@@ -38,7 +38,7 @@
 
 - [x] T014 Create `02_clean_svg.bat` launcher
 - [x] T015 Add Vietnamese error messages
-- [ ] T016 Write quickstart.md verification steps
+- [x] T016 Write quickstart.md verification steps
 
 ---
 
