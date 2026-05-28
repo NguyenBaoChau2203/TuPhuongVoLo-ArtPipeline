@@ -1,0 +1,43 @@
+---
+description: "Python code style and CLI rules"
+globs: ["scripts/python/**/*.py", "tests/**/*.py"]
+alwaysApply: false
+---
+
+# Python CLI Rules
+
+## Code Style
+- Python 3.10+ syntax (use `match` statements where appropriate)
+- Use `pathlib.Path` — never `os.path` string manipulation
+- Use `click` for CLI argument parsing (not argparse)
+- Use type hints on all function signatures
+- Use docstrings (Google style) on all public functions
+- Line length: 100 characters max (per ruff config)
+
+## Path Handling (Windows-First)
+- NEVER hardcode absolute paths
+- Use `pathlib.Path` for all path operations
+- Use `/` separator in Path() — pathlib handles Windows conversion
+- Read paths from `config/pipeline.yaml` when possible
+- Use `Path(__file__).parent` for relative paths from script location
+
+## CLI Conventions
+- Every script must be runnable as `python scripts/python/script_name.py`
+- Use `--input`, `--output`, `--config` as standard argument names
+- Print progress to stdout
+- Print errors to stderr
+- Exit code 0 = success, 1 = error
+- Support `--help` with clear descriptions
+- Support `--verbose` for debug output
+
+## Testing
+- Every module in `scripts/python/` must have a test in `tests/`
+- Test files named `test_*.py`
+- Use `pytest` fixtures for common test data
+- Test inputs in `tests/in/`, expected outputs in `tests/out_expected/`
+
+## Do NOT
+- Do not use `os.system()` or `subprocess.call()` for path operations
+- Do not hardcode `C:\` or `D:\` paths
+- Do not use `print()` for errors — use `click.echo(err=True)` or `logging`
+- Do not catch and silence exceptions without logging

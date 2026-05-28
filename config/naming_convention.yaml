@@ -1,0 +1,77 @@
+# TuPhuongVoLo-ArtPipeline — Naming Convention
+# Defines the standard naming pattern for all generated assets.
+
+naming:
+  # Pattern template — variables are wrapped in {braces}
+  pattern: "tu_phuong_vo_lo_{asset_name}_{variant}_{stage}_v{version}"
+
+  # Example outputs:
+  # tu_phuong_vo_lo_motel_room_a_svgclean_v001.svg
+  # tu_phuong_vo_lo_island_map_main_iso_v003.png
+  # tu_phuong_vo_lo_kho_default_blockout_v001.blend
+
+  # Field definitions
+  fields:
+    asset_name:
+      description: "Descriptive name using snake_case (e.g., motel_room, island_map, kho)"
+      required: true
+      regex: "^[a-z][a-z0-9_]+$"
+      max_length: 40
+
+    variant:
+      description: "Variant identifier (e.g., main, a, b, alt, draft)"
+      required: true
+      default: "main"
+      regex: "^[a-z][a-z0-9_]*$"
+      max_length: 20
+
+    stage:
+      description: "Pipeline stage indicating processing state"
+      required: true
+      allowed_values:
+        - "raw"              # Original unprocessed file
+        - "traced"           # After Potrace/vectorization
+        - "svgraw"           # SVG exported from Illustrator, before cleanup
+        - "svgclean"         # SVG after vpype/svgpathtools cleanup and validation
+        - "blockout"         # 3D blockout geometry (no detail)
+        - "iso"              # Isometric scene/render
+        - "preview"          # Preview render (PNG)
+        - "final_candidate"  # Ready for artist review/approval
+
+    version:
+      description: "Three-digit zero-padded version number"
+      required: true
+      format: "NNN"  # e.g., 001, 002, 015
+      regex: "^\\d{3}$"
+      start: 1
+
+  # Separator between fields
+  separator: "_"
+
+  # File extension is NOT part of the naming pattern
+  # It is determined by the output format
+
+  # Directory structure for outputs
+  output_directories:
+    raw: "assets/2d/svg_raw/"
+    traced: "assets/2d/svg_raw/"
+    svgraw: "outputs/svg/"
+    svgclean: "assets/2d/svg_clean/"
+    blockout: "outputs/blender/"
+    iso: "outputs/blender/"
+    preview: "outputs/preview/"
+    final_candidate: "outputs/png/"
+
+  # Manifest tracking
+  manifest:
+    file: "outputs/manifest/asset_manifest.json"
+    required_fields:
+      - "asset_name"
+      - "variant"
+      - "stage"
+      - "version"
+      - "source_file"
+      - "output_path"
+      - "timestamp"
+      - "checksum"
+      - "pipeline_step"

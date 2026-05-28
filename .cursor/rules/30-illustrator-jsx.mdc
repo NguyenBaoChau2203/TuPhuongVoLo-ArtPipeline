@@ -1,0 +1,37 @@
+---
+description: "Illustrator JSX/ExtendScript rules"
+globs: ["scripts/illustrator/**/*.jsx"]
+alwaysApply: false
+---
+
+# Illustrator JSX Rules
+
+## Script Safety
+- NEVER modify the source `.ai` file destructively
+- NEVER delete layers or objects from the source
+- Always export TO a designated output folder (not the source folder)
+- Show an alert/dialog if the script completes successfully or fails
+
+## Layer Naming Convention
+- Room layers: `room_{name}` (e.g., `room_kho`, `room_sanh_chinh`)
+- Props layers: `props_{room_name}`
+- Reference layers: `ref_{description}`
+- Guide layers: `guide_{description}`
+
+## Export Settings
+- SVG 1.1 profile
+- Preserve layer names as group IDs
+- Embed no raster images
+- Flatten transforms where possible
+- Output to `assets/2d/svg_raw/` by default
+
+## Compatibility
+- Target Illustrator CC 2020+ (ExtendScript)
+- Use `$.writeln()` for debug logging (appears in ESTK console)
+- Use `alert()` for user-facing messages
+- Test with both CS6 and CC if possible
+
+## File Organization
+- One script per purpose (export, organize, batch, transform)
+- Include header comment with: name, purpose, author, date, version
+- Include `#target illustrator` directive

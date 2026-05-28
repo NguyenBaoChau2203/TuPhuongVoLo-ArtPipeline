@@ -1,0 +1,142 @@
+# TuPhuongVoLo-ArtPipeline — Room Presets
+# Defines props and furniture presets for each room type.
+# These presets guide the isometric room generation in Blender/Maya.
+
+room_presets:
+  kho:
+    display_name: "Kho (Storage Room)"
+    display_name_vi: "Kho"
+    description: "Storage room with shelves, boxes, and crates"
+    floor_material: "concrete_gray"
+    wall_height: 3.0  # meters
+    props:
+      - name: "shelf_unit"
+        count: 2
+        placement: "along_wall"
+      - name: "wooden_crate"
+        count: 4
+        placement: "floor_scattered"
+      - name: "cardboard_box"
+        count: 6
+        placement: "on_shelf"
+      - name: "metal_barrel"
+        count: 1
+        placement: "corner"
+
+  phong_dieu_khien:
+    display_name: "Phòng Điều Khiển (Control Room)"
+    display_name_vi: "Phòng điều khiển"
+    description: "Control room with console desk, chair, and monitors"
+    floor_material: "tile_dark"
+    wall_height: 3.0
+    props:
+      - name: "console_desk"
+        count: 1
+        placement: "center_wall"
+      - name: "office_chair"
+        count: 1
+        placement: "at_desk"
+      - name: "monitor_screen"
+        count: 3
+        placement: "on_desk"
+      - name: "keyboard"
+        count: 1
+        placement: "on_desk"
+      - name: "cable_bundle"
+        count: 2
+        placement: "floor_under_desk"
+
+  khu_hau_can:
+    display_name: "Khu Hậu Cần (Logistics Area)"
+    display_name_vi: "Khu hậu cần"
+    description: "Logistics/break area with table, chairs, counter, and sink"
+    floor_material: "tile_light"
+    wall_height: 3.0
+    props:
+      - name: "dining_table"
+        count: 1
+        placement: "center"
+      - name: "folding_chair"
+        count: 4
+        placement: "around_table"
+      - name: "kitchen_counter"
+        count: 1
+        placement: "along_wall"
+      - name: "sink"
+        count: 1
+        placement: "on_counter"
+      - name: "water_dispenser"
+        count: 1
+        placement: "corner"
+
+  khu_biet_giam:
+    display_name: "Khu Biệt Giam (Isolation Cell)"
+    display_name_vi: "Khu biệt giam"
+    description: "Isolation cell with bed, toilet, small desk, and barred door"
+    floor_material: "concrete_rough"
+    wall_height: 2.8
+    props:
+      - name: "metal_bed_frame"
+        count: 1
+        placement: "against_wall"
+      - name: "thin_mattress"
+        count: 1
+        placement: "on_bed"
+      - name: "toilet"
+        count: 1
+        placement: "corner"
+      - name: "small_desk"
+        count: 1
+        placement: "opposite_bed"
+      - name: "barred_door"
+        count: 1
+        placement: "entrance"
+
+  sanh_chinh:
+    display_name: "Sảnh Chính (Main Hall)"
+    display_name_vi: "Sảnh chính"
+    description: "Main hall with open floor, plants, and reception/entry details"
+    floor_material: "polished_stone"
+    wall_height: 4.0
+    props:
+      - name: "reception_desk"
+        count: 1
+        placement: "entrance_facing"
+      - name: "potted_plant_large"
+        count: 2
+        placement: "flanking_entrance"
+      - name: "bench"
+        count: 2
+        placement: "along_wall"
+      - name: "notice_board"
+        count: 1
+        placement: "wall_mounted"
+      - name: "floor_mat"
+        count: 1
+        placement: "entrance"
+
+  khu_luu_tru_mau_vat:
+    display_name: "Khu Lưu Trữ Mẫu Vật (Specimen Storage)"
+    display_name_vi: "Khu lưu trữ mẫu vật"
+    description: "Specimen storage with sample cabinets, shelves, and lab-like table"
+    floor_material: "lab_tile_white"
+    wall_height: 3.0
+    props:
+      - name: "glass_cabinet"
+        count: 3
+        placement: "along_wall"
+      - name: "metal_shelf"
+        count: 2
+        placement: "along_wall"
+      - name: "lab_table"
+        count: 1
+        placement: "center"
+      - name: "microscope"
+        count: 1
+        placement: "on_table"
+      - name: "specimen_jar"
+        count: 8
+        placement: "in_cabinet"
+      - name: "desk_lamp"
+        count: 1
+        placement: "on_table"

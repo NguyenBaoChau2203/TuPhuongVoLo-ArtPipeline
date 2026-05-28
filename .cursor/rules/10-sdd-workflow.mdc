@@ -1,0 +1,30 @@
+---
+description: "Spec-Driven Development workflow enforcement"
+globs: ["scripts/**", "tests/**", "launchers/**"]
+alwaysApply: false
+---
+
+# SDD Workflow Rules
+
+## Before Writing Code
+1. Check if a spec exists for this feature in `specs/NNN-feature/`
+2. Read `spec.md` for requirements and acceptance criteria
+3. Read `tasks.md` for the specific task you're implementing
+4. Reference the task ID in your commit message
+
+## Task Mapping
+- Every code change MUST map to a task in `specs/NNN-feature/tasks.md`
+- Mark tasks as `[x]` when complete
+- Do not implement features that have no spec
+
+## Validation
+- After implementation, follow `quickstart.md` to verify
+- Run `pytest tests/` to ensure nothing is broken
+- Update the manifest if outputs are generated
+
+## Commit Convention
+```
+feat(NNN): T0XX — brief description
+
+Implements task T0XX from specs/NNN-feature/tasks.md
+```

@@ -1,0 +1,43 @@
+---
+description: "Blender Python pipeline rules"
+globs: ["scripts/blender/**/*.py"]
+alwaysApply: false
+---
+
+# Blender Pipeline Rules
+
+## Execution Mode
+- Prefer headless batch mode: `blender --background --python script.py -- args`
+- Scripts must work without GUI (no `bpy.ops` that require viewport)
+- Use `--` separator for script arguments (Blender convention)
+
+## Isometric Camera Setup
+- Camera type: ORTHOGRAPHIC
+- Standard isometric rotation: X=54.736°, Z=45° (or equivalent)
+- Orthographic scale: calculated from room bounding box + padding
+- Camera named: `IsometricCamera`
+
+## Scene Conventions
+- Scene named after room: `Scene_{room_name}`
+- Collections for: Walls, Floor, Props, Camera_Lights
+- Materials named: `mat_{purpose}` (e.g., `mat_wall`, `mat_floor`)
+- Objects named: `{type}_{room_name}_{detail}` (e.g., `wall_kho_north`)
+
+## Rendering
+- Default engine: EEVEE (fast) — CYCLES for review_render preset
+- Default resolution: 1920x1080 (from config)
+- Transparent background: `scene.render.film_transparent = True`
+- Output format: PNG with RGBA
+- Anti-aliasing: ON
+
+## Output
+- PNG to `outputs/preview/`
+- .blend scene to `outputs/blender/`
+- Follow naming convention from `config/naming_convention.yaml`
+- Never write to `assets/` directories
+
+## Do NOT
+- Do not use `bpy.ops.wm.open_mainfile()` in production scripts
+- Do not import external addons without checking availability
+- Do not hardcode file paths
+- Do not use Blender's internal Python packages for non-Blender tasks

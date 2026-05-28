@@ -1,0 +1,57 @@
+# TuPhuongVoLo-ArtPipeline — Style Presets
+# Defines visual style presets for different rendering purposes.
+
+style_presets:
+  line_art_green_floor:
+    display_name: "Line Art with Green Floor"
+    description: "Clean line art style with tinted green floor plane, suitable for isometric room drafts"
+    background: "transparent"
+    floor_color: "#4A7C59"  # Muted forest green
+    wall_color: "#F5F5F0"   # Warm off-white
+    line_color: "#2C2C2C"   # Near-black for outlines
+    line_weight: 1.5         # pixels
+    ambient_light: 0.6
+    use_shadows: true
+    shadow_softness: 0.3
+    render_engine: "EEVEE"   # EEVEE for speed, CYCLES for quality
+
+  clean_white_wall:
+    display_name: "Clean White Wall"
+    description: "Minimal white walls with subtle shadows, good for architectural review"
+    background: "transparent"
+    floor_color: "#E8E4DF"   # Warm light gray
+    wall_color: "#FFFFFF"    # Pure white
+    line_color: "#555555"    # Medium gray
+    line_weight: 1.0
+    ambient_light: 0.8
+    use_shadows: true
+    shadow_softness: 0.5
+    render_engine: "EEVEE"
+
+  grayscale_blockout:
+    display_name: "Grayscale Blockout"
+    description: "Gray-scale blockout for layout review, no decorative details"
+    background: "#F0F0F0"
+    floor_color: "#AAAAAA"
+    wall_color: "#CCCCCC"
+    line_color: "#333333"
+    line_weight: 2.0
+    ambient_light: 0.7
+    use_shadows: false
+    shadow_softness: 0.0
+    render_engine: "EEVEE"
+
+  review_render:
+    display_name: "Review Render"
+    description: "Higher quality render for review/approval with colored materials and soft lighting"
+    background: "transparent"
+    floor_color: "#5B7553"
+    wall_color: "#F0EDE8"
+    line_color: "#1A1A1A"
+    line_weight: 1.0
+    ambient_light: 0.5
+    use_shadows: true
+    shadow_softness: 0.4
+    render_engine: "CYCLES"
+    samples: 128
+    use_denoiser: true

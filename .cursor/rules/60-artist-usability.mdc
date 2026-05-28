@@ -1,0 +1,44 @@
+---
+description: "Artist usability rules for non-programmer usage"
+globs: ["launchers/**", "docs/**", "drops/**"]
+alwaysApply: false
+---
+
+# Artist Usability Rules
+
+## Non-Programmer Design
+The artist is NOT a programmer. All tools must be usable without:
+- Terminal/command line knowledge
+- Python knowledge
+- Understanding of file paths or arguments
+
+## .bat Launchers
+- Every common operation must have a `.bat` launcher in `launchers/`
+- Launchers must show clear Vietnamese messages
+- Launchers must pause before closing (so the artist can read output)
+- Launchers must handle errors gracefully (no cryptic stack traces)
+- Launcher naming: numbered for suggested order (01_, 02_, 03_, ...)
+
+## Folder Convention
+- `drops/` — Artist drops files here for processing
+- `outputs/` — Artist finds results here
+- These two folders are the artist's primary interaction points
+- Keep the mental model simple: DROP → RUN → GET OUTPUT
+
+## Vietnamese Instructions
+- All artist-facing docs in Vietnamese (files ending in `_VI.md`)
+- Error messages shown to artist must include Vietnamese text
+- Use clear, non-technical language
+- Include screenshots or diagrams where helpful
+
+## Non-Destructive
+- NEVER overwrite files in `drops/` — process and move/copy
+- NEVER delete artist's source files
+- If an output already exists, create a new version (never overwrite)
+- Show clear message: "File đã được xử lý. Kết quả ở: outputs/..."
+
+## Error Handling
+- Show Vietnamese error message to the artist
+- Log English technical details to a log file
+- Suggest a fix or next step in the error message
+- Never show raw Python tracebacks to the artist

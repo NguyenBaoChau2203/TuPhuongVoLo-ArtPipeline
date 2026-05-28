@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 400 300"
+     width="400" height="300">
+  <!-- TuPhuongVoLo-ArtPipeline — Placeholder SVG for testing -->
+  <!-- This is a minimal example floorplan with one room -->
+
+  <g id="room_motel_room">
+    <!-- Simple rectangular room: 200x150 units -->
+    <path d="M100,75 L300,75 L300,225 L100,225 Z"
+          fill="none" stroke="#333333" stroke-width="3"/>
+
+    <!-- Door opening on south wall -->
+    <path d="M170,225 L230,225"
+          fill="none" stroke="#FFFFFF" stroke-width="4"/>
+  </g>
+</svg>

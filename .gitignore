@@ -1,0 +1,77 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === OS ===
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# === Project Outputs (generated, not source) ===
+outputs/svg/*.svg
+outputs/png/*.png
+outputs/preview/*.png
+outputs/blender/*.blend
+outputs/blender/*.blend1
+outputs/maya/*
+outputs/manifest/*.json
+outputs/manifest/*.csv
+
+# === Blender backups ===
+*.blend1
+*.blend2
+
+# === Maya ===
+*.ma~
+*.mb~
+
+# === Logs ===
+*.log
+
+# === Temporary ===
+*.tmp
+*.bak
+
+# === Do NOT ignore ===
+# !assets/       — source assets are tracked
+# !drops/        — drop folder structure is tracked (but contents may be gitignored)
+# !config/       — config files are tracked
+# !examples/     — example files are tracked
+# !tests/in/     — test inputs are tracked
+# !tests/out_expected/ — expected outputs are tracked
+
+# Keep empty directories
+!assets/refs/.gitkeep
+!assets/2d/ai_src/.gitkeep
+!assets/2d/svg_raw/.gitkeep
+!assets/2d/svg_clean/.gitkeep
+!assets/3d/blender/.gitkeep
+!assets/3d/maya/.gitkeep
+!assets/props_library/.gitkeep
+!outputs/svg/.gitkeep
+!outputs/png/.gitkeep
+!outputs/preview/.gitkeep
+!outputs/blender/.gitkeep
+!outputs/maya/.gitkeep
+!outputs/manifest/.gitkeep
+!drops/.gitkeep
+!tests/in/.gitkeep
+!tests/out_expected/.gitkeep

@@ -1,0 +1,39 @@
+---
+description: "Maya pipeline rules (optional advanced branch)"
+globs: ["scripts/maya/**/*.py"]
+alwaysApply: false
+---
+
+# Maya Pipeline Rules
+
+## Branch Status
+Maya is an OPTIONAL ADVANCED branch. It must NOT block the primary Blender pipeline.
+
+## Execution
+- Prefer `mayapy` for headless execution
+- Scripts must work without Maya GUI
+- Test with `mayapy script.py` before integrating
+
+## SVG Import Strategy
+Maya does NOT have native SVG import like Blender. Use one of:
+1. **Blender → USD → Maya**: Export from Blender as USD, import in Maya
+2. **Custom SVG parser**: Parse SVG with svgpathtools in Python, create Maya curves via cmds/pymel
+3. **Direct import**: Limited — requires plugin or manual conversion
+
+Do NOT assume direct SVG import works in Maya.
+
+## Camera Setup
+- Match Blender isometric camera parameters exactly
+- Camera type: Orthographic
+- Same rotation angles as Blender setup
+
+## Output
+- Maya scene files (.ma/.mb) to `outputs/maya/`
+- PNG renders to `outputs/maya/`
+- Follow naming convention
+
+## Do NOT
+- Do not make Maya a hard dependency
+- Do not import Maya-specific modules at top level (lazy import)
+- Do not block Blender pipeline development for Maya features
+- Do not assume Maya Python has the same packages as system Python

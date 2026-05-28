@@ -1,0 +1,70 @@
+# TuPhuongVoLo-ArtPipeline — Main Pipeline Configuration
+# This file defines global settings for the art pipeline.
+
+project:
+  name: "TuPhuongVoLo-ArtPipeline"
+  game_title: "Tứ Phương Vô Lộ"
+  version: "0.1.0"
+  phase: "sdd-bootstrap"  # sdd-bootstrap | development | production
+
+paths:
+  # All paths are relative to the repository root
+  drops_dir: "drops/"
+  outputs_root: "outputs/"
+  assets_root: "assets/"
+  config_dir: "config/"
+  scripts_dir: "scripts/"
+
+  # Output subdirectories
+  output_svg: "outputs/svg/"
+  output_png: "outputs/png/"
+  output_preview: "outputs/preview/"
+  output_blender: "outputs/blender/"
+  output_maya: "outputs/maya/"
+  output_manifest: "outputs/manifest/"
+
+  # Asset subdirectories
+  ai_src: "assets/2d/ai_src/"
+  svg_raw: "assets/2d/svg_raw/"
+  svg_clean: "assets/2d/svg_clean/"
+  blender_scenes: "assets/3d/blender/"
+  maya_scenes: "assets/3d/maya/"
+  props_library: "assets/props_library/"
+  refs: "assets/refs/"
+
+defaults:
+  style_preset: "line_art_green_floor"
+  render_resolution:
+    width: 1920
+    height: 1080
+  render_format: "PNG"
+  render_transparent_bg: true
+  isometric_angle: 30  # degrees — standard isometric
+  camera_type: "ORTHO"
+
+# Tool paths — override these for your machine
+# Set to "auto" to search PATH, or provide absolute path
+tool_paths:
+  illustrator: "auto"       # e.g., "C:/Program Files/Adobe/Adobe Illustrator 2025/Support Files/Contents/Windows/Illustrator.exe"
+  blender: "auto"           # e.g., "C:/Program Files/Blender Foundation/Blender 4.0/blender.exe"
+  maya: "auto"              # e.g., "C:/Program Files/Autodesk/Maya2025/bin/maya.exe"
+  mayapy: "auto"            # e.g., "C:/Program Files/Autodesk/Maya2025/bin/mayapy.exe"
+  potrace: "auto"           # e.g., "C:/tools/potrace/potrace.exe"
+  vpype: "auto"             # Usually available via pip: vpype
+  python: "auto"            # e.g., "python" or full path to python.exe
+
+svg_cleanup:
+  # vpype simplification tolerance
+  simplify_tolerance: 0.1
+  # Minimum path length to keep (in SVG units)
+  min_path_length: 1.0
+  # Remove invisible/hidden elements
+  remove_hidden: true
+  # Flatten transforms
+  flatten_transforms: true
+
+manifest:
+  format: "json"  # json | csv | both
+  auto_update: true
+  include_checksum: true
+  checksum_algorithm: "sha256"

@@ -1,0 +1,33 @@
+---
+description: "Always-applied project context for TuPhuongVoLo-ArtPipeline"
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Project Context: TuPhuongVoLo-ArtPipeline
+
+This is an art pipeline automation project for the indie game "Tứ Phương Vô Lộ".
+
+## Key Facts
+- **Artist-first**: The primary user is a Vietnamese-speaking artist on Windows
+- **Semi-automated**: Assists repetitive tasks, does NOT replace artistic decisions
+- **Pipeline**: Illustrator SVG export → cleanup → Blender isometric render → editable outputs
+- **SDD**: Every feature has spec.md → plan.md → tasks.md → quickstart.md
+
+## Core Tools
+- Adobe Illustrator (2D authoring) — JSX/ExtendScript for automation
+- Blender (default 3D bridge) — bpy Python API, headless batch
+- Maya (optional advanced) — mayapy, optional only
+- Python 3.10+ (CLI glue) — pathlib, click, svgpathtools
+
+## Critical Rules
+- Windows-first (pathlib, .bat launchers, CRLF)
+- Non-destructive (never overwrite source files)
+- Naming convention: `tu_phuong_vo_lo_{name}_{variant}_{stage}_v{version}`
+- Vietnamese artist documentation required
+- Script-first — no mouse/click automation
+
+## Read Before Coding
+- `AGENTS.md` — full agent instructions
+- `.specify/constitution.md` — project constitution
+- `specs/NNN-feature/` — feature specs

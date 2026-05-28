@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 600 400"
+     width="600" height="400">
+  <!-- TuPhuongVoLo-ArtPipeline — Placeholder island map SVG -->
+  <!-- This is a minimal example with multiple area layers -->
+
+  <g id="room_kho">
+    <!-- Storage room -->
+    <path d="M50,50 L200,50 L200,150 L50,150 Z"
+          fill="none" stroke="#333333" stroke-width="2"/>
+  </g>
+
+  <g id="room_sanh_chinh">
+    <!-- Main hall -->
+    <path d="M250,50 L550,50 L550,250 L250,250 Z"
+          fill="none" stroke="#333333" stroke-width="2"/>
+  </g>
+
+  <g id="room_khu_biet_giam">
+    <!-- Isolation cell -->
+    <path d="M50,200 L200,200 L200,350 L50,350 Z"
+          fill="none" stroke="#333333" stroke-width="2"/>
+  </g>
+</svg>
