@@ -9,8 +9,8 @@
  * Feature 002 tasks: T001, T003, T004, T005, T015
  *
  * Output:
- *   assets/2d/svg_raw/{document_name}_svgraw_v001.svg
- *   assets/2d/svg_raw/{document_name}_ab01_svgraw_v001.svg for multi-artboard docs
+ *   assets/2d/svg_raw/tu_phuong_vo_lo_{asset_name}_main_svgraw_v001.svg
+ *   assets/2d/svg_raw/tu_phuong_vo_lo_{asset_name}_ab01_svgraw_v001.svg for multi-artboard docs
  *
  * Safety:
  *   - Does not save or modify the source .ai file.
@@ -32,16 +32,41 @@
         return String(fileName).replace(/\.[^\.]+$/, "");
     }
 
-    function safeFileStem(name) {
-        var stem = trimText(stripExtension(name));
-        stem = stem.replace(/\s+/g, "_");
-        stem = stem.replace(/[\\\/:\*\?"<>\|]/g, "");
+    function normalizeAssetName(name) {
+        var stem = trimText(stripExtension(name)).toLowerCase();
+        stem = stem.replace(/[^a-z0-9_]+/g, "_");
         stem = stem.replace(/_+/g, "_");
         stem = stem.replace(/^_+|_+$/g, "");
-        if (!stem) {
-            stem = "illustrator_asset";
+        if (!stem || !/^[a-z]/.test(stem)) {
+            stem = stem ? "asset_" + stem : "asset";
         }
-        return stem.toLowerCase();
+        if (stem.length > 40) {
+            stem = stem.substring(0, 40).replace(/_+$/g, "");
+        }
+        return stem || "asset";
+    }
+
+    function parseDocumentName(fileName) {
+        var stem = normalizeAssetName(fileName);
+        var match = stem.match(
+            /^tu_phuong_vo_lo_(.+)_([a-z][a-z0-9_]*)_(raw|traced|svgraw|svgclean|blockout|iso|preview|final_candidate)_v(\d{3})$/
+        );
+        if (match) {
+            return {
+                assetName: match[1],
+                variant: match[2],
+                version: parseInt(match[4], 10)
+            };
+        }
+        return {
+            assetName: stem,
+            variant: "main",
+            version: 1
+        };
+    }
+
+    function formatOutputStem(assetName, variant, version) {
+        return "tu_phuong_vo_lo_" + assetName + "_" + variant + "_svgraw_v" + pad3(version);
     }
 
     function ensureFolder(folder) {
@@ -50,17 +75,55 @@
         }
     }
 
-    function versionedFile(folder, baseStem) {
-        var version = 1;
+    function versionedFile(folder, assetName, variant, startVersion) {
+        var version = startVersion || 1;
         var candidate;
         do {
-            candidate = new File(folder.fsName + "/" + baseStem + "_svgraw_v" + pad3(version) + ".svg");
+            candidate = new File(
+                folder.fsName + "/" + formatOutputStem(assetName, variant, version) + ".svg"
+            );
             version += 1;
         } while (candidate.exists && version < 1000);
         if (candidate.exists) {
-            throw new Error("Không tạo được tên phiên bản mới cho: " + baseStem);
+            throw new Error("Không tạo được tên phiên bản mới cho: " + assetName);
         }
         return candidate;
+    }
+
+    function hasFile(folder, relativePath) {
+        return new File(folder.fsName + "/" + relativePath).exists;
+    }
+
+    function isValidProjectRoot(folder) {
+        return folder && folder.exists && (
+            hasFile(folder, "AGENTS.md") ||
+            hasFile(folder, "config/pipeline.yaml") ||
+            hasFile(folder, ".specify/constitution.md")
+        );
+    }
+
+    function discoverProjectRoot() {
+        var scriptFile = new File($.fileName);
+        var folder = scriptFile.parent;
+        var guard = 0;
+        while (folder && folder.exists && guard < 20) {
+            if (isValidProjectRoot(folder)) {
+                return folder;
+            }
+            folder = folder.parent;
+            guard += 1;
+        }
+
+        var selected = Folder.selectDialog(
+            "Chọn thư mục TuPhuongVoLo-ArtPipeline để xuất SVG vào assets/2d/svg_raw/"
+        );
+        if (isValidProjectRoot(selected)) {
+            return selected;
+        }
+        throw new Error(
+            "Không tìm thấy thư mục project hợp lệ.\n" +
+            "Hãy chọn thư mục có AGENTS.md hoặc config/pipeline.yaml."
+        );
     }
 
     function pad2(value) {
@@ -136,20 +199,24 @@
         }
 
         var doc = app.activeDocument;
-        var scriptFile = new File($.fileName);
-        var projectRoot = scriptFile.parent.parent.parent;
+        var projectRoot = discoverProjectRoot();
         var outputFolder = new Folder(projectRoot.fsName + "/assets/2d/svg_raw");
         ensureFolder(outputFolder);
 
-        var baseStem = safeFileStem(doc.name);
+        var nameParts = parseDocumentName(doc.name);
         var artboardCount = doc.artboards.length;
         var exportedFiles = [];
         var originalArtboardIndex = doc.artboards.getActiveArtboardIndex();
 
         for (var index = 0; index < artboardCount; index += 1) {
             doc.artboards.setActiveArtboardIndex(index);
-            var artboardSuffix = artboardCount > 1 ? "_ab" + pad2(index + 1) : "";
-            var outputFile = versionedFile(outputFolder, baseStem + artboardSuffix);
+            var variant = artboardCount > 1 ? "ab" + pad2(index + 1) : nameParts.variant;
+            var outputFile = versionedFile(
+                outputFolder,
+                nameParts.assetName,
+                variant,
+                nameParts.version
+            );
             var options = buildExportOptions(artboardCount > 1 ? index + 1 : null);
             doc.exportFile(outputFile, ExportType.SVG, options);
             exportedFiles.push(outputFile.fsName);

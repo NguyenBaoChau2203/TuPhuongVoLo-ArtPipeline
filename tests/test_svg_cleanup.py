@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from clean_svg_paths import clean_svg_file, clean_svg_input
+from clean_svg_paths import clean_output_name, clean_svg_file, clean_svg_input
 from validate_svg_contract import validate_svg_file
 
 
@@ -140,5 +140,33 @@ def test_directory_input_processes_multiple_svg_files(tmp_path: Path) -> None:
     reports = clean_svg_input(input_dir, output_dir)
 
     assert len(reports) == 2
-    assert (output_dir / "a_svgclean_v001.svg").exists()
-    assert (output_dir / "b_svgclean_v001.svg").exists()
+    assert (output_dir / "tu_phuong_vo_lo_a_main_svgclean_v001.svg").exists()
+    assert (output_dir / "tu_phuong_vo_lo_b_main_svgclean_v001.svg").exists()
+
+
+def test_file_output_path_still_uses_convention_name(tmp_path: Path) -> None:
+    """Even explicit file outputs are normalized to the repository convention."""
+
+    raw_svg = write_svg(
+        tmp_path / "a.svg",
+        '<g id="room_a"><path id="wall_a" d="M0 0 L20 0 Z"/></g>',
+    )
+
+    reports = clean_svg_input(raw_svg, tmp_path / "custom.svg")
+
+    assert reports[0].output_path.name == "tu_phuong_vo_lo_a_main_svgclean_v001.svg"
+    assert (tmp_path / "tu_phuong_vo_lo_a_main_svgclean_v001.svg").exists()
+
+
+def test_clean_output_name_normalizes_arbitrary_input() -> None:
+    """Arbitrary SVG names are normalized into the repository convention."""
+
+    assert clean_output_name(Path("a.svg")) == "tu_phuong_vo_lo_a_main_svgclean_v001.svg"
+
+
+def test_clean_output_name_preserves_convention_fields() -> None:
+    """Convention input preserves asset, variant, and version while changing stage."""
+
+    source = Path("tu_phuong_vo_lo_motel_room_ab01_svgraw_v003.svg")
+
+    assert clean_output_name(source) == "tu_phuong_vo_lo_motel_room_ab01_svgclean_v003.svg"

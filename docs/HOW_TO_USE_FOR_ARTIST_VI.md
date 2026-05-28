@@ -42,7 +42,7 @@ Khi vẽ bản vẽ mặt bằng, hãy:
 3. Chạy export: File → Scripts → Other Script → chọn `scripts/illustrator/export_clean_svg.jsx`
 4. File SVG raw sẽ xuất hiện trong `assets/2d/svg_raw/`.
 
-Script export sẽ tự đặt tên dạng `_svgraw_v001.svg`. Nếu file đã tồn tại, script sẽ tạo phiên bản tiếp theo và không ghi đè file cũ.
+Script export sẽ tự đặt tên theo quy ước, ví dụ `tu_phuong_vo_lo_motel_room_main_svgraw_v001.svg`. Nếu file đã tồn tại, script sẽ tạo phiên bản tiếp theo và không ghi đè file cũ.
 
 **Cách 2: Xuất thủ công**
 1. Trong Illustrator: File → Save As → SVG

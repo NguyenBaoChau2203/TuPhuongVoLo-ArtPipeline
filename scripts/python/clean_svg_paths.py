@@ -39,6 +39,13 @@ XLINK_NS = "http://www.w3.org/1999/xlink"
 RASTER_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".tif", ".tiff")
 DEFAULT_OUTPUT_DIR = Path("assets/2d/svg_clean")
 DEFAULT_MANIFEST_PATH = Path("outputs/manifest/asset_manifest.json")
+PROJECT_PREFIX = "tu_phuong_vo_lo"
+NAMED_ASSET_RE = re.compile(
+    r"^tu_phuong_vo_lo_(?P<asset_name>[a-z][a-z0-9_]*?)_"
+    r"(?P<variant>[a-z][a-z0-9_]*?)_"
+    r"(?P<stage>raw|traced|svgraw|svgclean|blockout|iso|preview|final_candidate)_"
+    r"v(?P<version>\d{3})$"
+)
 
 try:
     if LXML_AVAILABLE:
@@ -81,6 +88,16 @@ class CleanupReport:
     raster_images: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     dry_run: bool = False
+
+
+@dataclass(frozen=True)
+class AssetNameParts:
+    """Parsed repository naming-convention fields for one SVG asset."""
+
+    asset_name: str
+    variant: str
+    stage: str
+    version: str
 
 
 def repo_root() -> Path:
@@ -171,16 +188,13 @@ def append_manifest_entry(input_path: Path, output_path: Path, manifest_path: Pa
     if not isinstance(manifest_data, list):
         manifest_data = []
 
-    version_match = re.search(r"_v(\d{3})$", output_path.stem)
-    asset_stem = re.sub(r"_svgclean_v\d{3}$", "", output_path.stem)
-    if asset_stem.startswith("tu_phuong_vo_lo_"):
-        asset_stem = asset_stem.removeprefix("tu_phuong_vo_lo_")
+    name_parts = parse_asset_name(output_path.stem, target_stage="svgclean")
 
     entry = {
-        "asset_name": asset_stem or output_path.stem,
-        "variant": "main",
-        "stage": "svgclean",
-        "version": version_match.group(1) if version_match else "001",
+        "asset_name": name_parts.asset_name,
+        "variant": name_parts.variant,
+        "stage": name_parts.stage,
+        "version": name_parts.version,
         "source_file": relative_to_repo(input_path),
         "output_path": relative_to_repo(output_path),
         "timestamp": datetime.now(UTC).isoformat(),
@@ -206,6 +220,48 @@ def parse_style(style_value: str | None) -> dict[str, str]:
         key, value = item.split(":", 1)
         styles[key.strip().lower()] = value.strip().lower()
     return styles
+
+
+def normalize_asset_name(value: str) -> str:
+    """Normalize an arbitrary filename stem into naming-convention asset_name."""
+
+    normalized = value.strip().lower()
+    normalized = re.sub(r"\.[^.]+$", "", normalized)
+    normalized = re.sub(r"[^a-z0-9_]+", "_", normalized)
+    normalized = re.sub(r"_+", "_", normalized).strip("_")
+    if not normalized or not re.match(r"^[a-z]", normalized):
+        normalized = f"asset_{normalized}" if normalized else "asset"
+    return normalized[:40].rstrip("_") or "asset"
+
+
+def parse_asset_name(stem: str, target_stage: str = "svgclean") -> AssetNameParts:
+    """Parse or normalize a filename stem into repository naming fields."""
+
+    match = NAMED_ASSET_RE.match(stem)
+    if match:
+        return AssetNameParts(
+            asset_name=match.group("asset_name"),
+            variant=match.group("variant"),
+            stage=target_stage,
+            version=match.group("version"),
+        )
+
+    cleaned_stem = re.sub(r"_(raw|traced|svgraw|svgclean)_v\d{3}$", "", stem)
+    return AssetNameParts(
+        asset_name=normalize_asset_name(cleaned_stem),
+        variant="main",
+        stage=target_stage,
+        version="001",
+    )
+
+
+def format_asset_name(parts: AssetNameParts) -> str:
+    """Format asset naming fields using the constitution pattern."""
+
+    return (
+        f"{PROJECT_PREFIX}_{parts.asset_name}_{parts.variant}_"
+        f"{parts.stage}_v{parts.version}.svg"
+    )
 
 
 def is_hidden_element(element: object) -> bool:
@@ -608,13 +664,9 @@ def clean_svg_file(
 
 
 def clean_output_name(input_path: Path) -> str:
-    """Return a versioned svgclean filename for a raw SVG input."""
+    """Return a constitution-compliant svgclean filename for a raw SVG input."""
 
-    stem = input_path.stem
-    stem = re.sub(r"_svgraw_v(\d{3})$", r"_svgclean_v\1", stem)
-    if not re.search(r"_svgclean_v\d{3}$", stem):
-        stem = f"{stem}_svgclean_v001"
-    return f"{stem}.svg"
+    return format_asset_name(parse_asset_name(input_path.stem, target_stage="svgclean"))
 
 
 def next_available_path(path: Path) -> Path:
@@ -637,10 +689,8 @@ def next_available_path(path: Path) -> Path:
 def resolve_output_path(input_file: Path, output_path: Path, multiple_inputs: bool) -> Path:
     """Resolve a non-destructive output path for one input file."""
 
-    if multiple_inputs or output_path.suffix.lower() != ".svg":
-        target = output_path / clean_output_name(input_file)
-    else:
-        target = output_path
+    output_dir = output_path.parent if output_path.suffix.lower() == ".svg" else output_path
+    target = output_dir / clean_output_name(input_file)
     return next_available_path(target)
 
 
@@ -722,7 +772,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--output",
         type=Path,
         default=repo_root() / DEFAULT_OUTPUT_DIR,
-        help="File/thư mục output. Mặc định: assets/2d/svg_clean/.",
+        help="Thư mục output; nếu truyền file .svg, chỉ dùng thư mục cha.",
     )
     parser.add_argument("--min-path-length", type=float, default=1.0)
     parser.add_argument("--min-bbox-side", type=float, default=1.0)
