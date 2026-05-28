@@ -4,17 +4,17 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Create Illustrator JSX script skeleton with header/docstring
-- [ ] T002 [P] Set up Python cleanup module structure
+- [x] T001 Create Illustrator JSX script skeleton with header/docstring
+- [x] T002 [P] Set up Python cleanup module structure
 
 ---
 
 ## Phase 2: Illustrator JSX Scripts
 
-- [ ] T003 [US1] Implement `export_clean_svg.jsx` — export active document as SVG preserving layer names
-- [ ] T004 [US1] Add artboard iteration for multi-artboard export
-- [ ] T005 [US1] Add output path configuration (default: `assets/2d/svg_raw/`)
-- [ ] T006 [US2] Implement `organize_layers.jsx` — rename layers to convention
+- [x] T003 [US1] Implement `export_clean_svg.jsx` — export active document as SVG preserving layer names
+- [x] T004 [US1] Add artboard iteration for multi-artboard export
+- [x] T005 [US1] Add output path configuration (default: `assets/2d/svg_raw/`)
+- [x] T006 [US2] Implement `organize_layers.jsx` — rename layers to convention
 - [ ] T007 [P] Implement `batch_export_assets.jsx` — batch export selected artboards
 - [ ] T008 [P] Create `isometric_transform_helper.jsx` — isometric skew/rotate utilities
 
@@ -24,11 +24,11 @@
 
 ## Phase 3: Python SVG Cleanup
 
-- [ ] T009 [US3] Implement `clean_svg_paths.py` — vpype simplification pipeline
-- [ ] T010 [US3] Add transform flattening logic
-- [ ] T011 [US3] Add hidden element removal
-- [ ] T012 [US3] Implement `validate_svg_contract.py` — check SVG meets clean contract
-- [ ] T013 [US3] Add unit tests in `tests/test_svg_cleanup.py`
+- [x] T009 [US3] Implement `clean_svg_paths.py` — vpype simplification pipeline
+- [x] T010 [US3] Add transform flattening logic
+- [x] T011 [US3] Add hidden element removal
+- [x] T012 [US3] Implement `validate_svg_contract.py` — check SVG meets clean contract
+- [x] T013 [US3] Add unit tests in `tests/test_svg_cleanup.py`
 
 **Checkpoint**: SVG cleanup pipeline produces validated clean SVG
 
@@ -36,8 +36,8 @@
 
 ## Phase 4: Integration & Launchers
 
-- [ ] T014 Create `02_clean_svg.bat` launcher
-- [ ] T015 Add Vietnamese error messages
+- [x] T014 Create `02_clean_svg.bat` launcher
+- [x] T015 Add Vietnamese error messages
 - [ ] T016 Write quickstart.md verification steps
 
 ---

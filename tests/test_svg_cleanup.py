@@ -1,57 +1,144 @@
-"""
-test_svg_cleanup.py — TuPhuongVoLo-ArtPipeline
+"""Tests for Feature 002 SVG cleanup and validation."""
 
-Tests for SVG cleanup pipeline (scripts/python/clean_svg_paths.py)
-and SVG validation (scripts/python/validate_svg_contract.py).
+from __future__ import annotations
 
-Status: PLACEHOLDER — TODO: Implement tests when features are built
-"""
-
-import pytest
 from pathlib import Path
 
-
-# Test fixture paths
-TESTS_DIR = Path(__file__).parent
-TEST_INPUT_DIR = TESTS_DIR / "in"
-TEST_EXPECTED_DIR = TESTS_DIR / "out_expected"
+from clean_svg_paths import clean_svg_file, clean_svg_input
+from validate_svg_contract import validate_svg_file
 
 
-class TestSVGCleanup:
-    """Tests for SVG cleanup pipeline."""
+def write_svg(path: Path, body: str) -> Path:
+    """Write a minimal SVG test file."""
 
-    def test_placeholder_passes(self):
-        """Placeholder test to verify test infrastructure works."""
-        assert True, "Test infrastructure is working"
+    path.write_text(
+        f"""<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+{body}
+</svg>
+""",
+        encoding="utf-8",
+    )
+    return path
 
-    @pytest.mark.skip(reason="TODO: Implement when clean_svg_paths.py is built")
-    def test_flatten_transforms(self):
-        """Test that nested transforms are flattened."""
-        # TODO: Create test SVG with nested transforms
-        # TODO: Run cleanup
-        # TODO: Assert transforms are flattened
-        pass
 
-    @pytest.mark.skip(reason="TODO: Implement when clean_svg_paths.py is built")
-    def test_remove_hidden_elements(self):
-        """Test that hidden/invisible elements are removed."""
-        # TODO: Create test SVG with hidden elements
-        # TODO: Run cleanup
-        # TODO: Assert hidden elements removed
-        pass
+def test_hidden_elements_removed(tmp_path: Path) -> None:
+    """Cleanup removes display:none, visibility:hidden, and opacity:0 elements."""
 
-    @pytest.mark.skip(reason="TODO: Implement when validate_svg_contract.py is built")
-    def test_valid_svg_passes_validation(self):
-        """Test that a valid clean SVG passes all validation checks."""
-        # TODO: Provide valid test SVG
-        # TODO: Run validation
-        # TODO: Assert passes
-        pass
+    raw_svg = write_svg(
+        tmp_path / "raw.svg",
+        """
+<g id="room_kho">
+  <path id="visible" d="M0 0 L10 0 L10 10 Z"/>
+  <path id="hidden_a" display="none" d="M0 0 L10 0"/>
+  <path id="hidden_b" visibility="hidden" d="M0 0 L10 0"/>
+  <path id="hidden_c" opacity="0" d="M0 0 L10 0"/>
+</g>
+""",
+    )
+    output_svg = tmp_path / "clean.svg"
 
-    @pytest.mark.skip(reason="TODO: Implement when validate_svg_contract.py is built")
-    def test_invalid_svg_fails_validation(self):
-        """Test that an invalid SVG fails validation with descriptive errors."""
-        # TODO: Provide invalid test SVG
-        # TODO: Run validation
-        # TODO: Assert fails with error messages
-        pass
+    report = clean_svg_file(raw_svg, output_svg)
+
+    text = output_svg.read_text(encoding="utf-8")
+    assert report.removed_hidden == 3
+    assert "hidden_a" not in text
+    assert "hidden_b" not in text
+    assert "hidden_c" not in text
+    assert "visible" in text
+
+
+def test_tiny_path_removed(tmp_path: Path) -> None:
+    """Cleanup removes clearly tiny path artifacts."""
+
+    raw_svg = write_svg(
+        tmp_path / "tiny.svg",
+        """
+<g id="room_kho">
+  <path id="tiny" d="M0 0 L0.1 0.1"/>
+  <path id="wall" d="M0 0 L20 0 L20 20 Z"/>
+</g>
+""",
+    )
+    output_svg = tmp_path / "clean.svg"
+
+    report = clean_svg_file(raw_svg, output_svg, min_path_length=1.0, min_bbox_side=1.0)
+
+    text = output_svg.read_text(encoding="utf-8")
+    assert report.removed_tiny_paths == 1
+    assert "tiny" not in text
+    assert "wall" in text
+
+
+def test_embedded_raster_image_detected(tmp_path: Path) -> None:
+    """Cleanup reports embedded raster image elements without deleting source files."""
+
+    raw_svg = write_svg(
+        tmp_path / "raster.svg",
+        """
+<g id="room_kho">
+  <image id="painted_ref" href="data:image/png;base64,AAAA" width="10" height="10"/>
+  <path id="wall" d="M0 0 L20 0 L20 20 Z"/>
+</g>
+""",
+    )
+    output_svg = tmp_path / "clean.svg"
+
+    report = clean_svg_file(raw_svg, output_svg)
+
+    assert report.raster_images
+    assert "painted_ref" in report.raster_images[0]
+    assert raw_svg.exists()
+
+
+def test_validator_fails_on_transform_in_strict_mode(tmp_path: Path) -> None:
+    """Strict validation fails if transforms remain."""
+
+    svg_path = write_svg(
+        tmp_path / "transform.svg",
+        """
+<g id="room_kho" transform="translate(10 0)">
+  <path id="wall" d="M0 0 L20 0 L20 20 Z"/>
+</g>
+""",
+    )
+
+    report = validate_svg_file(svg_path, strict=True)
+
+    assert not report.passed
+    assert any("transform" in error for error in report.errors)
+
+
+def test_validator_passes_minimal_clean_svg(tmp_path: Path) -> None:
+    """Validator passes a minimal clean SVG with meaningful layer IDs."""
+
+    svg_path = write_svg(
+        tmp_path / "clean.svg",
+        """
+<g id="room_kho">
+  <path id="wall_main" d="M0 0 L20 0 L20 20 L0 20 Z"/>
+</g>
+""",
+    )
+
+    report = validate_svg_file(svg_path, strict=True)
+
+    assert report.passed
+    assert report.errors == []
+
+
+def test_directory_input_processes_multiple_svg_files(tmp_path: Path) -> None:
+    """Directory input cleans each SVG into the output directory."""
+
+    input_dir = tmp_path / "in"
+    output_dir = tmp_path / "out"
+    input_dir.mkdir()
+    output_dir.mkdir()
+    write_svg(input_dir / "a.svg", '<g id="room_a"><path id="wall_a" d="M0 0 L20 0 Z"/></g>')
+    write_svg(input_dir / "b.svg", '<g id="room_b"><path id="wall_b" d="M0 0 L30 0 Z"/></g>')
+
+    reports = clean_svg_input(input_dir, output_dir)
+
+    assert len(reports) == 2
+    assert (output_dir / "a_svgclean_v001.svg").exists()
+    assert (output_dir / "b_svgclean_v001.svg").exists()

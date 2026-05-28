@@ -1,20 +1,49 @@
 @echo off
 chcp 65001 >nul
+setlocal
+
+cd /d "%~dp0\.."
+
+set "INPUT_PATH=%~1"
+if "%INPUT_PATH%"=="" set "INPUT_PATH=drops"
+set "OUTPUT_PATH=assets\2d\svg_clean"
+
 echo ============================================================
-echo  TuPhuongVoLo-ArtPipeline — Làm sạch SVG
-echo  (Clean SVG)
+echo  TuPhuongVoLo-ArtPipeline - Làm sạch SVG
 echo ============================================================
 echo.
-echo ⚠️  PLACEHOLDER: Chưa triển khai (not implemented yet)
+echo Hãy đặt file SVG vào một trong hai nơi:
+echo   - drops\
+echo   - assets\2d\svg_raw\
 echo.
-echo Script này sẽ:
-echo   1. Đọc file SVG từ thư mục drops/
-echo   2. Làm sạch đường path (vpype)
-echo   3. Kiểm tra cấu trúc SVG
-echo   4. Lưu kết quả vào assets/2d/svg_clean/
+echo Input đang dùng: %INPUT_PATH%
+echo Output sẽ ở:    %OUTPUT_PATH%
 echo.
-echo TODO: python scripts/python/clean_svg_paths.py --input drops/ --output assets/2d/svg_clean/
+
+python scripts\python\clean_svg_paths.py --input "%INPUT_PATH%" --output "%OUTPUT_PATH%" --verbose
+if errorlevel 1 (
+    echo.
+    echo Lỗi: Không làm sạch được SVG. File gốc vẫn được giữ nguyên.
+    echo Gợi ý: kiểm tra xem thư mục input có file .svg hay chưa.
+    echo.
+    pause
+    exit /b 1
+)
+
 echo.
-echo Xem: specs/002-illustrator-export-clean-svg/spec.md
-echo ============================================================
+echo Đang kiểm tra các SVG sạch vừa tạo / đang có trong thư mục output...
+python scripts\python\validate_svg_contract.py --input "%OUTPUT_PATH%" --strict
+if errorlevel 1 (
+    echo.
+    echo Cảnh báo: Có SVG chưa đạt kiểm tra. Hãy đọc dòng "Lỗi" ở trên.
+    echo File gốc vẫn không bị thay đổi.
+    echo.
+    pause
+    exit /b 1
+)
+
+echo.
+echo Hoàn tất. Kết quả nằm trong: %OUTPUT_PATH%
+echo File gốc trong drops\ hoặc assets\2d\svg_raw\ không bị xóa hoặc ghi đè.
+echo.
 pause
