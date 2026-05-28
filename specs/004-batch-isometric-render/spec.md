@@ -68,7 +68,7 @@ From the Vietnamese research document, the recommended batch render defaults:
 |---------|-------|-----------|
 | Engine | EEVEE | Fast preview; use CYCLES only for `review_render` style preset |
 | Transparent BG | `film_transparent = True` | PNG alpha for compositing |
-| Resolution | 2048×2048 | Production quality, configurable per style |
+| Resolution | 2048x2048 | Production/review preset; `config/pipeline.yaml` keeps 1920x1080 as the lightweight iterative default |
 | Camera type | Orthographic | No perspective distortion |
 | Camera rotation | X=54.7356°, Z=45° | Strict isometric (or 2:1 dimetric variant) |
 | Lighting | Sun lamp, rotation (45°, 0°, 35°) | Consistent shadow direction |

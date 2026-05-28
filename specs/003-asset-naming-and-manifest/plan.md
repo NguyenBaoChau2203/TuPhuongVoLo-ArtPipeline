@@ -8,7 +8,7 @@ Python CLI tool that processes files from `drops/`, applies the naming conventio
 
 ## Technical Context
 
-**Language/Version**: Python 3.10+
+**Language/Version**: Python 3.11+
 **Primary Dependencies**: PyYAML (config), click (CLI), hashlib (checksums)
 **Target Platform**: Windows 10/11
 **Project Type**: CLI tool

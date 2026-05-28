@@ -34,6 +34,8 @@ paths:
 
 defaults:
   style_preset: "line_art_green_floor"
+  # Lightweight default for iterative previews.
+  # Production/review preset target: 2048x2048 (Feature 004), configurable per style.
   render_resolution:
     width: 1920
     height: 1080

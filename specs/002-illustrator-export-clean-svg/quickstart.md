@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - [ ] Adobe Illustrator CC installed
-- [ ] Python 3.10+ with vpype, svgpathtools installed
+- [ ] Python 3.11+ with vpype[all] 1.15.0 and svgpathtools 1.7.2 installed
 - [ ] Virtual environment activated
 
 ## Quick Verification
@@ -37,5 +37,5 @@ Expected: "✅ SVG passes all validation checks"
 | Issue | Solution |
 |-------|----------|
 | JSX script not found | Copy to Illustrator's Scripts folder |
-| vpype not found | `pip install vpype` |
+| vpype not found | `pip install "vpype[all]==1.15.0"` |
 | Validation fails | Check error messages for specific issues |
