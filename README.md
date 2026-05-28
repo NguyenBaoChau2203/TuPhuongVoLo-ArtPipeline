@@ -47,7 +47,7 @@ Illustrator authoring / export
 ## 🚀 Quickstart for Developers
 
 ### Prerequisites
-- Python 3.10+
+- Python 3.11+
 - Git
 - (Optional) Blender 4.x — only needed for features 001, 004
 - (Optional) Adobe Illustrator — only needed for feature 002
@@ -63,7 +63,7 @@ cd TuPhuongVoLo-ArtPipeline
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 
-# Install dependencies (placeholder — no real deps yet)
+# Install dependencies declared for Feature 002/003 planning
 pip install -r requirements.txt
 
 # Run tests (placeholder — tests are stubs)
@@ -164,7 +164,7 @@ TuPhuongVoLo-ArtPipeline/
 | Blender scene generation | Placeholder scripts only — implement via Feature 001 |
 | Maya integration | Optional advanced branch — implement via Feature 005 |
 | Natural language control | Future layer — implement via Feature 006 |
-| Real Python dependencies | No `pip install` yet — only `requirements.txt` placeholder |
+| Production Python implementations | Dependencies are declared for Feature 002/003, but production logic remains unimplemented |
 | CI/CD pipeline | Not needed until production code exists |
 | AI/ML models | This is rule-based semi-automation, not ML |
 

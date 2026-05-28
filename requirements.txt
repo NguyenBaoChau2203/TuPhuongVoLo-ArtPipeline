@@ -1,17 +1,17 @@
-# TuPhuongVoLo-ArtPipeline — Python Dependencies
-# Phase: SDD Bootstrap — dependencies are listed but NOT installed yet
+# TuPhuongVoLo-ArtPipeline - Python Dependencies
+# Phase: SDD Bootstrap - dependencies are declared, but production logic is not implemented yet
 # Install with: pip install -r requirements.txt
 
-# SVG Processing
-# svgpathtools>=1.6.1
-# vpype>=1.14
-# lxml>=4.9
+# SVG Cleanup and Validation
+svgpathtools==1.7.2
+vpype[all]==1.15.0
+lxml>=4.9,<6.0
 
 # Config & Manifest
-# pyyaml>=6.0
+pyyaml>=6.0,<7.0
 
 # CLI
-# click>=8.1
+click>=8.1,<9.0
 
 # Development / Testing
 pytest>=7.4

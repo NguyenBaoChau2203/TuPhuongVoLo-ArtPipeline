@@ -8,9 +8,9 @@ Create Illustrator JSX scripts for organized layer export and a Python pipeline 
 
 ## Technical Context
 
-**Language/Version**: ExtendScript/JSX (Illustrator), Python 3.10+ (cleanup/validation)
+**Language/Version**: ExtendScript/JSX (Illustrator), Python 3.11+ (cleanup/validation; vpype supports Python >=3.11,<3.14)
 
-**Primary Dependencies**: vpype (SVG simplification), svgpathtools (path parsing), lxml (XML manipulation)
+**Primary Dependencies**: vpype[all] 1.15.0 (SVG simplification), svgpathtools 1.7.2 (path parsing), lxml (XML manipulation), PyYAML (config), click (CLI)
 
 **Target Platform**: Windows 10/11 + Adobe Illustrator CC
 
