@@ -17,8 +17,6 @@
  *   - Exports a copy to the project raw SVG folder.
  */
 
-#target illustrator
-
 (function () {
     function showError(message) {
         alert("TuPhuongVoLo-ArtPipeline\n\nLỗi xuất SVG:\n" + message);

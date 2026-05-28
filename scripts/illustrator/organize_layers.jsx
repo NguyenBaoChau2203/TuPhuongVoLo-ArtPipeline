@@ -13,9 +13,6 @@
  *   - Does not flatten, move, or alter geometry.
  *   - Only renames top-level layers when the normalized name is safe.
  */
-
-#target illustrator
-
 (function () {
     function showError(message) {
         alert("TuPhuongVoLo-ArtPipeline\n\nLỗi sắp xếp layer:\n" + message);
