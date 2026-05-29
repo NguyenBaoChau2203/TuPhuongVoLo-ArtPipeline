@@ -40,14 +40,6 @@ XLINK_NS = "http://www.w3.org/1999/xlink"
 RASTER_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".tif", ".tiff")
 DEFAULT_OUTPUT_DIR = Path("assets/2d/svg_clean")
 DEFAULT_MANIFEST_PATH = Path("outputs/manifest/asset_manifest.json")
-PROJECT_PREFIX = "tu_phuong_vo_lo"
-NAMED_ASSET_RE = re.compile(
-    r"^tu_phuong_vo_lo_(?P<asset_name>[a-z][a-z0-9_]*?)_"
-    r"(?P<variant>[a-z][a-z0-9_]*?)_"
-    r"(?P<stage>raw|traced|svgraw|svgclean|blockout|iso|preview|final_candidate)_"
-    r"v(?P<version>\d{3})$"
-)
-
 try:
     if LXML_AVAILABLE:
         xml_backend.register_namespace("svg", SVG_NS)
@@ -89,16 +81,6 @@ class CleanupReport:
     raster_images: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     dry_run: bool = False
-
-
-@dataclass(frozen=True)
-class AssetNameParts:
-    """Parsed repository naming-convention fields for one SVG asset."""
-
-    asset_name: str
-    variant: str
-    stage: str
-    version: str
 
 
 def repo_root() -> Path:
@@ -205,29 +187,23 @@ def parse_style(style_value: str | None) -> dict[str, str]:
 def normalize_asset_name(value: str) -> str:
     """Normalize an arbitrary filename stem into naming-convention asset_name."""
 
-    normalized = value.strip().lower()
-    normalized = re.sub(r"\.[^.]+$", "", normalized)
-    normalized = re.sub(r"[^a-z0-9_]+", "_", normalized)
-    normalized = re.sub(r"_+", "_", normalized).strip("_")
-    if not normalized or not re.match(r"^[a-z]", normalized):
-        normalized = f"asset_{normalized}" if normalized else "asset"
-    return normalized[:40].rstrip("_") or "asset"
+    return asset_manifest.normalize_asset_name(value)
 
 
-def parse_asset_name(stem: str, target_stage: str = "svgclean") -> AssetNameParts:
+def parse_asset_name(stem: str, target_stage: str = "svgclean") -> asset_manifest.AssetNameParts:
     """Parse or normalize a filename stem into repository naming fields."""
 
-    match = NAMED_ASSET_RE.match(stem)
-    if match:
-        return AssetNameParts(
-            asset_name=match.group("asset_name"),
-            variant=match.group("variant"),
+    parsed = asset_manifest.parse_asset_filename(stem)
+    if parsed:
+        return asset_manifest.AssetNameParts(
+            asset_name=parsed.asset_name,
+            variant=parsed.variant,
             stage=target_stage,
-            version=match.group("version"),
+            version=parsed.version,
         )
 
     cleaned_stem = re.sub(r"_(raw|traced|svgraw|svgclean)_v\d{3}$", "", stem)
-    return AssetNameParts(
+    return asset_manifest.AssetNameParts(
         asset_name=normalize_asset_name(cleaned_stem),
         variant="main",
         stage=target_stage,
@@ -235,13 +211,10 @@ def parse_asset_name(stem: str, target_stage: str = "svgclean") -> AssetNamePart
     )
 
 
-def format_asset_name(parts: AssetNameParts) -> str:
+def format_asset_name(parts: asset_manifest.AssetNameParts) -> str:
     """Format asset naming fields using the constitution pattern."""
 
-    return (
-        f"{PROJECT_PREFIX}_{parts.asset_name}_{parts.variant}_"
-        f"{parts.stage}_v{parts.version}.svg"
-    )
+    return asset_manifest.generate_filename(parts, extension=".svg")
 
 
 def is_hidden_element(element: object) -> bool:

@@ -11,9 +11,6 @@
  * @version 0.1.0
  * @date    2026-05-29
  */
-
-#target illustrator
-
 // TODO: Implement batch export:
 // 1. Iterate all artboards in active document
 // 2. Export each artboard as separate SVG

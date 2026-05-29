@@ -23,7 +23,7 @@ def test_valid_asset_names_accepted() -> None:
 def test_invalid_asset_names_are_normalized() -> None:
     """Uppercase, spaces, diacritics, and leading digits are normalized."""
 
-    assert normalize_asset_name("  12 Sảnh Chính!!! ") == "asset_12_sanh_chinh"
+    assert normalize_asset_name("  12 S\u1ea3nh Ch\u00ednh!!! ") == "asset_12_sanh_chinh"
 
 
 def test_allowed_stages_loaded_from_config() -> None:

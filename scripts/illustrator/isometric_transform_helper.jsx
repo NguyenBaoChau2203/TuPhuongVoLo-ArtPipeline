@@ -10,9 +10,6 @@
  * @version 0.1.0
  * @date    2026-05-29
  */
-
-#target illustrator
-
 // TODO: Implement isometric transform helpers:
 // 1. Skew selected objects for isometric projection
 // 2. Rotate for left-face / right-face / top-face isometric views
