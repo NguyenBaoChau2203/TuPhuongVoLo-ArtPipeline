@@ -64,6 +64,9 @@ python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --r
 Feature 005 MVP actual run supports `mayapy.exe` only. Direct `maya.exe` or
 `mayabatch.exe` execution is future work.
 
+`mayapy.exe` runs headless, so the Maya script creates and saves the
+orthographic isometric camera but does not call viewport switching commands.
+
 Expected after success:
 
 - Geometry JSON is written
@@ -91,4 +94,6 @@ python -m ruff check scripts/python tests
 - Single room dry-run: `launchers/07_build_maya_room.bat`
 - Batch dry-run/report: `launchers/08_batch_maya_room.bat`
 
-Actual Maya execution pending local Maya verification.
+Actual Maya execution was verified manually on the artist/DCC machine with
+Autodesk Maya 2024 and `mayapy.exe`. The generated `.ma` opened successfully in
+Maya and contained floor, walls, props, camera, and lights.

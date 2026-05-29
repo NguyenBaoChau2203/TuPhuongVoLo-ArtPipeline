@@ -240,7 +240,8 @@ def create_camera_and_lights(
     )
     cmds.setAttr(f"{camera_shape}.orthographic", True)
     cmds.setAttr(f"{camera_shape}.orthographicWidth", span * 1.4)
-    cmds.lookThru(camera_transform)
+    # mayapy runs headless and has no active viewport; the camera is saved
+    # into the scene without switching the current viewport.
     cmds.parent(camera_transform, parent)
 
     key_light = cmds.directionalLight(name="key_light")

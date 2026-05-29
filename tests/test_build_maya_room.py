@@ -37,6 +37,15 @@ def isolated_manifest(monkeypatch, tmp_path: Path) -> Path:
     return manifest_path
 
 
+def test_maya_scene_script_does_not_switch_viewports() -> None:
+    """mayapy headless mode has no active viewport for cmds.lookThru."""
+
+    script_path = builder.repo_root() / "scripts" / "maya" / "build_maya_room_scene.py"
+    script_text = script_path.read_text(encoding="utf-8")
+
+    assert "lookThru(" not in script_text
+
+
 def test_dry_run_builds_expected_ma_output_path(tmp_path: Path, monkeypatch) -> None:
     isolated_manifest(monkeypatch, tmp_path)
     svg = write_svg(tmp_path / "floorplan.svg")

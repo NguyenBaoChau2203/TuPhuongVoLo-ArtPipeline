@@ -23,7 +23,7 @@
 - [X] T012 Read geometry JSON instead of parsing SVG directly in Maya
 - [X] T013 Create floor mesh, wall blocks, simple placeholder props, materials, lights, and isometric camera
 - [X] T014 Save editable Maya ASCII `.ma` scene
-- [ ] T015 Verify actual Maya execution on a machine with Autodesk Maya/mayapy installed
+- [X] T015 Verify actual Maya execution on a machine with Autodesk Maya/mayapy installed
 
 ## Phase 3: Batch Maya Wrapper
 
@@ -51,4 +51,4 @@
 
 ## Notes
 
-Actual Maya execution pending local Maya verification.
+Verified manually on artist/DCC machine with Autodesk Maya 2024 mayapy.exe. .ma output generated and opened successfully in Maya. Scene contained floor, walls, props, camera, and lights.
