@@ -37,25 +37,61 @@ Khi vẽ bản vẽ mặt bằng, hãy:
 ## Bước 2: Xuất SVG
 
 **Cách 1: Dùng script JSX (khuyến nghị)**
-1. Trong Illustrator: File → Scripts → Other Script
-2. Chọn `scripts/illustrator/export_clean_svg.jsx`
-3. File SVG sẽ xuất hiện trong `assets/2d/svg_raw/`
+1. Mở file `.ai` trong Illustrator.
+2. Nếu muốn chuẩn hóa tên layer trước, chạy: File → Scripts → Other Script → chọn `scripts/illustrator/organize_layers.jsx`
+3. Chạy export: File → Scripts → Other Script → chọn `scripts/illustrator/export_clean_svg.jsx`
+4. File SVG raw sẽ xuất hiện trong `assets/2d/svg_raw/`.
+
+Script export sẽ tự đặt tên theo quy ước, ví dụ `tu_phuong_vo_lo_motel_room_main_svgraw_v001.svg`. Nếu file đã tồn tại, script sẽ tạo phiên bản tiếp theo và không ghi đè file cũ.
 
 **Cách 2: Xuất thủ công**
-1. File → Save As → SVG
-2. Chọn SVG 1.1
-3. Lưu vào thư mục `drops/`
+1. Trong Illustrator: File → Save As → SVG
+2. Chọn SVG 1.1 nếu Illustrator hỏi tùy chọn
+3. Lưu file vào thư mục `drops/`
+
+Lưu ý: trước khi xuất, hãy tắt hoặc xóa khỏi bản xuất các layer raster/reference nếu không muốn pipeline báo lỗi raster image.
 
 ---
 
-## Bước 3: Làm sạch SVG
+## Bước 3: Ingest và đặt tên asset
 
-1. Nhấp đúp `launchers/02_clean_svg.bat`
-2. File SVG sạch sẽ xuất hiện trong `assets/2d/svg_clean/`
+Feature 003 giúp đưa file từ `drops/` vào đúng thư mục và đặt tên theo quy ước của project.
+
+1. Bỏ file cần xử lý vào `drops/`.
+2. Nhấp đúp `launchers/06_ingest_assets.bat`.
+3. File sẽ được **copy** sang thư mục phù hợp, ví dụ SVG raw vào `assets/2d/svg_raw/`.
+4. Pipeline sẽ tạo hoặc cập nhật `outputs/manifest/asset_manifest.json`.
+
+Launcher này không xóa file gốc trong `drops/`. Manifest là danh sách ghi chú kỹ thuật cho pipeline: file tên gì, nằm ở đâu, phiên bản nào, checksum là gì, và bước nào đã tạo ra file đó. Bạn không cần sửa manifest bằng tay.
+
+Ví dụ tên file sau khi ingest:
+`tu_phuong_vo_lo_sanh_chinh_main_raw_v001.svg`
+
+Nếu chạy lại với cùng asset, pipeline sẽ tạo phiên bản mới như `v002` thay vì ghi đè file cũ.
 
 ---
 
-## Bước 4: Tạo phòng isometric
+## Bước 4: Làm sạch SVG
+
+1. Bỏ file SVG vào `drops/` hoặc dùng file đã xuất trong `assets/2d/svg_raw/`.
+2. Nhấp đúp `launchers/02_clean_svg.bat`.
+3. Nếu muốn xử lý một thư mục/file khác, có thể kéo thả file/thư mục SVG lên `02_clean_svg.bat`.
+4. File SVG sạch sẽ xuất hiện trong `assets/2d/svg_clean/`.
+
+Launcher sẽ:
+- Xóa các phần tử bị ẩn (`display:none`, `visibility:hidden`, `opacity:0`)
+- Xóa path quá nhỏ do lỗi export/vector hóa
+- Cảnh báo nếu SVG còn ảnh raster nhúng
+- Chạy kiểm tra clean SVG contract sau khi xử lý
+
+Nếu cửa sổ báo lỗi:
+- `Không tìm thấy file SVG nào`: hãy kiểm tra lại `drops/` hoặc đường dẫn bạn kéo thả.
+- `Có embedded/linked raster image`: SVG còn ảnh PNG/JPG nhúng; hãy quay lại Illustrator và bỏ layer ảnh khỏi bản xuất nếu đó không phải geometry.
+- `Strict mode: còn transform`: SVG còn transform chưa flatten; hãy thử Expand/Outline trong Illustrator hoặc báo developer kiểm tra file.
+
+---
+
+## Bước 5: Tạo phòng isometric
 
 1. Nhấp đúp `launchers/03_build_isometric_room.bat`
 2. Kết quả:
@@ -64,7 +100,7 @@ Khi vẽ bản vẽ mặt bằng, hãy:
 
 ---
 
-## Bước 5: Xem kết quả
+## Bước 6: Xem kết quả
 
 1. Nhấp đúp `launchers/05_open_outputs.bat`
 2. Hoặc mở trực tiếp thư mục `outputs/` trong Explorer
@@ -76,8 +112,9 @@ Khi vẽ bản vẽ mặt bằng, hãy:
 | Thư mục | Mục đích | Bạn cần làm gì |
 |---------|----------|-----------------|
 | `drops/` | Bỏ file vào đây để xử lý | Bỏ file SVG vào |
-| `outputs/` | Kết quả xuất hiện ở đây | Lấy file từ đây |
-| `assets/` | File nguồn đã tổ chức | Không cần đụng vào |
+| `assets/2d/svg_raw/` | SVG raw xuất từ Illustrator | Kiểm tra file export |
+| `assets/2d/svg_clean/` | SVG sạch sau cleanup | Dùng cho bước tiếp theo |
+| `outputs/` | Kết quả các bước sau | Lấy file từ đây |
 | `launchers/` | File .bat để chạy | Nhấp đúp để chạy |
 
 ---
@@ -86,14 +123,15 @@ Khi vẽ bản vẽ mặt bằng, hãy:
 
 ⚠️ **File gốc không bị thay đổi**: Pipeline không bao giờ xóa hoặc sửa file gốc của bạn.
 
-⚠️ **Kết quả là bản nháp**: Ảnh render và file 3D là bản nháp — bạn vẫn cần chỉnh sửa cuối cùng.
+⚠️ **SVG sạch là nguồn trung gian quan trọng**: Nếu bước kiểm tra SVG báo lỗi, hãy sửa file trong Illustrator rồi xuất lại.
 
 ⚠️ **Đặt tên tự động**: File kết quả được đặt tên theo quy ước, ví dụ:
-`tu_phuong_vo_lo_kho_main_iso_v001.png`
+`tu_phuong_vo_lo_kho_main_svgclean_v001.svg`
 
 ---
 
 ## Hiện tại (Trạng thái)
 
-⚠️ Pipeline đang ở giai đoạn **chuẩn bị**. Các script chưa hoạt động thật.
-Chúng sẽ được triển khai trong các bước tiếp theo.
+✅ Feature 002 đã có bước xuất SVG từ Illustrator, làm sạch SVG bằng launcher, và kiểm tra SVG sạch.
+
+⚠️ Các bước tạo phòng isometric/render 3D thuộc feature sau, chưa phải phạm vi của Feature 002.

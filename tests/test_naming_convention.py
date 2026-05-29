@@ -1,49 +1,62 @@
-"""
-test_naming_convention.py — TuPhuongVoLo-ArtPipeline
+"""Tests for Feature 003 naming convention behavior."""
 
-Tests for asset naming convention (config/naming_convention.yaml).
-
-Status: PLACEHOLDER — TODO: Implement tests when feature is built
-"""
+from __future__ import annotations
 
 import pytest
+from manifest import (
+    AssetNameParts,
+    format_version,
+    load_naming_convention,
+    normalize_asset_name,
+    validate_asset_parts,
+)
 
 
-class TestNamingConvention:
-    """Tests for asset naming convention."""
+def test_valid_asset_names_accepted() -> None:
+    """Snake_case asset names are accepted."""
 
-    def test_placeholder_passes(self):
-        """Placeholder test to verify test infrastructure works."""
-        assert True, "Test infrastructure is working"
+    parts = validate_asset_parts(AssetNameParts("motel_room", "main", "raw", "001"))
 
-    @pytest.mark.skip(reason="TODO: Implement when asset_agent.py is built")
-    def test_generate_filename(self):
-        """Test filename generation from naming convention."""
-        # TODO: Load naming convention
-        # TODO: Generate filename with known params
-        # TODO: Assert matches expected pattern
-        # Expected: tu_phuong_vo_lo_kho_main_iso_v001
-        pass
+    assert parts.asset_name == "motel_room"
 
-    @pytest.mark.skip(reason="TODO: Implement when asset_agent.py is built")
-    def test_version_auto_increment(self):
-        """Test version auto-increment when file exists."""
-        # TODO: Create v001 file
-        # TODO: Request new version
-        # TODO: Assert v002 is generated
-        pass
 
-    @pytest.mark.skip(reason="TODO: Implement when asset_agent.py is built")
-    def test_invalid_asset_name_rejected(self):
-        """Test that invalid asset names are rejected."""
-        # TODO: Try names with uppercase, spaces, special chars
-        # TODO: Assert validation fails
-        pass
+def test_invalid_asset_names_are_normalized() -> None:
+    """Uppercase, spaces, diacritics, and leading digits are normalized."""
 
-    @pytest.mark.skip(reason="TODO: Implement when asset_agent.py is built")
-    def test_valid_stages(self):
-        """Test that only valid pipeline stages are accepted."""
-        # TODO: Try valid stages (raw, svgclean, iso, etc.)
-        # TODO: Try invalid stage
-        # TODO: Assert correct acceptance/rejection
-        pass
+    assert normalize_asset_name("  12 Sảnh Chính!!! ") == "asset_12_sanh_chinh"
+
+
+def test_allowed_stages_loaded_from_config() -> None:
+    """The stage list comes from naming_convention.yaml."""
+
+    cfg = load_naming_convention()
+
+    assert "raw" in cfg.allowed_stages
+    assert "svgclean" in cfg.allowed_stages
+    with pytest.raises(ValueError, match="Stage"):
+        validate_asset_parts(AssetNameParts("motel_room", "main", "unknown", "001"), cfg)
+
+
+def test_version_format_is_three_digits() -> None:
+    """Versions are always zero-padded to three digits."""
+
+    assert format_version(1) == "001"
+    assert format_version("3") == "003"
+    assert format_version("v015") == "015"
+
+
+def test_output_directory_mapping_exists_for_required_stages() -> None:
+    """Each required pipeline stage has an output directory mapping."""
+
+    cfg = load_naming_convention()
+    required_stages = {
+        "raw",
+        "svgraw",
+        "svgclean",
+        "blockout",
+        "iso",
+        "preview",
+        "final_candidate",
+    }
+
+    assert required_stages.issubset(set(cfg.output_directories))
