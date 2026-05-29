@@ -15,7 +15,8 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 | `01_install_tools.bat` | Kiểm tra và cài đặt công cụ | Chạy một lần khi bắt đầu |
 | `02_clean_svg.bat` | Làm sạch file SVG | Sau khi xuất SVG từ Illustrator |
 | `03_build_isometric_room.bat` | Tạo phòng isometric 3D | Khi muốn xem preview phòng |
-| `04_batch_render.bat` | Render hàng loạt | Khi muốn render tất cả phòng |
+| `04_batch_isometric_render.bat` | Lập kế hoạch batch render | Khi muốn xử lý nhiều phòng/nhiều SVG |
+| `04_batch_render.bat` | Wrapper tương thích | Gọi lại launcher batch mới |
 | `05_open_outputs.bat` | Mở thư mục kết quả | Khi muốn xem file đã tạo |
 
 ---
@@ -39,7 +40,12 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 1. Nhấp đúp `03_build_isometric_room.bat`
 2. Ảnh preview PNG + file Blender sẽ xuất hiện trong `outputs/`
 
-### Bước 5: Xem kết quả
+### Bước 5: Batch render nhiều phòng / nhiều SVG
+1. Nhấp đúp `04_batch_isometric_render.bat`
+2. Mặc định launcher chạy dry-run an toàn, không sửa file nguồn
+3. Báo cáo JSON nằm trong `outputs/reports/batch_isometric_report.json`
+
+### Bước 6: Xem kết quả
 1. Nhấp đúp `05_open_outputs.bat`
 2. Thư mục `outputs/` sẽ mở ra trong Explorer
 
@@ -55,5 +61,4 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 
 ## Lưu ý
 
-⚠️ **Hiện tại**: Các launcher đang ở trạng thái **placeholder** (chưa hoạt động thật).
-Chúng sẽ được kích hoạt khi các feature tương ứng được triển khai.
+⚠️ **Hiện tại**: Batch launcher chạy dry-run mặc định để an toàn khi máy chưa có Blender. Render thật cần Blender 4.x và nên do developer chạy/kiểm chứng.

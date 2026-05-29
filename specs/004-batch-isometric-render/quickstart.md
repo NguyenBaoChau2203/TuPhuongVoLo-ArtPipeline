@@ -2,36 +2,79 @@
 
 ## Prerequisites
 
-- [ ] Feature 001 (single room render) is implemented and tested
-- [ ] Blender 4.x installed
-- [ ] Clean SVGs available in `assets/2d/svg_clean/`
+- Python 3.11+ with project dependencies installed.
+- Feature 001, 002, and 003 are merged.
+- Blender 4.x is optional for this MVP. Dry-run works without Blender.
 
-## Quick Verification
+## Step 1: Create Two Simple SVG Files
 
-### Step 1: Prepare input folder
-
-Ensure `assets/2d/svg_clean/` contains at least 2 clean SVGs with room layers.
-
-### Step 2: Run batch render
+Use `tests/in/` or another temporary folder. Example:
 
 ```powershell
-# Via launcher
-launchers\04_batch_render.bat
+@'
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+  <g id="room_kho"><path d="M0 0 L40 0 L40 30 L0 30 Z"/></g>
+</svg>
+'@ | Set-Content -Encoding UTF8 tests/in/batch_kho.svg
 
-# Via command line
-blender --background --python scripts/blender/batch_render_rooms.py -- --input assets/2d/svg_clean/ --style line_art_green_floor
+@'
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+  <g id="room_sanh_chinh"><path d="M0 0 L60 0 L60 40 L0 40 Z"/></g>
+</svg>
+'@ | Set-Content -Encoding UTF8 tests/in/batch_sanh_chinh.svg
 ```
 
-### Step 3: Check outputs
+## Step 2: Run Folder Dry-Run
 
 ```powershell
-Get-ChildItem outputs/preview/ -Filter "*.png" | Measure-Object
+python scripts/python/batch_isometric_render.py --input-dir tests/in --dry-run --json-report outputs/reports/batch_isometric_report.json
 ```
 
-Expected: One PNG per room detected.
+Expected:
 
-### Step 4: Check manifest
+- No source SVG is modified.
+- Blender is not required.
+- Manifest is not updated.
+- A JSON report is written to `outputs/reports/batch_isometric_report.json`.
+
+## Step 3: Run Dry-Run With All Rooms
 
 ```powershell
-Get-Content outputs/manifest/asset_manifest.json | ConvertFrom-Json | Measure-Object
+python scripts/python/batch_isometric_render.py --input-file tests/in/batch_kho.svg --all-rooms --dry-run
 ```
+
+For an SVG with multiple usable room groups, `--all-rooms` creates one planned job per room.
+
+## Step 4: Check the JSON Report
+
+```powershell
+Get-Content outputs/reports/batch_isometric_report.json | ConvertFrom-Json
+```
+
+The report should show:
+
+- `scanned_files`
+- `detected_rooms`
+- `planned_jobs`
+- `succeeded`
+- `failed`
+- `skipped`
+- `jobs` with planned `.blend` and PNG preview paths
+
+## Optional: Actual Blender Run
+
+When Blender 4.x is installed and available on PATH or configured in `config/pipeline.yaml`:
+
+```powershell
+python scripts/python/batch_isometric_render.py --input-dir assets/2d/svg_clean --all-rooms
+```
+
+Expected outputs when Blender succeeds:
+
+- Editable Blender scenes in `outputs/blender/`
+- PNG previews in `outputs/preview/`
+- Manifest updates in `outputs/manifest/asset_manifest.json`
+- Batch report in `outputs/reports/batch_isometric_report.json`
+
+If Blender is missing, actual render mode fails gracefully with a Vietnamese error message.
+Dry-run remains the safe default for artist launcher verification.

@@ -1,5 +1,6 @@
 # === Python ===
 __pycache__/
+.pytest_cache/
 *.py[cod]
 *$py.class
 *.so
@@ -34,6 +35,7 @@ outputs/blender/*.blend1
 outputs/maya/*
 outputs/manifest/*.json
 outputs/manifest/*.csv
+outputs/reports/*.json
 
 # === Blender backups ===
 *.blend1
@@ -49,6 +51,7 @@ outputs/manifest/*.csv
 # === Temporary ===
 *.tmp
 *.bak
+tests/tmp/
 
 # === Do NOT ignore ===
 # !assets/       — source assets are tracked
