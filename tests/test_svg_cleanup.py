@@ -164,6 +164,14 @@ def test_clean_output_name_normalizes_arbitrary_input() -> None:
     assert clean_output_name(Path("a.svg")) == "tu_phuong_vo_lo_a_main_svgclean_v001.svg"
 
 
+def test_clean_output_name_normalizes_vietnamese_diacritics() -> None:
+    """Vietnamese names use the shared Feature 003 normalization."""
+
+    source = Path("S\u1ea3nh ch\u00ednh.svg")
+
+    assert clean_output_name(source) == "tu_phuong_vo_lo_sanh_chinh_main_svgclean_v001.svg"
+
+
 def test_clean_output_name_preserves_convention_fields() -> None:
     """Convention input preserves asset, variant, and version while changing stage."""
 

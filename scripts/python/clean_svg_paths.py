@@ -8,23 +8,23 @@ artifacts, and writes versioned clean SVG files without touching source files.
 from __future__ import annotations
 
 import argparse
-import hashlib
-import json
 import math
 import re
 import shutil
 import sys
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
 from pathlib import Path
-from typing import Iterable
+
+import manifest as asset_manifest
 
 try:  # lxml is the project dependency; ElementTree keeps tests runnable if absent.
-    from lxml import etree as XML_ETREE
+    from lxml import etree
 
+    xml_backend = etree
     LXML_AVAILABLE = True
 except ModuleNotFoundError:  # pragma: no cover - exercised only in minimal local envs
-    import xml.etree.ElementTree as XML_ETREE  # type: ignore[no-redef]
+    import xml.etree.ElementTree as xml_backend
 
     LXML_AVAILABLE = False
 
@@ -39,20 +39,13 @@ XLINK_NS = "http://www.w3.org/1999/xlink"
 RASTER_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".tif", ".tiff")
 DEFAULT_OUTPUT_DIR = Path("assets/2d/svg_clean")
 DEFAULT_MANIFEST_PATH = Path("outputs/manifest/asset_manifest.json")
-PROJECT_PREFIX = "tu_phuong_vo_lo"
-NAMED_ASSET_RE = re.compile(
-    r"^tu_phuong_vo_lo_(?P<asset_name>[a-z][a-z0-9_]*?)_"
-    r"(?P<variant>[a-z][a-z0-9_]*?)_"
-    r"(?P<stage>raw|traced|svgraw|svgclean|blockout|iso|preview|final_candidate)_"
-    r"v(?P<version>\d{3})$"
-)
 
 try:
     if LXML_AVAILABLE:
-        XML_ETREE.register_namespace("svg", SVG_NS)
+        xml_backend.register_namespace("svg", SVG_NS)
     else:
-        XML_ETREE.register_namespace("", SVG_NS)
-    XML_ETREE.register_namespace("xlink", XLINK_NS)
+        xml_backend.register_namespace("", SVG_NS)
+    xml_backend.register_namespace("xlink", XLINK_NS)
 except (AttributeError, ValueError):  # Namespace registration differs by XML backend.
     pass
 
@@ -90,16 +83,6 @@ class CleanupReport:
     dry_run: bool = False
 
 
-@dataclass(frozen=True)
-class AssetNameParts:
-    """Parsed repository naming-convention fields for one SVG asset."""
-
-    asset_name: str
-    variant: str
-    stage: str
-    version: str
-
-
 def repo_root() -> Path:
     """Return the repository root based on this script location."""
 
@@ -133,10 +116,10 @@ def load_svg_tree(svg_path: Path) -> tuple[object, object]:
     """Load an SVG XML tree with UTF-8-safe parsing."""
 
     if LXML_AVAILABLE:
-        parser = XML_ETREE.XMLParser(remove_blank_text=False, resolve_entities=False)
-        tree = XML_ETREE.parse(str(svg_path), parser)
+        parser = xml_backend.XMLParser(remove_blank_text=False, resolve_entities=False)
+        tree = xml_backend.parse(str(svg_path), parser)
         return tree, tree.getroot()
-    tree = XML_ETREE.parse(svg_path)
+    tree = xml_backend.parse(svg_path)
     return tree, tree.getroot()
 
 
@@ -167,44 +150,23 @@ def relative_to_repo(path: Path) -> str:
 def compute_checksum(file_path: Path) -> str:
     """Compute a SHA-256 checksum for a generated file."""
 
-    sha256 = hashlib.sha256()
-    with file_path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            sha256.update(chunk)
-    return f"sha256:{sha256.hexdigest()}"
+    return asset_manifest.compute_checksum(file_path)
 
 
 def append_manifest_entry(input_path: Path, output_path: Path, manifest_path: Path) -> None:
     """Append a minimal Feature 002 manifest entry for a generated SVG."""
 
-    manifest_path.parent.mkdir(parents=True, exist_ok=True)
-    if manifest_path.exists():
-        try:
-            manifest_data = json.loads(manifest_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            manifest_data = []
-    else:
-        manifest_data = []
-    if not isinstance(manifest_data, list):
-        manifest_data = []
-
     name_parts = parse_asset_name(output_path.stem, target_stage="svgclean")
-
-    entry = {
-        "asset_name": name_parts.asset_name,
-        "variant": name_parts.variant,
-        "stage": name_parts.stage,
-        "version": name_parts.version,
-        "source_file": relative_to_repo(input_path),
-        "output_path": relative_to_repo(output_path),
-        "timestamp": datetime.now(UTC).isoformat(),
-        "checksum": compute_checksum(output_path),
-        "pipeline_step": "feature_002_clean_svg_paths",
-    }
-    manifest_data.append(entry)
-    manifest_path.write_text(
-        json.dumps(manifest_data, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
+    asset_manifest.add_manifest_entry(
+        manifest_path=manifest_path,
+        source_file=input_path,
+        output_path=output_path,
+        stage=name_parts.stage,
+        asset_name=name_parts.asset_name,
+        variant=name_parts.variant,
+        pipeline_step="feature_002_clean_svg_paths",
+        version=name_parts.version,
+        root=repo_root(),
     )
 
 
@@ -225,29 +187,23 @@ def parse_style(style_value: str | None) -> dict[str, str]:
 def normalize_asset_name(value: str) -> str:
     """Normalize an arbitrary filename stem into naming-convention asset_name."""
 
-    normalized = value.strip().lower()
-    normalized = re.sub(r"\.[^.]+$", "", normalized)
-    normalized = re.sub(r"[^a-z0-9_]+", "_", normalized)
-    normalized = re.sub(r"_+", "_", normalized).strip("_")
-    if not normalized or not re.match(r"^[a-z]", normalized):
-        normalized = f"asset_{normalized}" if normalized else "asset"
-    return normalized[:40].rstrip("_") or "asset"
+    return asset_manifest.normalize_asset_name(value)
 
 
-def parse_asset_name(stem: str, target_stage: str = "svgclean") -> AssetNameParts:
+def parse_asset_name(stem: str, target_stage: str = "svgclean") -> asset_manifest.AssetNameParts:
     """Parse or normalize a filename stem into repository naming fields."""
 
-    match = NAMED_ASSET_RE.match(stem)
-    if match:
-        return AssetNameParts(
-            asset_name=match.group("asset_name"),
-            variant=match.group("variant"),
+    parsed = asset_manifest.parse_asset_filename(stem)
+    if parsed:
+        return asset_manifest.AssetNameParts(
+            asset_name=parsed.asset_name,
+            variant=parsed.variant,
             stage=target_stage,
-            version=match.group("version"),
+            version=parsed.version,
         )
 
     cleaned_stem = re.sub(r"_(raw|traced|svgraw|svgclean)_v\d{3}$", "", stem)
-    return AssetNameParts(
+    return asset_manifest.AssetNameParts(
         asset_name=normalize_asset_name(cleaned_stem),
         variant="main",
         stage=target_stage,
@@ -255,13 +211,10 @@ def parse_asset_name(stem: str, target_stage: str = "svgclean") -> AssetNamePart
     )
 
 
-def format_asset_name(parts: AssetNameParts) -> str:
+def format_asset_name(parts: asset_manifest.AssetNameParts) -> str:
     """Format asset naming fields using the constitution pattern."""
 
-    return (
-        f"{PROJECT_PREFIX}_{parts.asset_name}_{parts.variant}_"
-        f"{parts.stage}_v{parts.version}.svg"
-    )
+    return asset_manifest.generate_filename(parts, extension=".svg")
 
 
 def is_hidden_element(element: object) -> bool:
