@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120">
+  <g id="room_kho">
+    <path d="M10 10 L100 10 L100 80 L10 80 Z" fill="none" stroke="#000"/>
+  </g>
+</svg>

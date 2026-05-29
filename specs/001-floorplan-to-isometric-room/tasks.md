@@ -13,7 +13,7 @@
 - [ ] T001 Verify Python 3.10+ is available and create venv
 - [ ] T002 [P] Install svgpathtools, PyYAML, click dependencies
 - [ ] T003 [P] Verify Blender is installed and accessible from PATH or config
-- [ ] T004 Validate config/room_presets.yaml and config/style_presets.yaml parse correctly
+- [x] T004 Validate config/room_presets.yaml and config/style_presets.yaml parse correctly
 
 ---
 
@@ -21,8 +21,8 @@
 
 **Purpose**: Core SVG-to-room extraction that all user stories depend on
 
-- [ ] T005 Implement `detect_rooms_from_svg.py` — parse SVG, identify named layers/groups as rooms
-- [ ] T006 [P] Implement room boundary extraction — convert SVG paths to wall segments
+- [x] T005 Implement `detect_rooms_from_svg.py` — parse SVG, identify named layers/groups as rooms
+- [x] T006 [P] Implement room boundary extraction — convert SVG paths to wall segments
 - [ ] T007 [P] Implement `validate_svg_contract.py` — check SVG meets clean SVG requirements
 - [ ] T008 Add unit tests for SVG room detection in `tests/test_svg_cleanup.py`
 
@@ -36,17 +36,17 @@
 
 ### Implementation
 
-- [ ] T009 [US1] Create `build_isometric_room.py` Blender script skeleton
+- [x] T009 [US1] Create `build_isometric_room.py` Blender script skeleton
 - [ ] T010 [US1] Implement SVG path → Blender curve import
-- [ ] T011 [US1] Implement curve → mesh → extrude walls workflow
-- [ ] T012 [US1] Implement floor plane generation from room boundary
-- [ ] T013 [US1] Implement orthographic isometric camera setup (30° angle, ORTHO)
-- [ ] T014 [US1] Implement basic lighting setup
-- [ ] T015 [US1] Implement PNG render with transparent background
-- [ ] T016 [US1] Implement .blend scene save
-- [ ] T017 [US1] Implement output filename generation per naming convention
-- [ ] T018 [US1] Create `03_build_isometric_room.bat` launcher
-- [ ] T019 [US1] Add Vietnamese error messages for common failures
+- [x] T011 [US1] Implement curve → mesh → extrude walls workflow
+- [x] T012 [US1] Implement floor plane generation from room boundary
+- [x] T013 [US1] Implement orthographic isometric camera setup (30° angle, ORTHO)
+- [x] T014 [US1] Implement basic lighting setup
+- [x] T015 [US1] Implement PNG render with transparent background
+- [x] T016 [US1] Implement .blend scene save
+- [x] T017 [US1] Implement output filename generation per naming convention
+- [x] T018 [US1] Create `03_build_isometric_room.bat` launcher
+- [x] T019 [US1] Add Vietnamese error messages for common failures
 
 **Checkpoint**: Artist can run .bat → get PNG preview + .blend file for one room
 
@@ -56,11 +56,11 @@
 
 **Goal**: Apply different visual styles to the room render
 
-- [ ] T020 [US2] Implement style preset loader from `config/style_presets.yaml`
-- [ ] T021 [US2] Apply floor/wall colors from preset to Blender materials
-- [ ] T022 [US2] Apply lighting settings from preset
+- [x] T020 [US2] Implement style preset loader from `config/style_presets.yaml`
+- [x] T021 [US2] Apply floor/wall colors from preset to Blender materials
+- [x] T022 [US2] Apply lighting settings from preset
 - [ ] T023 [US2] Apply shadow settings from preset
-- [ ] T024 [US2] Add `--style` CLI argument to build_isometric_room.py
+- [x] T024 [US2] Add `--style` CLI argument to build_isometric_room.py
 
 **Checkpoint**: Same room renders differently with different presets
 
@@ -71,10 +71,10 @@
 **Goal**: Place placeholder props based on room type
 
 - [ ] T025 [US3] Implement `props_library.py` — basic prop geometry generators
-- [ ] T026 [US3] Implement room preset loader from `config/room_presets.yaml`
-- [ ] T027 [US3] Implement prop placement logic (along_wall, center, corner, etc.)
-- [ ] T028 [US3] Add `--room-preset` CLI argument
-- [ ] T029 [US3] Handle unknown room preset gracefully (empty room + warning)
+- [x] T026 [US3] Implement room preset loader from `config/room_presets.yaml`
+- [x] T027 [US3] Implement prop placement logic (along_wall, center, corner, etc.)
+- [x] T028 [US3] Add `--room-preset` CLI argument
+- [x] T029 [US3] Handle unknown room preset gracefully (empty room + warning)
 
 **Checkpoint**: Rooms have appropriate placeholder furniture based on type
 
@@ -85,8 +85,8 @@
 **Goal**: Track all generated outputs in manifest
 
 - [ ] T030 [US4] Implement manifest writer in `scripts/python/manifest.py`
-- [ ] T031 [US4] Integrate manifest update into build_isometric_room.py
-- [ ] T032 [US4] Add checksum calculation for generated files
+- [x] T031 [US4] Integrate manifest update into build_isometric_room.py
+- [x] T032 [US4] Add checksum calculation for generated files
 - [ ] T033 [US4] Add unit tests for manifest in `tests/test_manifest.py`
 
 **Checkpoint**: Every build run creates/updates manifest entry
@@ -96,7 +96,7 @@
 ## Phase 7: Polish
 
 - [ ] T034 [P] End-to-end test with example motel_room SVG
-- [ ] T035 [P] Write quickstart.md verification steps
+- [x] T035 [P] Write quickstart.md verification steps
 - [ ] T036 [P] Update README with feature 001 status
 - [ ] T037 Code cleanup and docstring review
 
