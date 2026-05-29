@@ -2,183 +2,118 @@
 
 > Semi-automated art pipeline for the indie game **Tứ Phương Vô Lộ**
 
----
+## Project Purpose
 
-## 🎯 Project Purpose
+This repository provides semi-automated tooling for an indie game art pipeline. The production workflow is Illustrator-first and Maya-first: artists draw in Adobe Illustrator, Python validates/translates clean SVG geometry, and Autodesk Maya receives editable `.ma` blockout scenes for polish.
 
-This repository provides **semi-automated tooling** for an indie game art pipeline. It bridges the gap between hand-drawn/vector art in Adobe Illustrator and isometric 3D draft renders in Blender (with an optional Maya advanced branch).
+Blender support remains in the repo as the previous MVP/fallback backend. It is not required for Feature 005.
 
-**Current Phase**: Core Pipeline MVPs in progress.
+## Pipeline Flow
 
-Feature 002, Feature 003, and Feature 001 MVPs are implemented. Feature 004 now has a safe batch dry-run/report MVP; actual Blender rendering remains environment-dependent.
-
----
-
-## 🏗️ Pipeline Flow
-
-```
-Illustrator authoring / export
-    → clean SVG export (JSX / ExtendScript)
-    → optional vectorization (Potrace / Vectorizer.AI / Image Trace)
-    → vpype cleanup
-    → svgpathtools rule-based validation
-    → Blender SVG import / extrude / isometric camera / render
-    → optional Maya advanced branch
-    → editable outputs for artist polish
+```text
+Illustrator authoring / clean SVG export
+    -> Python SVG cleanup + validation
+    -> Python room detection + geometry JSON handoff
+    -> Maya .ma room blockout
+    -> artist polish in Maya
 ```
 
----
+Optional/fallback path:
 
-## 📌 Recommended Implementation Order
+```text
+clean SVG -> Blender MVP isometric draft / batch dry-run
+```
+
+## Feature Status
 
 | Order | Feature | Spec | Status |
 |-------|---------|------|--------|
 | 1 | Illustrator Export & Clean SVG | `specs/002-illustrator-export-clean-svg/` | Done |
 | 2 | Asset Naming & Manifest | `specs/003-asset-naming-and-manifest/` | Done |
-| 3 | Floorplan to Isometric Room | `specs/001-floorplan-to-isometric-room/` | MVP done; Blender render depends on local Blender |
-| 4 | Batch Isometric Render | `specs/004-batch-isometric-render/` | MVP dry-run/report implemented |
-| 5 | Maya Bridge (optional) | `specs/005-maya-bridge/` | 📋 Spec only |
-| 6 | Natural Language Agent Control | `specs/006-natural-language-agent-control/` | 📋 Spec only |
+| 3 | Floorplan to Isometric Room | `specs/001-floorplan-to-isometric-room/` | MVP done; Blender optional/fallback |
+| 4 | Batch Isometric Render | `specs/004-batch-isometric-render/` | MVP dry-run/report for previous backend |
+| 5 | Maya Bridge | `specs/005-maya-bridge/` | Primary DCC backend MVP |
+| 6 | Natural Language Agent Control | `specs/006-natural-language-agent-control/` | Spec only; not implemented |
 
-> Feature 002 should be implemented first because it produces clean SVGs that all other features consume.
+## Developer Quickstart
 
----
+Prerequisites:
 
-## 🚀 Quickstart for Developers
-
-### Prerequisites
 - Python 3.11+
 - Git
-- (Optional) Blender 4.x — only needed for features 001, 004
-- (Optional) Adobe Illustrator — only needed for feature 002
-- (Optional) Autodesk Maya — only needed for feature 005
+- Optional: Adobe Illustrator for Feature 002 authoring/export
+- Optional: Autodesk Maya/mayapy for actual Feature 005 `.ma` generation
+- Optional: Blender 4.x for legacy/fallback Feature 001/004 execution
 
-### Setup
 ```powershell
-# Clone the repository
-git clone <repo-url>
-cd TuPhuongVoLo-ArtPipeline
-
-# Create virtual environment
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-
-# Install dependencies declared for Feature 002/003 planning
 pip install -r requirements.txt
-
-# Run tests
 pytest tests/ -v
 ```
 
-### Read the specs
-Start with `specs/002-illustrator-export-clean-svg/spec.md` and work through the implementation order above.
+Feature 005 dry-run without Maya:
 
----
-
-## 🎨 Quickstart for Artist (Dành cho họa sĩ)
-
-Xem hướng dẫn chi tiết bằng tiếng Việt tại:
-- 📖 [Hướng dẫn cài đặt](docs/INSTALL_VI.md)
-- 🎨 [Hướng dẫn sử dụng](docs/HOW_TO_USE_FOR_ARTIST_VI.md)
-- 🔧 [Xử lý sự cố](docs/TROUBLESHOOTING_VI.md)
-- 🚀 [Launchers](launchers/README_LAUNCHERS_VI.md)
-
-**Quy trình cơ bản:**
-1. Bỏ file SVG vào thư mục `drops/`
-2. Chạy file `.bat` phù hợp trong `launchers/`
-3. Lấy kết quả từ `outputs/`
-
----
-
-## 📁 Repository Structure
-
+```powershell
+python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --room kho --dry-run
+python scripts/python/batch_maya_room.py --input-dir tests/in --dry-run --json-report outputs/reports/batch_maya_report.json
 ```
+
+Actual Maya run, when `mayapy.exe` is available:
+
+```powershell
+python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --room kho --maya-path "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe"
+```
+
+## Artist Quickstart
+
+Vietnamese guides:
+
+- [Hướng dẫn cài đặt](docs/INSTALL_VI.md)
+- [Hướng dẫn sử dụng](docs/HOW_TO_USE_FOR_ARTIST_VI.md)
+- [Xử lý sự cố](docs/TROUBLESHOOTING_VI.md)
+- [Launchers](launchers/README_LAUNCHERS_VI.md)
+
+Core artist flow:
+
+1. Draw/export clean SVG from Illustrator.
+2. Run `launchers/07_build_maya_room.bat` for one room dry-run.
+3. Run `launchers/08_batch_maya_room.bat` for multi-SVG or multi-room planning.
+4. Open generated `.ma` scenes from `outputs/maya/` in Maya after actual Maya execution.
+
+## Repository Structure
+
+```text
 TuPhuongVoLo-ArtPipeline/
-├─ AGENTS.md                    # AI agent instructions
-├─ README.md                    # This file
-├─ pyproject.toml               # Python project config
-├─ requirements.txt             # Python dependencies
-├─ .gitignore                   # Git ignore rules
-├─ .editorconfig                # Editor settings
-│
-├─ .specify/                    # Spec Kit configuration
-│  ├─ constitution.md           # Project constitution
-│  └─ templates/                # SDD templates
-│
 ├─ specs/                       # Feature specifications (SDD)
-│  ├─ 001-floorplan-to-isometric-room/
-│  ├─ 002-illustrator-export-clean-svg/
-│  ├─ 003-asset-naming-and-manifest/
-│  ├─ 004-batch-isometric-render/
-│  ├─ 005-maya-bridge/
-│  └─ 006-natural-language-agent-control/
-│
-├─ .cursor/rules/               # Cursor IDE rules
-├─ skills/                      # Reusable AI agent skills
-├─ scripts/                     # Automation scripts
+├─ scripts/
 │  ├─ illustrator/              # JSX/ExtendScript
 │  ├─ python/                   # Python CLI tools
-│  ├─ blender/                  # Blender Python
-│  └─ maya/                     # Maya Python/MEL
-│
+│  ├─ blender/                  # Legacy/fallback Blender Python
+│  └─ maya/                     # Maya Python scripts
 ├─ launchers/                   # Windows .bat launchers
 ├─ config/                      # YAML configuration
 ├─ assets/                      # Source art assets
-├─ drops/                       # Artist drops files here
+├─ drops/                       # Artist drop folder
 ├─ outputs/                     # Generated outputs
-├─ examples/                    # Example inputs/outputs
-├─ tests/                       # Test files
-└─ docs/                        # Documentation
+├─ tests/                       # Python tests and fixtures
+└─ docs/                        # Vietnamese artist docs + developer docs
 ```
 
----
+## Not Implemented
 
-## 🗺️ Feature Roadmap
+Feature 006 natural-language control/MCP is not implemented. Actual Maya scene generation requires local Autodesk Maya/mayapy and is environment-dependent.
 
-### Phase 1: Foundation (Current)
-- [x] Repository skeleton
-- [x] SDD artifacts and specs
-- [x] AI agent rules and skills
-- [x] Config templates
-- [x] Vietnamese documentation placeholders
-
-### Phase 2: Core Pipeline
-- [x] Feature 002: Illustrator Export & Clean SVG
-- [x] Feature 003: Asset Naming & Manifest
-- [x] Feature 001: Floorplan to Isometric Room MVP
-
-### Phase 3: Batch & Integration
-- [x] Feature 004: Batch Isometric Render MVP dry-run/report
-- [ ] Feature 005: Maya Bridge (optional)
-
-### Phase 4: Intelligence Layer
-- [ ] Feature 006: Natural Language Agent Control
-
----
-
-## ⚠️ What Is Intentionally NOT Implemented Yet
-
-| Item | Reason |
-|------|--------|
-| Full production Blender render verification on every machine | Depends on local Blender 4.x installation |
-| Maya integration | Optional advanced branch — implement via Feature 005 |
-| Natural language control | Future layer — implement via Feature 006 |
-| CI/CD pipeline | Not needed until production code exists |
-| AI/ML models | This is rule-based semi-automation, not ML |
-
----
-
-## 📜 License
+## License
 
 Internal project — not for public distribution.
 
----
-
-## 🤝 Contributing
+## Contributing
 
 Follow the Spec-Driven Development workflow:
-1. Read `AGENTS.md` and `.specify/constitution.md`
-2. Pick a feature from `specs/`
-3. Follow the spec → plan → tasks → implement cycle
-4. Run tests before committing
-5. Update manifest for any generated outputs
+
+1. Read `AGENTS.md` and `.specify/constitution.md`.
+2. Pick or create a feature under `specs/`.
+3. Follow spec -> plan -> tasks -> implement.
+4. Run tests before committing.
+5. Update manifest only for generated outputs that actually exist.

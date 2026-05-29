@@ -2,141 +2,113 @@
 
 ## Tổng quan
 
-Pipeline này giúp bạn tự động hóa một phần công việc lặp lại:
+Pipeline này giúp tự động hóa một phần công việc lặp lại trong quy trình vẽ game:
 
-- Xuất SVG sạch từ Illustrator
-- Đưa file vào đúng thư mục và đặt tên theo quy ước
-- Làm sạch/kiểm tra SVG trước khi dựng 3D
-- Tạo bản nháp phòng isometric trong Blender
-- Render preview PNG để xem nhanh
+- Vẽ và xuất SVG từ Adobe Illustrator
+- Làm sạch/kiểm tra SVG trước khi đưa sang 3D
+- Tạo geometry JSON bằng Python
+- Tạo bản blockout `.ma` trong Autodesk Maya để họa sĩ mở ra chỉnh tiếp
+- Ghi manifest khi có output thật
 
-Bạn vẫn là người quyết định cuối cùng. Pipeline chỉ tạo bản nháp/blockout để bạn mở ra chỉnh sửa tiếp.
+Illustrator là công cụ vẽ chính. Maya là công cụ 3D/chỉnh sửa chính cho production. Blender vẫn còn trong repo như backend MVP cũ hoặc fallback tùy chọn, nhưng không bắt buộc cho quy trình Maya.
 
-## Quy trình cơ bản
+## Quy trình chính
 
 ```text
 Vẽ trong Illustrator
-  -> xuất SVG
-  -> ingest/đặt tên asset
-  -> làm sạch SVG
-  -> tạo phòng isometric
-  -> xem output trong outputs/
+  -> xuất SVG sạch
+  -> Python phát hiện phòng/boundary
+  -> Python tạo geometry JSON
+  -> Maya tạo .ma blockout
+  -> họa sĩ mở .ma trong Maya và polish
 ```
 
 ## Bước 1: Vẽ trong Illustrator
 
-Khi vẽ bản vẽ mặt bằng:
-
 - Đặt tên layer/group theo phòng, ví dụ `room_kho`, `room_sanh_chinh`.
 - Mỗi phòng nên nằm trong một group/layer riêng.
 - Boundary phòng nên là path đóng kín.
-- Tránh để raster/reference image trong layer geometry.
+- Không để raster/reference image trong layer geometry.
 
-## Bước 2: Xuất SVG
-
-Cách khuyến nghị:
+## Bước 2: Xuất và làm sạch SVG
 
 1. Mở file `.ai` trong Illustrator.
-2. Chạy `scripts/illustrator/organize_layers.jsx` nếu muốn chuẩn hóa layer.
-3. Chạy `scripts/illustrator/export_clean_svg.jsx`.
-4. SVG raw sẽ nằm trong `assets/2d/svg_raw/`.
+2. Chạy `scripts/illustrator/export_clean_svg.jsx` hoặc dùng launcher cleanup hiện có.
+3. SVG sạch nên nằm trong `assets/2d/svg_clean/`.
 
-Nếu xuất thủ công, hãy lưu SVG vào `drops/`, rồi chạy bước ingest bên dưới.
+Nếu cleanup báo lỗi path chưa đóng kín hoặc còn transform, hãy quay lại Illustrator để sửa boundary/layer trước khi dựng Maya.
 
-## Bước 3: Ingest và đặt tên asset
+## Tạo phòng Maya từ SVG sạch
 
-Feature 003 copy file từ `drops/` vào thư mục đúng và cập nhật manifest.
+1. Nhấp đúp `launchers/07_build_maya_room.bat`.
+2. Có thể kéo-thả một file `.svg` sạch vào launcher.
+3. Nếu không kéo-thả file, launcher sẽ lấy SVG mới nhất trong `assets/2d/svg_clean/`.
 
-1. Bỏ file cần xử lý vào `drops/`.
-2. Nhấp đúp `launchers/06_ingest_assets.bat`.
-3. File được copy sang thư mục phù hợp, ví dụ `assets/2d/svg_raw/`.
-4. Manifest được cập nhật tại `outputs/manifest/asset_manifest.json`.
+Launcher mặc định chạy dry-run để lập kế hoạch an toàn:
 
-Launcher này không xóa file gốc trong `drops/`. Nếu chạy lại cùng asset, pipeline tạo phiên bản mới như `v002` thay vì ghi đè.
+- Không chạy Maya
+- Không ghi manifest
+- Không sửa file SVG nguồn
+- In đường dẫn `.ma` dự kiến trong `outputs/maya/`
 
-## Bước 4: Làm sạch SVG
-
-1. Dùng file SVG raw trong `assets/2d/svg_raw/` hoặc kéo thả một file SVG vào launcher.
-2. Nhấp đúp `launchers/02_clean_svg.bat`.
-3. SVG sạch sẽ xuất hiện trong `assets/2d/svg_clean/`.
-
-Launcher sẽ xóa phần tử ẩn, xóa path quá nhỏ, cảnh báo raster image, và kiểm tra clean SVG contract.
-
-Nếu có lỗi:
-
-- `Không tìm thấy file SVG nào`: kiểm tra lại `drops/` hoặc file bạn kéo thả.
-- `Có embedded/linked raster image`: quay lại Illustrator và bỏ layer ảnh nếu đó không phải geometry.
-- `Strict mode: còn transform`: thử Expand/Outline trong Illustrator hoặc báo developer kiểm tra file.
-
-## Bước 5: Tạo phòng isometric
-
-1. Nhấp đúp `launchers/03_build_isometric_room.bat`.
-2. Nếu muốn chọn file cụ thể, kéo thả SVG sạch vào launcher này.
-3. Nếu không kéo thả file, launcher sẽ tự lấy SVG mới nhất trong `assets/2d/svg_clean/`.
-
-Kết quả:
-
-- PNG preview: `outputs/preview/`
-- File Blender chỉnh sửa được: `outputs/blender/`
-- Manifest: `outputs/manifest/asset_manifest.json`
-
-Nếu Blender chưa được cài hoặc không nằm trong PATH, launcher sẽ báo lỗi. Khi đó hãy cài Blender 4.x hoặc nhờ developer sửa `tool_paths.blender` trong `config/pipeline.yaml`.
-
-Lưu ý: Đây là bản blockout/draft. Tường, sàn và props chỉ là hình khối đơn giản để kiểm tra bố cục, không phải final art.
-
-## Bước 6: Batch render nhiều phòng / nhiều SVG
-
-Khi có nhiều SVG sạch hoặc một SVG có nhiều phòng, dùng launcher:
+Khi developer cấu hình `mayapy` trong `config/pipeline.yaml` hoặc chạy script với `--maya-path`, output thật sẽ là:
 
 ```text
-launchers/04_batch_isometric_render.bat
+outputs/maya/tu_phuong_vo_lo_{ten_phong}_main_maya_v001.ma
 ```
 
-Mặc định launcher này chạy dry-run để lập kế hoạch an toàn. Dry-run không chạy Blender, không ghi manifest, không sửa file SVG nguồn, và vẫn dùng được khi máy chưa cài Blender.
+Đây là blockout/draft, chưa phải final art. Họa sĩ mở file `.ma` trong Maya để chỉnh hình khối, vật liệu, props, ánh sáng và camera.
 
-Bạn có thể:
+## Batch Maya nhiều phòng / nhiều SVG
 
-- Nhấp đúp launcher để quét `assets/2d/svg_clean/`.
-- Kéo thả một file `.svg` vào launcher để lập kế hoạch cho một SVG.
-- Kéo thả một thư mục vào launcher để lập kế hoạch cho nhiều SVG.
+1. Nhấp đúp `launchers/08_batch_maya_room.bat`.
+2. Có thể kéo-thả một file `.svg` hoặc một thư mục chứa nhiều SVG sạch.
+3. Nếu không kéo-thả gì, launcher sẽ quét `assets/2d/svg_clean/`.
 
-Kết quả batch:
+Batch launcher cũng chạy dry-run mặc định. Báo cáo nằm tại:
 
-- PNG preview khi render thật: `outputs/preview/`
-- File Blender chỉnh sửa được khi render thật: `outputs/blender/`
-- Báo cáo batch: `outputs/reports/batch_isometric_report.json`
+```text
+outputs/reports/batch_maya_report.json
+```
 
-Khi Blender đã được cài, developer có thể chạy actual batch render bằng script Python không dùng `--dry-run`. Đây vẫn là bản blockout/draft để kiểm tra bố cục, chưa phải final art.
+Báo cáo cho biết file nào đã quét, phòng nào phát hiện được, output `.ma` dự kiến, job nào lỗi, và job nào bị bỏ qua.
 
-## Bước 7: Xem kết quả
+## Backend Blender cũ
 
-1. Nhấp đúp `launchers/05_open_outputs.bat`.
-2. Hoặc mở trực tiếp thư mục `outputs/` trong Explorer.
-3. Mở file `.blend` trong Blender nếu muốn chỉnh sửa cảnh.
+Các launcher Blender cũ vẫn còn để kiểm tra/fallback:
+
+- `launchers/03_build_isometric_room.bat`
+- `launchers/04_batch_isometric_render.bat`
+
+Blender không bắt buộc để dùng Feature 005 Maya Bridge.
 
 ## Thư mục quan trọng
 
-| Thư mục | Mục đích | Bạn cần làm gì |
-| --- | --- | --- |
-| `drops/` | Bỏ file vào đây để xử lý | Bỏ SVG raw nếu xuất thủ công |
-| `assets/2d/svg_raw/` | SVG raw từ Illustrator | Kiểm tra file export |
-| `assets/2d/svg_clean/` | SVG sạch sau cleanup | Dùng cho bước isometric |
-| `outputs/preview/` | Ảnh PNG xem nhanh | Xem render preview |
-| `outputs/blender/` | File `.blend` chỉnh sửa được | Mở trong Blender |
-| `outputs/manifest/` | Manifest kỹ thuật | Không cần sửa tay |
-| `launchers/` | File `.bat` để chạy | Nhấp đúp hoặc kéo thả file |
+| Thư mục | Mục đích |
+| --- | --- |
+| `drops/` | Nơi bỏ file đầu vào thủ công; pipeline không xóa file ở đây |
+| `assets/2d/svg_raw/` | SVG raw từ Illustrator |
+| `assets/2d/svg_clean/` | SVG sạch làm đầu vào cho Maya |
+| `outputs/tmp/` | Geometry JSON handoff tạm thời |
+| `outputs/maya/` | File `.ma` editable cho Maya |
+| `outputs/preview/` | Preview nếu backend tạo được |
+| `outputs/reports/` | Báo cáo batch JSON |
+| `outputs/manifest/` | Manifest kỹ thuật |
+| `launchers/` | File `.bat` để chạy nhanh |
 
 ## Lưu ý quan trọng
 
 File gốc không bị thay đổi. Pipeline không xóa hoặc sửa file trong `drops/`, `assets/2d/ai_src/`, hoặc SVG nguồn.
 
+Dry-run chỉ lập kế hoạch. Manifest chỉ được cập nhật sau khi Maya chạy thật thành công và file `.ma` tồn tại.
+
 Tên output luôn theo quy ước, ví dụ:
 
 ```text
-tu_phuong_vo_lo_kho_main_iso_v001.blend
+tu_phuong_vo_lo_kho_main_maya_v001.ma
 tu_phuong_vo_lo_kho_main_preview_v001.png
 ```
 
 ## Hiện tại
 
-Feature 002 đã có xuất/làm sạch/kiểm tra SVG. Feature 003 đã có naming và manifest. Feature 001 hiện tạo được bản nháp phòng isometric qua Blender khi máy có Blender. Feature 004 đã có batch dry-run và báo cáo JSON; actual batch render cần Blender để kiểm chứng trên máy có Blender.
+Feature 002 đã có xuất/làm sạch/kiểm tra SVG. Feature 003 đã có naming và manifest. Feature 001/004 là Blender MVP và batch dry-run/report cũ. Feature 005 bổ sung Maya Bridge làm backend DCC production chính; actual Maya execution cần kiểm chứng trên máy có Autodesk Maya/mayapy.

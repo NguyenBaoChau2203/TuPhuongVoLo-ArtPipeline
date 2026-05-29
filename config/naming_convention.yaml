@@ -34,6 +34,7 @@ naming:
         - "svgraw"           # SVG exported from Illustrator, before cleanup
         - "svgclean"         # SVG after vpype/svgpathtools cleanup and validation
         - "blockout"         # 3D blockout geometry (no detail)
+        - "maya"             # Editable Maya ASCII scene (.ma)
         - "iso"              # Isometric scene/render
         - "preview"          # Preview render (PNG)
         - "final_candidate"  # Ready for artist review/approval
@@ -58,6 +59,7 @@ naming:
     svgraw: "outputs/svg/"
     svgclean: "assets/2d/svg_clean/"
     blockout: "outputs/blender/"
+    maya: "outputs/maya/"
     iso: "outputs/blender/"
     preview: "outputs/preview/"
     final_candidate: "outputs/png/"
