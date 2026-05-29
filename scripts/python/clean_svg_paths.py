@@ -24,9 +24,8 @@ try:  # lxml is the project dependency; ElementTree keeps tests runnable if abse
     xml_backend = etree
     LXML_AVAILABLE = True
 except ModuleNotFoundError:  # pragma: no cover - exercised only in minimal local envs
-    import xml.etree.ElementTree
+    import xml.etree.ElementTree as xml_backend
 
-    xml_backend = xml.etree.ElementTree
     LXML_AVAILABLE = False
 
 try:
@@ -40,6 +39,7 @@ XLINK_NS = "http://www.w3.org/1999/xlink"
 RASTER_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".tif", ".tiff")
 DEFAULT_OUTPUT_DIR = Path("assets/2d/svg_clean")
 DEFAULT_MANIFEST_PATH = Path("outputs/manifest/asset_manifest.json")
+
 try:
     if LXML_AVAILABLE:
         xml_backend.register_namespace("svg", SVG_NS)

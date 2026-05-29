@@ -68,6 +68,21 @@ Ví dụ tên file sau khi ingest:
 `tu_phuong_vo_lo_sanh_chinh_main_raw_v001.svg`
 
 Nếu chạy lại với cùng asset, pipeline sẽ tạo phiên bản mới như `v002` thay vì ghi đè file cũ.
+1. Bỏ file SVG vào `drops/` hoặc dùng file đã xuất trong `assets/2d/svg_raw/`.
+2. Nhấp đúp `launchers/02_clean_svg.bat`.
+3. Nếu muốn xử lý một thư mục/file khác, có thể kéo thả file/thư mục SVG lên `02_clean_svg.bat`.
+4. File SVG sạch sẽ xuất hiện trong `assets/2d/svg_clean/`.
+
+Launcher sẽ:
+- Xóa các phần tử bị ẩn (`display:none`, `visibility:hidden`, `opacity:0`)
+- Xóa path quá nhỏ do lỗi export/vector hóa
+- Cảnh báo nếu SVG còn ảnh raster nhúng
+- Chạy kiểm tra clean SVG contract sau khi xử lý
+
+Nếu cửa sổ báo lỗi:
+- `Không tìm thấy file SVG nào`: hãy kiểm tra lại `drops/` hoặc đường dẫn bạn kéo thả.
+- `Có embedded/linked raster image`: SVG còn ảnh PNG/JPG nhúng; hãy quay lại Illustrator và bỏ layer ảnh khỏi bản xuất nếu đó không phải geometry.
+- `Strict mode: còn transform`: SVG còn transform chưa flatten; hãy thử Expand/Outline trong Illustrator hoặc báo developer kiểm tra file.
 
 ---
 
