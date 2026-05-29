@@ -24,7 +24,7 @@ try:  # lxml is the project dependency; ElementTree keeps tests runnable if abse
     xml_backend = etree
     LXML_AVAILABLE = True
 except ModuleNotFoundError:  # pragma: no cover - exercised only in minimal local envs
-    import xml.etree.ElementTree as xml_backend
+    import xml.etree.ElementTree as xml_backend  # noqa: N813
 
     LXML_AVAILABLE = False
 
