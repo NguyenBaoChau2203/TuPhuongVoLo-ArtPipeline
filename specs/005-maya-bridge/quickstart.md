@@ -55,11 +55,14 @@ Expected:
 
 ## Step 4: Actual Maya Run
 
-Actual execution is environment-dependent and requires Maya/mayapy:
+Actual execution is environment-dependent and requires `mayapy.exe`:
 
 ```powershell
 python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --room kho --maya-path "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe"
 ```
+
+Feature 005 MVP actual run supports `mayapy.exe` only. Direct `maya.exe` or
+`mayabatch.exe` execution is future work.
 
 Expected after success:
 

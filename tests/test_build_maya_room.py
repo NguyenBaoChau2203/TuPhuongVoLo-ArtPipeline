@@ -115,6 +115,51 @@ def test_missing_maya_executable_is_handled_gracefully(tmp_path: Path, capsys) -
     assert "Maya" in captured.err or "mayapy" in captured.err
 
 
+def test_actual_run_rejects_maya_or_mayabatch_path(tmp_path: Path, capsys) -> None:
+    svg = write_svg(tmp_path / "floorplan.svg")
+
+    for executable_name in ("maya.exe", "mayabatch.exe"):
+        fake_executable = tmp_path / executable_name
+        fake_executable.write_text("not a real executable", encoding="utf-8")
+
+        exit_code = builder.main(
+            [
+                "--input",
+                str(svg),
+                "--room",
+                "kho",
+                "--maya-path",
+                str(fake_executable),
+            ]
+        )
+        captured = capsys.readouterr()
+
+        assert exit_code == 1
+        assert "Feature 005 MVP chỉ hỗ trợ mayapy.exe cho actual run" in captured.err
+        assert "maya.exe/mayabatch.exe chưa được hỗ trợ" in captured.err
+
+
+def test_dry_run_allows_non_mayapy_path_for_planning(tmp_path: Path, monkeypatch) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg = write_svg(tmp_path / "floorplan.svg")
+    fake_maya = tmp_path / "maya.exe"
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "kho",
+            "--maya-path",
+            str(fake_maya),
+            "--dry-run",
+        ]
+    )
+
+    plan = builder.build_plan(args)
+
+    assert plan.maya_command[0] == str(fake_maya)
+
+
 def test_dry_run_does_not_update_manifest(tmp_path: Path, monkeypatch) -> None:
     manifest_path = isolated_manifest(monkeypatch, tmp_path)
     svg = write_svg(tmp_path / "floorplan.svg")

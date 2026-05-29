@@ -414,7 +414,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--maya-path",
         type=Path,
-        help="Đường dẫn mayapy.exe/maya.exe tùy chọn.",
+        help="Đường dẫn mayapy.exe tùy chọn.",
     )
     parser.add_argument(
         "--dry-run",

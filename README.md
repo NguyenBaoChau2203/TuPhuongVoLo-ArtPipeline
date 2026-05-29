@@ -42,7 +42,7 @@ Prerequisites:
 - Python 3.11+
 - Git
 - Optional: Adobe Illustrator for Feature 002 authoring/export
-- Optional: Autodesk Maya/mayapy for actual Feature 005 `.ma` generation
+- Optional: Autodesk Maya with `mayapy.exe` for actual Feature 005 `.ma` generation
 - Optional: Blender 4.x for legacy/fallback Feature 001/004 execution
 
 ```powershell
@@ -64,6 +64,9 @@ Actual Maya run, when `mayapy.exe` is available:
 ```powershell
 python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --room kho --maya-path "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe"
 ```
+
+Feature 005 MVP actual execution supports `mayapy.exe` only. `maya.exe` and
+`mayabatch.exe` support is future work.
 
 ## Artist Quickstart
 
@@ -102,7 +105,7 @@ TuPhuongVoLo-ArtPipeline/
 
 ## Not Implemented
 
-Feature 006 natural-language control/MCP is not implemented. Actual Maya scene generation requires local Autodesk Maya/mayapy and is environment-dependent.
+Feature 006 natural-language control/MCP is not implemented. Actual Maya scene generation requires local Autodesk Maya with `mayapy.exe` and is environment-dependent.
 
 ## License
 

@@ -51,13 +51,15 @@ Launcher mặc định chạy dry-run để lập kế hoạch an toàn:
 - Không sửa file SVG nguồn
 - In đường dẫn `.ma` dự kiến trong `outputs/maya/`
 
-Khi developer cấu hình `mayapy` trong `config/pipeline.yaml` hoặc chạy script với `--maya-path`, output thật sẽ là:
+Khi developer cấu hình `mayapy.exe` trong `config/pipeline.yaml` hoặc chạy script với `--maya-path`, output thật sẽ là:
 
 ```text
 outputs/maya/tu_phuong_vo_lo_{ten_phong}_main_maya_v001.ma
 ```
 
 Đây là blockout/draft, chưa phải final art. Họa sĩ mở file `.ma` trong Maya để chỉnh hình khối, vật liệu, props, ánh sáng và camera.
+
+Lưu ý kỹ thuật: MVP hiện chỉ hỗ trợ chạy thật qua `mayapy.exe`. `maya.exe` và `mayabatch.exe` sẽ được hỗ trợ sau nếu cần.
 
 ## Batch Maya nhiều phòng / nhiều SVG
 
@@ -111,4 +113,4 @@ tu_phuong_vo_lo_kho_main_preview_v001.png
 
 ## Hiện tại
 
-Feature 002 đã có xuất/làm sạch/kiểm tra SVG. Feature 003 đã có naming và manifest. Feature 001/004 là Blender MVP và batch dry-run/report cũ. Feature 005 bổ sung Maya Bridge làm backend DCC production chính; actual Maya execution cần kiểm chứng trên máy có Autodesk Maya/mayapy.
+Feature 002 đã có xuất/làm sạch/kiểm tra SVG. Feature 003 đã có naming và manifest. Feature 001/004 là Blender MVP và batch dry-run/report cũ. Feature 005 bổ sung Maya Bridge làm backend DCC production chính; actual Maya execution cần kiểm chứng trên máy có Autodesk Maya và mayapy.exe.

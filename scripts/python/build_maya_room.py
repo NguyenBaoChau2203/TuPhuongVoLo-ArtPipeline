@@ -161,35 +161,52 @@ def next_maya_version(maya_dir: Path, asset_name: str, manifest_path: Path) -> s
     )
 
 
+def is_mayapy_executable(executable: str) -> bool:
+    """Return whether a path/command looks like mayapy."""
+
+    return "mayapy" in Path(executable).name.lower()
+
+
+def unsupported_maya_runtime_message() -> str:
+    """Return the Feature 005 MVP runtime limitation message."""
+
+    return (
+        "Feature 005 MVP chỉ hỗ trợ mayapy.exe cho actual run. "
+        "maya.exe/mayabatch.exe chưa được hỗ trợ."
+    )
+
+
 def resolve_maya_executable(
     maya_path: Path | None,
     pipeline_config: dict[str, Any],
     require_exists: bool,
 ) -> str:
-    """Resolve mayapy/mayabatch/maya from CLI, config, or PATH."""
+    """Resolve mayapy from CLI, config, or PATH."""
 
     if maya_path:
         candidate = str(maya_path)
         if require_exists and not Path(candidate).exists():
             raise FileNotFoundError(f"Không tìm thấy Maya/mayapy tại: {candidate}")
+        if require_exists and not is_mayapy_executable(candidate):
+            raise ValueError(unsupported_maya_runtime_message())
         return candidate
 
     tool_paths = pipeline_config.get("tool_paths", {}) if isinstance(pipeline_config, dict) else {}
-    for key in ("mayapy", "mayabatch", "maya"):
-        configured = str(tool_paths.get(key, "auto")).strip()
-        if configured and configured.lower() != "auto":
-            if require_exists and not Path(configured).exists():
-                raise FileNotFoundError(f"Không tìm thấy {key} theo config: {configured}")
-            return configured
+    configured = str(tool_paths.get("mayapy", "auto")).strip()
+    if configured and configured.lower() != "auto":
+        if require_exists and not Path(configured).exists():
+            raise FileNotFoundError(f"Không tìm thấy mayapy theo config: {configured}")
+        if require_exists and not is_mayapy_executable(configured):
+            raise ValueError(unsupported_maya_runtime_message())
+        return configured
 
-    for executable in ("mayapy", "mayabatch", "maya"):
-        found = shutil.which(executable)
-        if found:
-            return found
+    found = shutil.which("mayapy")
+    if found:
+        return found
 
     if require_exists:
         raise FileNotFoundError(
-            "Không tìm thấy Maya/mayapy. Hãy cài Autodesk Maya hoặc đặt "
+            "Không tìm thấy mayapy. Hãy cài Autodesk Maya hoặc đặt "
             "tool_paths.mayapy trong config/pipeline.yaml."
         )
     return "mayapy"
@@ -402,7 +419,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--maya-path",
         type=Path,
-        help="Đường dẫn mayapy.exe/maya.exe tùy chọn.",
+        help="Đường dẫn mayapy.exe tùy chọn.",
     )
     parser.add_argument(
         "--dry-run",
