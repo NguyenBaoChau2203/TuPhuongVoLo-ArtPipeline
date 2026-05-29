@@ -8,9 +8,9 @@
 
 This repository provides **semi-automated tooling** for an indie game art pipeline. It bridges the gap between hand-drawn/vector art in Adobe Illustrator and isometric 3D draft renders in Blender (with an optional Maya advanced branch).
 
-**Current Phase**: 📋 SDD Bootstrap / Planning Only — no production logic implemented yet.
+**Current Phase**: Core Pipeline MVPs in progress.
 
-All files are documentation, specs, placeholder scripts, config templates, and AI agent instructions. This is preparation for future coding work.
+Feature 002, Feature 003, and Feature 001 MVPs are implemented. Feature 004 now has a safe batch dry-run/report MVP; actual Blender rendering remains environment-dependent.
 
 ---
 
@@ -33,10 +33,10 @@ Illustrator authoring / export
 
 | Order | Feature | Spec | Status |
 |-------|---------|------|--------|
-| 1 | Illustrator Export & Clean SVG | `specs/002-illustrator-export-clean-svg/` | 📋 Spec only |
-| 2 | Asset Naming & Manifest | `specs/003-asset-naming-and-manifest/` | 📋 Spec only |
-| 3 | Floorplan to Isometric Room | `specs/001-floorplan-to-isometric-room/` | 📋 Spec only |
-| 4 | Batch Isometric Render | `specs/004-batch-isometric-render/` | 📋 Spec only |
+| 1 | Illustrator Export & Clean SVG | `specs/002-illustrator-export-clean-svg/` | Done |
+| 2 | Asset Naming & Manifest | `specs/003-asset-naming-and-manifest/` | Done |
+| 3 | Floorplan to Isometric Room | `specs/001-floorplan-to-isometric-room/` | MVP done; Blender render depends on local Blender |
+| 4 | Batch Isometric Render | `specs/004-batch-isometric-render/` | MVP dry-run/report implemented |
 | 5 | Maya Bridge (optional) | `specs/005-maya-bridge/` | 📋 Spec only |
 | 6 | Natural Language Agent Control | `specs/006-natural-language-agent-control/` | 📋 Spec only |
 
@@ -66,7 +66,7 @@ python -m venv .venv
 # Install dependencies declared for Feature 002/003 planning
 pip install -r requirements.txt
 
-# Run tests (placeholder — tests are stubs)
+# Run tests
 pytest tests/ -v
 ```
 
@@ -143,12 +143,12 @@ TuPhuongVoLo-ArtPipeline/
 - [x] Vietnamese documentation placeholders
 
 ### Phase 2: Core Pipeline
-- [ ] Feature 002: Illustrator Export & Clean SVG
-- [ ] Feature 003: Asset Naming & Manifest
-- [ ] Feature 001: Floorplan to Isometric Room
+- [x] Feature 002: Illustrator Export & Clean SVG
+- [x] Feature 003: Asset Naming & Manifest
+- [x] Feature 001: Floorplan to Isometric Room MVP
 
 ### Phase 3: Batch & Integration
-- [ ] Feature 004: Batch Isometric Render
+- [x] Feature 004: Batch Isometric Render MVP dry-run/report
 - [ ] Feature 005: Maya Bridge (optional)
 
 ### Phase 4: Intelligence Layer
@@ -160,11 +160,9 @@ TuPhuongVoLo-ArtPipeline/
 
 | Item | Reason |
 |------|--------|
-| SVG parsing/cleaning logic | Placeholder scripts only — implement via Feature 002 |
-| Blender scene generation | Placeholder scripts only — implement via Feature 001 |
+| Full production Blender render verification on every machine | Depends on local Blender 4.x installation |
 | Maya integration | Optional advanced branch — implement via Feature 005 |
 | Natural language control | Future layer — implement via Feature 006 |
-| Production Python implementations | Dependencies are declared for Feature 002/003, but production logic remains unimplemented |
 | CI/CD pipeline | Not needed until production code exists |
 | AI/ML models | This is rule-based semi-automation, not ML |
 

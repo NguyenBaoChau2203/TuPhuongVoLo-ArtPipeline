@@ -84,7 +84,31 @@ Nếu Blender chưa được cài hoặc không nằm trong PATH, launcher sẽ 
 
 Lưu ý: Đây là bản blockout/draft. Tường, sàn và props chỉ là hình khối đơn giản để kiểm tra bố cục, không phải final art.
 
-## Bước 6: Xem kết quả
+## Bước 6: Batch render nhiều phòng / nhiều SVG
+
+Khi có nhiều SVG sạch hoặc một SVG có nhiều phòng, dùng launcher:
+
+```text
+launchers/04_batch_isometric_render.bat
+```
+
+Mặc định launcher này chạy dry-run để lập kế hoạch an toàn. Dry-run không chạy Blender, không ghi manifest, không sửa file SVG nguồn, và vẫn dùng được khi máy chưa cài Blender.
+
+Bạn có thể:
+
+- Nhấp đúp launcher để quét `assets/2d/svg_clean/`.
+- Kéo thả một file `.svg` vào launcher để lập kế hoạch cho một SVG.
+- Kéo thả một thư mục vào launcher để lập kế hoạch cho nhiều SVG.
+
+Kết quả batch:
+
+- PNG preview khi render thật: `outputs/preview/`
+- File Blender chỉnh sửa được khi render thật: `outputs/blender/`
+- Báo cáo batch: `outputs/reports/batch_isometric_report.json`
+
+Khi Blender đã được cài, developer có thể chạy actual batch render bằng script Python không dùng `--dry-run`. Đây vẫn là bản blockout/draft để kiểm tra bố cục, chưa phải final art.
+
+## Bước 7: Xem kết quả
 
 1. Nhấp đúp `launchers/05_open_outputs.bat`.
 2. Hoặc mở trực tiếp thư mục `outputs/` trong Explorer.
@@ -115,4 +139,4 @@ tu_phuong_vo_lo_kho_main_preview_v001.png
 
 ## Hiện tại
 
-Feature 002 đã có xuất/làm sạch/kiểm tra SVG. Feature 003 đã có naming và manifest. Feature 001 hiện tạo được bản nháp phòng isometric qua Blender khi máy có Blender.
+Feature 002 đã có xuất/làm sạch/kiểm tra SVG. Feature 003 đã có naming và manifest. Feature 001 hiện tạo được bản nháp phòng isometric qua Blender khi máy có Blender. Feature 004 đã có batch dry-run và báo cáo JSON; actual batch render cần Blender để kiểm chứng trên máy có Blender.
