@@ -2,41 +2,53 @@
 
 **Input**: Design documents from `/specs/005-maya-bridge/`
 
-**Prerequisites**: Feature 001 (Blender pipeline) should be implemented first for reference.
+**Correction applied**: Feature 005 treats Maya as the primary production DCC backend for the Illustrator + Maya artist workflow. Blender remains optional/fallback legacy MVP code and is not required for Feature 005 tests.
 
-## Phase 1: Camera Setup
+## Phase 1: Maya-First Build Wrapper
 
-- [ ] T001 [US1] Implement `setup_iso_camera.py` — create orthographic isometric camera in Maya
-- [ ] T002 [US1] Match camera parameters to Blender isometric setup
-- [ ] T003 [US1] Test with mayapy in headless mode
+- [X] T001 Implement `scripts/python/build_maya_room.py` CLI wrapper
+- [X] T002 Reuse existing Python SVG detection and room geometry logic
+- [X] T003 Select room by normalized Vietnamese/ASCII room name
+- [X] T004 Load style and room presets from config
+- [X] T005 Create geometry JSON handoff for Maya
+- [X] T006 Resolve Maya/mayapy executable from CLI, config, or PATH
+- [X] T007 Support dry-run planning without Maya
+- [X] T008 Name `.ma` outputs using `tu_phuong_vo_lo_{asset_name}_{variant}_maya_v{version}`
+- [X] T009 Update manifest only after verified successful Maya `.ma` generation
 
----
+## Phase 2: Maya Scene Script
 
-## Phase 2: SVG Import
+- [X] T010 Implement `scripts/maya/build_maya_room_scene.py`
+- [X] T011 Initialize Maya standalone safely when running under mayapy
+- [X] T012 Read geometry JSON instead of parsing SVG directly in Maya
+- [X] T013 Create floor mesh, wall blocks, simple placeholder props, materials, lights, and isometric camera
+- [X] T014 Save editable Maya ASCII `.ma` scene
+- [ ] T015 Verify actual Maya execution on a machine with Autodesk Maya/mayapy installed
 
-- [ ] T004 [US2] Research SVG → Maya import options (USD bridge, custom parser, direct)
-- [ ] T005 [US2] Implement `import_svg_walls.py` — chosen import method
-- [ ] T006 [US2] Handle wall extrusion in Maya
-- [ ] T007 [US2] Apply materials from style presets
+## Phase 3: Batch Maya Wrapper
 
----
+- [X] T016 Implement `scripts/python/batch_maya_room.py`
+- [X] T017 Support `--input-dir`, `--input-file`, and `--job-file`
+- [X] T018 Support `--all-rooms`, `--room`, `--stop-on-error`, and dry-run mode
+- [X] T019 Write JSON report to `outputs/reports/batch_maya_report.json`
+- [X] T020 Continue past corrupt SVGs by default
 
-## Phase 3: Batch Render
+## Phase 4: Artist Launchers and Docs
 
-- [ ] T008 [US3] Implement `batch_render.py` — headless render via mayapy
-- [ ] T009 [US3] Output to `outputs/maya/` with naming convention
-- [ ] T010 [US3] Update manifest
+- [X] T021 Add `launchers/07_build_maya_room.bat`
+- [X] T022 Add `launchers/08_batch_maya_room.bat`
+- [X] T023 Update `docs/HOW_TO_USE_FOR_ARTIST_VI.md`
+- [X] T024 Update `README.md` to document Maya as primary DCC backend
+- [X] T025 Update `specs/005-maya-bridge/quickstart.md`
 
----
+## Phase 5: Tests and Validation
 
-## Phase 4: Integration
+- [X] T026 Add `tests/test_build_maya_room.py`
+- [X] T027 Add `tests/test_batch_maya_room.py`
+- [X] T028 Unit tests do not require Maya
+- [X] T029 Dry-run does not update manifest
+- [X] T030 Existing Feature 001/002/003/004 tests remain supported
 
-- [ ] T011 Graceful failure when Maya is not installed
-- [ ] T012 Write quickstart.md verification steps
+## Notes
 
----
-
-## Dependencies
-
-- Reference Feature 001 Blender pipeline for camera parameters
-- Independent of Blender pipeline execution
+Actual Maya execution pending local Maya verification.

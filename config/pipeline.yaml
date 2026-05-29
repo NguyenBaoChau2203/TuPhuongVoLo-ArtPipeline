@@ -44,13 +44,16 @@ defaults:
   isometric_angle: 30  # degrees — standard isometric
   camera_type: "ORTHO"
 
-# Tool paths — override these for your machine
+# Tool paths — override these for your machine.
+# Illustrator + Maya is the primary artist production path.
+# Blender remains available as an optional/fallback MVP backend.
 # Set to "auto" to search PATH, or provide absolute path
 tool_paths:
   illustrator: "auto"       # e.g., "C:/Program Files/Adobe/Adobe Illustrator 2025/Support Files/Contents/Windows/Illustrator.exe"
   blender: "auto"           # e.g., "C:/Program Files/Blender Foundation/Blender 4.0/blender.exe"
   maya: "auto"              # e.g., "C:/Program Files/Autodesk/Maya2025/bin/maya.exe"
   mayapy: "auto"            # e.g., "C:/Program Files/Autodesk/Maya2025/bin/mayapy.exe"
+  mayabatch: "auto"         # e.g., "C:/Program Files/Autodesk/Maya2025/bin/mayabatch.exe"
   potrace: "auto"           # e.g., "C:/tools/potrace/potrace.exe"
   vpype: "auto"             # Usually available via pip: vpype
   python: "auto"            # e.g., "python" or full path to python.exe

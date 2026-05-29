@@ -4,69 +4,59 @@
 
 **Created**: 2026-05-29
 
-**Status**: Draft
+**Status**: MVP implemented; actual Maya execution pending local Maya verification
+
+## Correction
+
+The real production artist workflow for this project is Illustrator + Maya. Feature 005 treats Maya as the primary DCC backend. Blender remains available as the previous MVP/fallback backend and must not be removed or required.
 
 ## User Scenarios & Testing
 
-### User Story 1 — Maya Isometric Camera Setup (Priority: P1)
+### User Story 1 - Maya Room Blockout Dry-Run (Priority: P1)
 
-A Maya Python script sets up a standard isometric camera matching the Blender pipeline's camera angle, enabling consistent previews across tools.
+An artist or developer can choose a clean Illustrator SVG and preview the Maya build plan without Maya installed.
 
-**Why this priority**: Camera consistency is the minimum viable bridge between Blender and Maya workflows.
+**Why this priority**: Dry-run gives safe feedback on room detection, output naming, and the Maya command without modifying source files or manifest.
 
-**Independent Test**: Run `setup_iso_camera.py` in mayapy, verify camera parameters match Blender's isometric setup.
+**Independent Test**: Run `build_maya_room.py --dry-run` against a clean SVG and verify the planned `.ma` path and Maya command.
 
-**Acceptance Scenarios**:
+### User Story 2 - Python Geometry JSON Handoff (Priority: P1)
 
-1. **Given** an empty Maya scene, **When** `setup_iso_camera.py` runs, **Then** an orthographic camera is created at the standard isometric angle.
+Python reuses the existing SVG parsing and room geometry layer to write a geometry JSON handoff for Maya.
 
----
+**Why this priority**: Maya should not parse SVG directly. The clean SVG and Python validation layer remain the source of truth.
 
-### User Story 2 — SVG Wall Import via Bridge (Priority: P2)
+**Independent Test**: Build a plan and write geometry JSON containing `boundary_points` and `wall_segments`.
 
-Import SVG wall data into Maya via one of: (a) Blender → USD → Maya, (b) custom SVG parser → Maya curves, (c) direct SVG to Maya (limited support).
+### User Story 3 - Editable Maya Scene Generation (Priority: P2)
 
-**Why this priority**: Getting geometry into Maya is the core purpose of the bridge.
+When Maya/mayapy is available, the Maya script reads geometry JSON and saves an editable `.ma` room blockout with floor, walls, placeholder props, lights, and camera.
 
-**Independent Test**: Provide a clean SVG, run the import script, verify walls appear in Maya scene.
+**Independent Test**: Run `build_maya_room.py` with `--maya-path` on a machine with Maya installed and verify the `.ma` output opens in Maya.
 
-**Acceptance Scenarios**:
+### User Story 4 - Batch Maya Planning (Priority: P2)
 
-1. **Given** a clean SVG with room walls, **When** `import_svg_walls.py` runs, **Then** wall geometry appears in the Maya scene.
+A batch wrapper scans one SVG, a folder of SVGs, or a job file and writes a JSON report for planned Maya jobs.
 
----
-
-### User Story 3 — Maya Batch Render (Priority: P3)
-
-Render isometric previews from Maya using mayapy in headless batch mode.
-
-**Acceptance Scenarios**:
-
-1. **Given** a Maya scene with room geometry, **When** `batch_render.py` runs via mayapy, **Then** PNG previews are generated.
-
----
-
-### Edge Cases
-
-- What if Maya is not installed? (Feature must fail gracefully)
-- What if USD interchange loses geometry data?
+**Independent Test**: Run `batch_maya_room.py --dry-run --json-report ...` and verify planned jobs, failures, and output paths.
 
 ## Requirements
 
-- **FR-001**: System MUST provide Maya Python scripts for isometric camera setup
-- **FR-002**: System MUST support at least one SVG → Maya import path
-- **FR-003**: System MUST support batch rendering via mayapy
-- **FR-004**: Maya features MUST NOT block the Blender pipeline
-- **FR-005**: All Maya scripts MUST work with mayapy (headless)
+- **FR-001**: System MUST provide `scripts/python/build_maya_room.py`.
+- **FR-002**: System MUST provide `scripts/maya/build_maya_room_scene.py`.
+- **FR-003**: System MUST provide `scripts/python/batch_maya_room.py`.
+- **FR-004**: Maya scene generation MUST consume geometry JSON, not raw SVG.
+- **FR-005**: Dry-run MUST NOT require Maya and MUST NOT update manifest.
+- **FR-006**: Actual run MUST update manifest only after a successful verified `.ma` output.
+- **FR-007**: Unit tests MUST NOT require Maya.
+- **FR-008**: Source SVG files and `drops/` files MUST NOT be modified or deleted.
+- **FR-009**: Blender code MUST remain available as optional/fallback legacy MVP backend.
+- **FR-010**: Artist-facing launcher/docs MUST be Vietnamese-friendly.
 
 ## Success Criteria
 
-- **SC-001**: Maya camera matches Blender isometric camera parameters
-- **SC-002**: At least one SVG import path produces usable geometry
-- **SC-003**: Maya scripts fail gracefully when Maya is not installed
-
-## Assumptions
-
-- Maya is optional — not all artists will have it
-- Blender pipeline is the primary path; Maya is the advanced branch
-- USD may be used as interchange format between Blender and Maya
+- **SC-001**: Dry-run resolves room, geometry JSON path, `.ma` output path, and Maya command.
+- **SC-002**: Batch dry-run writes `outputs/reports/batch_maya_report.json`.
+- **SC-003**: Missing Maya executable fails gracefully in actual mode.
+- **SC-004**: Existing Feature 001/002/003/004 tests still pass.
+- **SC-005**: Actual Maya execution is documented as environment-dependent until verified locally.
