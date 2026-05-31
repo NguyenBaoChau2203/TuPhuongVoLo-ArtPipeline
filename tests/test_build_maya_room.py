@@ -8,6 +8,15 @@ from pathlib import Path
 import build_maya_room as builder
 
 
+class _FakeProcess:
+    """Minimal subprocess.CompletedProcess stand-in for monkeypatched runs."""
+
+    def __init__(self, returncode: int, stdout: str = "", stderr: str = "") -> None:
+        self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = stderr
+
+
 def write_svg(path: Path) -> Path:
     """Write a clean SVG with two room groups."""
 
@@ -335,3 +344,308 @@ def test_dry_run_on_illustrator_fixture_leaves_manifest_untouched(
     assert exit_code == 0
     assert not manifest_path.exists()
     assert "không ghi manifest" in captured.out
+
+
+# --- Feature 005.2: Maya isometric PNG preview render ---
+
+
+def fake_mayapy(tmp_path: Path) -> Path:
+    """Create a fake mayapy.exe accepted by actual-run validation."""
+
+    path = tmp_path / "mayapy.exe"
+    path.write_text("fake mayapy", encoding="utf-8")
+    return path
+
+
+def test_build_plan_includes_render_settings_when_enabled(
+    tmp_path: Path, monkeypatch
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg = write_svg(tmp_path / "floorplan.svg")
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--render-preview",
+            "--render-width",
+            "800",
+            "--render-height",
+            "600",
+            "--dry-run",
+        ]
+    )
+
+    plan = builder.build_plan(args)
+
+    assert plan.render_preview is True
+    assert plan.render_width == 800
+    assert plan.render_height == 600
+    assert plan.render_output is not None
+    assert any("render_maya_room_preview.py" in part for part in plan.render_command)
+    assert "--scene" in plan.render_command
+    assert "--render-output" in plan.render_command
+
+
+def test_build_plan_render_disabled_by_default(tmp_path: Path, monkeypatch) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg = write_svg(tmp_path / "floorplan.svg")
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+
+    plan = builder.build_plan(args)
+
+    assert plan.render_preview is False
+    assert plan.render_output is None
+    assert plan.render_command == []
+
+
+def test_render_output_follows_naming_convention(tmp_path: Path, monkeypatch) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg = write_svg(tmp_path / "floorplan.svg")
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--render-preview",
+            "--dry-run",
+        ]
+    )
+
+    plan = builder.build_plan(args)
+
+    assert plan.render_output is not None
+    assert plan.render_output.parent.name == "preview"
+    assert plan.render_output.name == "tu_phuong_vo_lo_kho_main_preview_v001.png"
+
+
+def test_dry_run_render_preview_prints_png_path_and_size(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg = write_svg(tmp_path / "floorplan.svg")
+
+    exit_code = builder.main(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--render-preview",
+            "--dry-run",
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "tu_phuong_vo_lo_kho_main_preview_v001.png" in captured.out
+    assert "1280x720" in captured.out
+    assert "không render" in captured.out
+
+
+def test_dry_run_render_preview_does_not_update_manifest(
+    tmp_path: Path, monkeypatch
+) -> None:
+    manifest_path = isolated_manifest(monkeypatch, tmp_path)
+    svg = write_svg(tmp_path / "floorplan.svg")
+
+    exit_code = builder.main(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--render-preview",
+            "--dry-run",
+        ]
+    )
+
+    assert exit_code == 0
+    assert not manifest_path.exists()
+
+
+def test_dry_run_render_preview_does_not_create_files(
+    tmp_path: Path, monkeypatch
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg = write_svg(tmp_path / "floorplan.svg")
+
+    builder.main(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--render-preview",
+            "--dry-run",
+        ]
+    )
+
+    preview_dir = tmp_path / "outputs" / "preview"
+    pngs = list(preview_dir.glob("*.png")) if preview_dir.exists() else []
+    assert pngs == []
+
+
+def test_actual_run_renders_png_and_updates_manifest(
+    tmp_path: Path, monkeypatch
+) -> None:
+    manifest_path = isolated_manifest(monkeypatch, tmp_path)
+    svg = write_svg(tmp_path / "floorplan.svg")
+    mayapy = fake_mayapy(tmp_path)
+
+    def fake_run(command, **kwargs):
+        if any("build_maya_room_scene.py" in part for part in command):
+            output = Path(command[command.index("--maya-output") + 1])
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text("//Maya ASCII", encoding="utf-8")
+        elif any("render_maya_room_preview.py" in part for part in command):
+            output = Path(command[command.index("--render-output") + 1])
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_bytes(b"\x89PNG\r\n")
+        return _FakeProcess(0)
+
+    monkeypatch.setattr(builder.subprocess, "run", fake_run)
+
+    exit_code = builder.main(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--maya-path",
+            str(mayapy),
+            "--render-preview",
+        ]
+    )
+
+    assert exit_code == 0
+    png = tmp_path / "outputs" / "preview" / "tu_phuong_vo_lo_kho_main_preview_v001.png"
+    assert png.exists()
+    entries = json.loads(manifest_path.read_text(encoding="utf-8"))
+    stages = {entry["stage"] for entry in entries}
+    assert "maya" in stages
+    assert "preview" in stages
+
+
+def test_actual_run_missing_png_is_error(tmp_path: Path, monkeypatch, capsys) -> None:
+    manifest_path = isolated_manifest(monkeypatch, tmp_path)
+    svg = write_svg(tmp_path / "floorplan.svg")
+    mayapy = fake_mayapy(tmp_path)
+
+    def fake_run(command, **kwargs):
+        if any("build_maya_room_scene.py" in part for part in command):
+            output = Path(command[command.index("--maya-output") + 1])
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text("//Maya ASCII", encoding="utf-8")
+        # Render command intentionally produces no PNG.
+        return _FakeProcess(0)
+
+    monkeypatch.setattr(builder.subprocess, "run", fake_run)
+
+    exit_code = builder.main(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--maya-path",
+            str(mayapy),
+            "--render-preview",
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert "ERR_RENDER_MISSING" in captured.err
+    # The .ma manifest entry exists, but no preview entry was added.
+    entries = json.loads(manifest_path.read_text(encoding="utf-8"))
+    stages = [entry["stage"] for entry in entries]
+    assert "preview" not in stages
+
+
+def test_actual_run_render_failure_returns_error(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg = write_svg(tmp_path / "floorplan.svg")
+    mayapy = fake_mayapy(tmp_path)
+
+    def fake_run(command, **kwargs):
+        if any("build_maya_room_scene.py" in part for part in command):
+            output = Path(command[command.index("--maya-output") + 1])
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text("//Maya ASCII", encoding="utf-8")
+            return _FakeProcess(0)
+        return _FakeProcess(2)
+
+    monkeypatch.setattr(builder.subprocess, "run", fake_run)
+
+    exit_code = builder.main(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--maya-path",
+            str(mayapy),
+            "--render-preview",
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 2
+    assert "ERR_RENDER_FAILED" in captured.err
+
+
+def test_render_preview_still_rejects_maya_or_mayabatch(
+    tmp_path: Path, capsys
+) -> None:
+    svg = write_svg(tmp_path / "floorplan.svg")
+
+    for executable_name in ("maya.exe", "mayabatch.exe"):
+        fake_executable = tmp_path / executable_name
+        fake_executable.write_text("not a real executable", encoding="utf-8")
+
+        exit_code = builder.main(
+            [
+                "--input",
+                str(svg),
+                "--room",
+                "kho",
+                "--maya-path",
+                str(fake_executable),
+                "--render-preview",
+            ]
+        )
+        captured = capsys.readouterr()
+
+        assert exit_code == 1
+        assert "Feature 005 MVP chỉ hỗ trợ mayapy.exe cho actual run" in captured.err

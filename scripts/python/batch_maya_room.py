@@ -37,6 +37,7 @@ class BatchMayaJob:
     planned_maya_output: Path | None
     status: str = STATUS_PLANNED
     message: str = ""
+    planned_render_output: Path | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-friendly job representation."""
@@ -48,6 +49,9 @@ class BatchMayaJob:
             "room_preset": self.room_preset,
             "planned_maya_output": str(self.planned_maya_output)
             if self.planned_maya_output
+            else None,
+            "planned_render_output": str(self.planned_render_output)
+            if self.planned_render_output
             else None,
             "status": self.status,
             "message": self.message,
@@ -117,6 +121,8 @@ def build_feature005_command(job: BatchMayaJob, dry_run: bool) -> list[str]:
     ]
     if job.room_preset:
         command.extend(["--room-preset", job.room_preset])
+    if job.planned_render_output:
+        command.append("--render-preview")
     if dry_run:
         command.append("--dry-run")
     return command
@@ -166,6 +172,10 @@ def make_plan_args(
         maya_path=args.maya_path,
         dry_run=dry_run,
         verbose=args.verbose,
+        render_preview=getattr(args, "render_preview", False),
+        render_output=None,
+        render_width=getattr(args, "render_width", builder.DEFAULT_RENDER_WIDTH),
+        render_height=getattr(args, "render_height", builder.DEFAULT_RENDER_HEIGHT),
     )
 
 
@@ -186,6 +196,7 @@ def create_job_from_room(
         planned_maya_output=plan.maya_output,
         status=STATUS_PLANNED,
         message=message,
+        planned_render_output=plan.render_output,
     )
 
 
@@ -234,6 +245,7 @@ def load_jobs_from_file(job_file: Path, args: argparse.Namespace) -> list[BatchM
         style = str(raw.get("style") or args.style)
         room_preset = raw.get("room_preset")
         planned_maya = raw.get("planned_maya_output") or raw.get("maya_output")
+        planned_render = raw.get("planned_render_output") or raw.get("render_output")
         jobs.append(
             BatchMayaJob(
                 source_svg=source_svg,
@@ -243,6 +255,9 @@ def load_jobs_from_file(job_file: Path, args: argparse.Namespace) -> list[BatchM
                 planned_maya_output=Path(str(planned_maya)).resolve() if planned_maya else None,
                 status=STATUS_PLANNED if room_name else STATUS_FAILED,
                 message="Đã tải từ job-file; dry-run sẽ không chạy Maya.",
+                planned_render_output=Path(str(planned_render)).resolve()
+                if planned_render
+                else None,
             )
         )
     return jobs
@@ -289,9 +304,12 @@ def execute_job(job: BatchMayaJob, args: argparse.Namespace) -> BatchMayaJob:
         print(f"Đang dựng Maya: {plan.room.room_name} từ {plan.input_path}")
         return_code = builder.run_maya(plan, verbose=args.verbose)
         job.planned_maya_output = plan.maya_output
+        job.planned_render_output = plan.render_output
         if return_code == 0:
             job.status = STATUS_SUCCEEDED
             job.message = "Đã tạo .ma và cập nhật manifest."
+            if plan.render_preview and plan.render_output:
+                job.message += f" Đã render preview: {plan.render_output.name}."
         else:
             job.status = STATUS_FAILED
             job.message = f"Maya trả về mã lỗi {return_code}."
@@ -350,6 +368,9 @@ def print_summary(report: BatchMayaReport, report_path: Path) -> None:
     print(f"Số file SVG đã quét: {report.scanned_files}")
     print(f"Số phòng đã phát hiện: {report.detected_rooms}")
     print(f"Số job đã lập kế hoạch: {report.planned_jobs}")
+    planned_renders = sum(1 for job in report.jobs if job.planned_render_output)
+    if planned_renders:
+        print(f"Số job có render PNG preview: {planned_renders}")
     print(f"Thành công: {report.succeeded}")
     print(f"Thất bại: {report.failed}")
     print(f"Bỏ qua: {report.skipped}")
@@ -415,6 +436,23 @@ def build_parser() -> argparse.ArgumentParser:
         "--maya-path",
         type=Path,
         help="Đường dẫn mayapy.exe tùy chọn.",
+    )
+    parser.add_argument(
+        "--render-preview",
+        action="store_true",
+        help="Render thêm ảnh PNG isometric preview cho mỗi job (cần mayapy).",
+    )
+    parser.add_argument(
+        "--render-width",
+        type=int,
+        default=builder.DEFAULT_RENDER_WIDTH,
+        help=f"Chiều rộng render (mặc định {builder.DEFAULT_RENDER_WIDTH}).",
+    )
+    parser.add_argument(
+        "--render-height",
+        type=int,
+        default=builder.DEFAULT_RENDER_HEIGHT,
+        help=f"Chiều cao render (mặc định {builder.DEFAULT_RENDER_HEIGHT}).",
     )
     parser.add_argument(
         "--dry-run",
