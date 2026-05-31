@@ -53,6 +53,38 @@ outputs/reports/*.json
 *.bak
 tests/tmp/
 
+# === AI / dev tooling artifacts (development aids, never production) ===
+# CodeGraph generated index/database — development aid only, never commit
+.codegraph/
+*.codegraph
+# Agent long-term memory stores (e.g. TencentDB-Agent-Memory) — evaluation only
+.agent_memory/
+agent_memory/
+memory/
+*.memory
+*.memory.db
+# Vector stores / embeddings / local caches produced by dev or AI tooling
+*.vectorstore
+vector_store/
+vectorstores/
+embeddings/
+*.embeddings
+*.faiss
+*.index
+.cache/
+.agent_cache/
+
+# === Secrets (never commit) ===
+.env
+.env.*
+*.env
+secrets/
+*.secret
+*.key
+*.pem
+credentials.json
+*.credentials
+
 # === Do NOT ignore ===
 # !assets/       — source assets are tracked
 # !drops/        — drop folder structure is tracked (but contents may be gitignored)
