@@ -13,6 +13,22 @@ import re
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+# Re-exported for callers that build candidates from non-path shapes.
+__all__ = [
+    "RoomBoundary",
+    "ShapeCandidate",
+    "calculate_bbox",
+    "choose_largest_closed_boundary",
+    "choose_largest_closed_boundary_from_candidates",
+    "create_wall_segments",
+    "is_closed_path",
+    "normalize_points_to_origin",
+    "parse_svg_path_points",
+    "polygon_area",
+    "points_close",
+    "scale_points_to_blender",
+]
+
 Point2D = tuple[float, float]
 WallSegment = tuple[Point2D, Point2D]
 BBox = tuple[float, float, float, float]
@@ -24,6 +40,22 @@ COMMAND_TOKEN_RE = re.compile(r"^[A-Za-z]$")
 SUPPORTED_COMMANDS = {"M", "m", "L", "l", "H", "h", "V", "v", "Z", "z"}
 UNSUPPORTED_COMMANDS = {"C", "c", "S", "s", "Q", "q", "T", "t", "A", "a"}
 EPSILON = 1e-6
+
+
+@dataclass(frozen=True)
+class ShapeCandidate:
+    """A boundary candidate already reduced to absolute 2D points.
+
+    Detection builds these from any supported shape (path/rect/polygon/polyline)
+    after parent-group transforms have been applied, so boundary selection can
+    treat every shape type uniformly.
+    """
+
+    points: list[Point2D]
+    closed: bool
+    source_index: int
+    source_kind: str = "path"
+    warnings: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -218,25 +250,58 @@ def create_wall_segments(points: list[Point2D]) -> list[WallSegment]:
 def choose_largest_closed_boundary(path_data_items: list[str]) -> RoomBoundary | None:
     """Choose the largest closed path as the room floor boundary."""
 
-    best: RoomBoundary | None = None
-    collected_warnings: list[str] = []
+    candidates: list[ShapeCandidate] = []
     for index, path_data in enumerate(path_data_items):
         points, closed, warnings = parse_svg_path_points(path_data)
-        collected_warnings.extend(f"path {index}: {warning}" for warning in warnings)
-        if not closed or len(points) < 3:
+        candidates.append(
+            ShapeCandidate(
+                points=points,
+                closed=closed,
+                source_index=index,
+                source_kind="path",
+                warnings=warnings,
+            )
+        )
+    return choose_largest_closed_boundary_from_candidates(candidates)
+
+
+def choose_largest_closed_boundary_from_candidates(
+    candidates: list[ShapeCandidate],
+) -> RoomBoundary | None:
+    """Choose the largest closed candidate as the room floor boundary.
+
+    Candidates carry pre-parsed absolute points (transforms already applied),
+    so this works uniformly for path/rect/polygon/polyline shapes.
+    """
+
+    best: RoomBoundary | None = None
+    collected_warnings: list[str] = []
+    for candidate in candidates:
+        index = candidate.source_index
+        collected_warnings.extend(
+            f"shape {index} ({candidate.source_kind}): {warning}"
+            for warning in candidate.warnings
+        )
+        points = _dedupe_closing_point(candidate.points)
+        is_closed = candidate.closed or is_closed_path(candidate.points)
+        if not is_closed or len(points) < 3:
             if points:
-                collected_warnings.append(f"path {index}: path chưa đóng kín, bỏ qua.")
+                collected_warnings.append(
+                    f"shape {index} ({candidate.source_kind}): path chưa đóng kín, bỏ qua."
+                )
             continue
         area = polygon_area(points)
         if area <= EPSILON:
-            collected_warnings.append(f"path {index}: diện tích quá nhỏ, bỏ qua.")
+            collected_warnings.append(
+                f"shape {index} ({candidate.source_kind}): diện tích quá nhỏ, bỏ qua."
+            )
             continue
         boundary = RoomBoundary(
             points=points,
             bbox=calculate_bbox(points),
             area=area,
             source_path_index=index,
-            warnings=list(warnings),
+            warnings=list(candidate.warnings),
         )
         if best is None or boundary.area > best.area:
             best = boundary

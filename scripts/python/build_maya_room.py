@@ -12,7 +12,7 @@ import json
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -44,6 +44,10 @@ class MayaBuildPlan:
     maya_command: list[str]
     version: str
     warnings: list[str]
+    candidate_rooms: int = 0
+    usable_rooms: int = 0
+    unsupported_elements: list[str] = field(default_factory=list)
+    transform_applied: bool = False
 
 
 def repo_root() -> Path:
@@ -308,6 +312,11 @@ def build_plan(args: argparse.Namespace) -> MayaBuildPlan:
     )
     command = build_maya_command(maya_executable, geometry_json, maya_output)
 
+    aggregated_unsupported: list[str] = []
+    for report in reports:
+        aggregated_unsupported.extend(report.unsupported_elements)
+    usable_rooms = sum(1 for report in reports if report.has_usable_boundary)
+
     return MayaBuildPlan(
         room=room,
         style_name=args.style,
@@ -320,6 +329,10 @@ def build_plan(args: argparse.Namespace) -> MayaBuildPlan:
         maya_command=command,
         version=version,
         warnings=warnings,
+        candidate_rooms=len(reports),
+        usable_rooms=usable_rooms,
+        unsupported_elements=list(dict.fromkeys(aggregated_unsupported)),
+        transform_applied=room.transform_applied,
     )
 
 
@@ -344,6 +357,23 @@ def print_plan(plan: MayaBuildPlan) -> None:
     """Print the resolved Maya build plan in Vietnamese."""
 
     print(f"Phòng đã chọn: {plan.room.room_name}")
+    if plan.room.group_path:
+        print(f"Đường dẫn group: {' > '.join(plan.room.group_path)}")
+    print(f"Số phòng/đường bao phát hiện: {plan.candidate_rooms} (dùng được: {plan.usable_rooms})")
+    if plan.room.shape_kinds:
+        kinds = ", ".join(
+            f"{kind}={count}" for kind, count in sorted(plan.room.shape_kinds.items())
+        )
+        print(f"Loại hình trong phòng: {kinds}")
+    print(
+        "Transform: "
+        + ("đã áp dụng vào tọa độ phòng." if plan.transform_applied else "không có/không cần.")
+    )
+    if plan.unsupported_elements:
+        print(
+            "Phần tử SVG chưa hỗ trợ (đã bỏ qua): "
+            + ", ".join(plan.unsupported_elements)
+        )
     print(f"Style: {plan.style_name}")
     print(f"Room preset: {plan.room_preset_name or '(không dùng)'}")
     print(f"Maya scene output: {plan.maya_output}")
@@ -450,7 +480,10 @@ def main(argv: list[str] | None = None) -> int:
     print("TuPhuongVoLo-ArtPipeline - Tạo phòng Maya")
     print_plan(plan)
     if args.dry_run:
-        print("Dry-run: không chạy Maya và không cập nhật manifest.")
+        print(
+            "Dry-run: chỉ kiểm tra kế hoạch, không chạy Maya và không ghi manifest. "
+            "File gốc không bị thay đổi."
+        )
         return 0
 
     try:

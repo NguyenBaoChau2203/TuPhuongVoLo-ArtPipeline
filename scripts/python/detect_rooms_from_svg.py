@@ -13,13 +13,36 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-from clean_svg_paths import configure_stdio, iter_elements, load_svg_tree, local_name
+from clean_svg_paths import (
+    configure_stdio,
+    is_hidden_element,
+    load_svg_tree,
+    local_name,
+)
 from manifest import normalize_asset_name
 from room_geometry import (
     RoomBoundary,
+    ShapeCandidate,
     calculate_bbox,
-    choose_largest_closed_boundary,
+    choose_largest_closed_boundary_from_candidates,
+    is_closed_path,
     parse_svg_path_points,
+)
+from svg_shapes import (
+    CONTAINER_TAGS,
+    SKIP_SUBTREE_TAGS,
+    SUPPORTED_SHAPES,
+    UNSUPPORTED_DRAWABLE,
+    Matrix,
+    Point2D,
+    declarations_hide_element,
+    is_identity,
+    matrix_multiply,
+    parse_css_text,
+    parse_transform,
+    points_attr_to_points,
+    rect_to_points,
+    transform_points,
 )
 
 INKSCAPE_LABEL_ATTR = "{http://www.inkscape.org/namespaces/inkscape}label"
@@ -36,6 +59,10 @@ class RoomReport:
     bbox: tuple[float, float, float, float] | None
     warnings: list[str] = field(default_factory=list)
     boundary: RoomBoundary | None = None
+    shape_kinds: dict[str, int] = field(default_factory=dict)
+    unsupported_elements: list[str] = field(default_factory=list)
+    transform_applied: bool = False
+    group_path: list[str] = field(default_factory=list)
 
     @property
     def has_usable_boundary(self) -> bool:
@@ -56,11 +83,19 @@ class RoomReport:
 
 
 def normalize_room_name(label: str) -> str:
-    """Normalize a group/layer label into the shared asset-name convention."""
+    """Normalize a group/layer label into the shared asset-name convention.
+
+    Only structural scaffolding prefixes (``room_``, ``room-``, ``room ``,
+    ``layer_``) are stripped. The Vietnamese word ``phong`` ("phòng"/room) is
+    kept because it is meaningful content: a real label like ``Phòng Ngủ``
+    normalizes to ``phong_ngu``, which the naming convention treats as the final
+    room name. Stripping it would make the function non-idempotent and break the
+    round-trip between detection output and ``--room`` selection.
+    """
 
     clean = label.strip()
     lowered = clean.lower()
-    for prefix in ("room_", "room-", "room ", "phong_", "phong-", "layer_"):
+    for prefix in ("room_", "room-", "room ", "layer_"):
         if lowered.startswith(prefix):
             clean = clean[len(prefix) :]
             break
@@ -78,74 +113,192 @@ def _element_label(element: object) -> str:
     ).strip()
 
 
-def _path_data_under(element: object) -> list[str]:
-    path_data: list[str] = []
-    for child in iter_elements(element):
-        if local_name(child.tag) == "path":  # type: ignore[attr-defined]
-            data = (child.get("d") or "").strip()  # type: ignore[attr-defined]
-            if data:
-                path_data.append(data)
-    return path_data
+def _element_classes(element: object) -> list[str]:
+    raw = element.get("class") or ""  # type: ignore[attr-defined]
+    return [token for token in raw.split() if token]
 
 
-def _closed_path_count(path_data_items: list[str]) -> int:
-    count = 0
-    for path_data in path_data_items:
-        points, closed, _ = parse_svg_path_points(path_data)
-        if closed and len(points) >= 3:
-            count += 1
-    return count
+def _element_hidden(element: object, css_rules: dict[str, dict[str, str]]) -> bool:
+    """Return whether an element is hidden via attribute, style, or CSS class."""
+
+    if is_hidden_element(element):
+        return True
+    element_id = element.get("id")  # type: ignore[attr-defined]
+    if element_id and declarations_hide_element(css_rules.get(f"#{element_id}", {})):
+        return True
+    for class_name in _element_classes(element):
+        if declarations_hide_element(css_rules.get(f".{class_name}", {})):
+            return True
+    return False
 
 
-def _make_room_report(label: str, path_data_items: list[str]) -> RoomReport:
-    room_name = normalize_room_name(label)
+def _shape_points(
+    element: object,
+    matrix: Matrix,
+) -> tuple[list[Point2D], bool, str, list[str]]:
+    """Extract absolute, transform-applied points for one supported shape."""
+
+    tag = local_name(element.tag).lower()  # type: ignore[attr-defined]
     warnings: list[str] = []
-    boundary = choose_largest_closed_boundary(path_data_items)
-    closed_count = _closed_path_count(path_data_items)
-    bbox = boundary.bbox if boundary else None
+    if tag == "path":
+        points, closed, warnings = parse_svg_path_points(element.get("d") or "")  # type: ignore[attr-defined]
+    elif tag == "rect":
+        points, warnings = rect_to_points(element)
+        closed = bool(points)
+    elif tag == "polygon":
+        points = points_attr_to_points(element.get("points"))  # type: ignore[attr-defined]
+        closed = len(points) >= 3
+    elif tag == "polyline":
+        points = points_attr_to_points(element.get("points"))  # type: ignore[attr-defined]
+        closed = is_closed_path(points)
+    else:  # pragma: no cover - guarded by SUPPORTED_SHAPES upstream
+        return [], False, tag, []
+    return transform_points(matrix, points), closed, tag, warnings
 
-    if not path_data_items:
-        warnings.append("Không tìm thấy path nào trong group/layer này.")
-    if path_data_items and closed_count == 0:
-        warnings.append("Không có path đóng kín để làm boundary phòng.")
-        point_sets = [
-            points
-            for path_data in path_data_items
-            for points, _closed, _warnings in [parse_svg_path_points(path_data)]
-            if points
-        ]
-        if point_sets:
-            all_points = [point for points in point_sets for point in points]
+
+@dataclass
+class _RoomBucket:
+    """Mutable accumulator for one named room (or the top-level fallback)."""
+
+    label: str
+    group_path: list[str]
+    candidates: list[ShapeCandidate] = field(default_factory=list)
+    unsupported: list[str] = field(default_factory=list)
+    transform_warnings: list[str] = field(default_factory=list)
+    transform_applied: bool = False
+
+
+def _collect_shapes(
+    element: object,
+    matrix: Matrix,
+    css_rules: dict[str, dict[str, str]],
+    current: _RoomBucket,
+    buckets: "list[_RoomBucket]",
+    group_path: list[str],
+) -> None:
+    """Recursively traverse a container, attributing shapes to nearest named room."""
+
+    for child in list(element):  # type: ignore[call-overload]
+        tag_raw = getattr(child, "tag", None)
+        if not isinstance(tag_raw, str):
+            continue
+        tag = local_name(tag_raw).lower()
+        if tag in SKIP_SUBTREE_TAGS:
+            continue
+        if _element_hidden(child, css_rules):
+            continue
+
+        child_matrix, transform_warnings = matrix, []
+        own_transform = child.get("transform")  # type: ignore[attr-defined]
+        if own_transform:
+            own_matrix, transform_warnings = parse_transform(own_transform)
+            child_matrix = matrix_multiply(matrix, own_matrix)
+            current.transform_warnings.extend(transform_warnings)
+
+        if tag in CONTAINER_TAGS:
+            label = _element_label(child)
+            if label:
+                bucket = _RoomBucket(label=label, group_path=[*group_path, label])
+                buckets.append(bucket)
+                _collect_shapes(child, child_matrix, css_rules, bucket, buckets, bucket.group_path)
+            else:
+                _collect_shapes(child, child_matrix, css_rules, current, buckets, group_path)
+            continue
+
+        if tag in SUPPORTED_SHAPES:
+            points, closed, kind, warnings = _shape_points(child, child_matrix)
+            if not is_identity(child_matrix):
+                current.transform_applied = True
+            current.candidates.append(
+                ShapeCandidate(
+                    points=points,
+                    closed=closed,
+                    source_index=len(current.candidates),
+                    source_kind=kind,
+                    warnings=warnings,
+                )
+            )
+            continue
+
+        if tag in UNSUPPORTED_DRAWABLE:
+            element_id = child.get("id") or ""  # type: ignore[attr-defined]
+            label = f"<{tag}>" + (f" id={element_id}" if element_id else "")
+            current.unsupported.append(label)
+            continue
+
+        # Unknown/decorative element: warn but keep going.
+        current.unsupported.append(f"<{tag}>")
+
+
+def _make_room_report_from_bucket(label: str, bucket: _RoomBucket) -> RoomReport:
+    room_name = normalize_room_name(label)
+    warnings: list[str] = list(bucket.transform_warnings)
+    boundary = choose_largest_closed_boundary_from_candidates(bucket.candidates)
+    closed_count = sum(
+        1
+        for candidate in bucket.candidates
+        if (candidate.closed or is_closed_path(candidate.points)) and len(candidate.points) >= 3
+    )
+    shape_kinds: dict[str, int] = {}
+    for candidate in bucket.candidates:
+        shape_kinds[candidate.source_kind] = shape_kinds.get(candidate.source_kind, 0) + 1
+
+    bbox = boundary.bbox if boundary else None
+    if not bucket.candidates:
+        warnings.append("Không tìm thấy hình (path/rect/polygon/polyline) trong group/layer này.")
+    if bucket.candidates and closed_count == 0:
+        warnings.append(
+            "Không có path đóng kín để làm boundary phòng. "
+            "Hãy kiểm tra path/rect/polygon có khép kín không."
+        )
+        all_points = [point for candidate in bucket.candidates for point in candidate.points]
+        if all_points:
             bbox = calculate_bbox(all_points)
+    if bucket.unsupported:
+        unique_unsupported = list(dict.fromkeys(bucket.unsupported))
+        warnings.append(
+            "SVG có phần tử chưa hỗ trợ, pipeline đã bỏ qua: "
+            + ", ".join(unique_unsupported)
+            + "."
+        )
     if boundary and boundary.warnings:
         warnings.extend(boundary.warnings)
 
     return RoomReport(
         room_name=room_name,
         original_label=label,
-        path_count=len(path_data_items),
+        path_count=len(bucket.candidates),
         closed_path_count=closed_count,
         bbox=bbox,
         warnings=list(dict.fromkeys(warnings)),
         boundary=boundary,
+        shape_kinds=shape_kinds,
+        unsupported_elements=list(dict.fromkeys(bucket.unsupported)),
+        transform_applied=bucket.transform_applied,
+        group_path=list(bucket.group_path),
     )
 
 
-def _candidate_groups(root: object) -> list[object]:
-    groups: list[object] = []
-    for element in iter_elements(root):
-        if local_name(element.tag) != "g":  # type: ignore[attr-defined]
-            continue
-        label = _element_label(element)
-        if not label:
-            continue
-        if _path_data_under(element):
-            groups.append(element)
-    return groups
+def _collect_css_rules(root: object) -> dict[str, dict[str, str]]:
+    rules: dict[str, dict[str, str]] = {}
+    for element in root.iter():  # type: ignore[attr-defined]
+        tag = getattr(element, "tag", "")
+        if isinstance(tag, str) and local_name(tag).lower() == "style":
+            css_text = "".join(element.itertext()) if hasattr(element, "itertext") else (
+                getattr(element, "text", "") or ""
+            )
+            for selector, declarations in parse_css_text(css_text).items():
+                rules.setdefault(selector, {}).update(declarations)
+    return rules
 
 
 def detect_rooms(svg_path: Path) -> list[RoomReport]:
-    """Detect named room groups/layers from a clean SVG file."""
+    """Detect named room groups/layers from a clean SVG file.
+
+    Handles nested groups, parent transform accumulation, multiple shape types
+    (path/rect/polygon/polyline), CSS classes for hidden elements, and warns on
+    unsupported elements instead of crashing.
+    """
 
     svg_path = svg_path.resolve()
     if not svg_path.exists():
@@ -161,20 +314,19 @@ def detect_rooms(svg_path: Path) -> list[RoomReport]:
     if local_name(root.tag).lower() != "svg":  # type: ignore[attr-defined]
         raise ValueError("File không phải SVG hợp lệ.")
 
-    reports: list[RoomReport] = []
-    groups = _candidate_groups(root)
-    for group in groups:
-        label = _element_label(group)
-        reports.append(_make_room_report(label, _path_data_under(group)))
+    css_rules = _collect_css_rules(root)
+    root_matrix, _ = parse_transform(root.get("transform"))  # type: ignore[attr-defined]
+    top_level = _RoomBucket(label=svg_path.stem, group_path=[])
+    buckets: list[_RoomBucket] = []
+    _collect_shapes(root, root_matrix, css_rules, top_level, buckets, [])
 
-    if not reports:
-        top_level_paths = [
-            (element.get("d") or "").strip()  # type: ignore[attr-defined]
-            for element in iter_elements(root)
-            if local_name(element.tag) == "path" and (element.get("d") or "").strip()  # type: ignore[attr-defined]
-        ]
-        if top_level_paths:
-            reports.append(_make_room_report(svg_path.stem, top_level_paths))
+    named_with_shapes = [bucket for bucket in buckets if bucket.candidates]
+    reports = [
+        _make_room_report_from_bucket(bucket.label, bucket) for bucket in named_with_shapes
+    ]
+
+    if not reports and top_level.candidates:
+        reports.append(_make_room_report_from_bucket(svg_path.stem, top_level))
 
     return reports
 
@@ -193,10 +345,19 @@ def print_room_report(report: RoomReport) -> None:
     status = "OK" if report.has_usable_boundary else "CHƯA DÙNG ĐƯỢC"
     print(f"- {report.room_name} ({status})")
     print(f"  Nhãn gốc: {report.original_label}")
-    print(f"  Số path: {report.path_count}; path đóng kín: {report.closed_path_count}")
+    if report.group_path:
+        print(f"  Đường dẫn group: {' > '.join(report.group_path)}")
+    print(f"  Số hình: {report.path_count}; đường bao đóng kín: {report.closed_path_count}")
+    if report.shape_kinds:
+        kinds = ", ".join(f"{kind}={count}" for kind, count in sorted(report.shape_kinds.items()))
+        print(f"  Loại hình: {kinds}")
+    if report.transform_applied:
+        print("  Transform: đã áp dụng transform từ group/shape vào tọa độ.")
     if report.bbox:
         min_x, min_y, max_x, max_y = report.bbox
         print(f"  BBox: ({min_x:.3f}, {min_y:.3f}) - ({max_x:.3f}, {max_y:.3f})")
+    if report.unsupported_elements:
+        print(f"  Phần tử bỏ qua: {', '.join(report.unsupported_elements)}")
     for warning in report.warnings:
         print(f"  Cảnh báo: {warning}")
 

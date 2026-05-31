@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic Illustrator-style export: transforms (translate+scale, matrix)
+     applied to rect / polygon / polyline boundaries. Hand-written, safe. -->
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="20cm" height="15cm" viewBox="0 0 200 150">
+  <g id="room_phong_ngu" data-name="Phòng Ngủ" transform="translate(10 10) scale(2)">
+    <rect x="0" y="0" width="40" height="30" fill="none" stroke="#000"/>
+  </g>
+  <g id="room_ban_cong" data-name="Ban Công" transform="matrix(1 0 0 1 120 20)">
+    <polygon points="0,0 50,0 50,40 25,55 0,40" fill="none" stroke="#000"/>
+  </g>
+  <g id="room_hanh_lang" data-name="Hành Lang">
+    <polyline points="10,100 90,100 90,130 10,130 10,100" fill="none" stroke="#000"/>
+  </g>
+</svg>
