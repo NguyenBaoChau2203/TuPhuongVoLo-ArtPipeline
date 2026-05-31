@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic Illustrator-style export: nested layers/groups with transforms.
+     Hand-written, safe, small. Not a real artist asset. -->
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="400px" height="300px" viewBox="0 0 400 300">
+  <g id="Layer_1" data-name="Layer 1" transform="translate(50 30)">
+    <g id="room_kho" data-name="Phòng Kho" transform="translate(10 10)">
+      <path d="M0 0 L120 0 L120 80 L0 80 Z" fill="none" stroke="#1a1a1a"/>
+    </g>
+    <g id="g42" data-name="Sảnh Chính">
+      <path d="M200 0 H320 V90 H200 Z" fill="none" stroke="#1a1a1a"/>
+    </g>
+  </g>
+</svg>

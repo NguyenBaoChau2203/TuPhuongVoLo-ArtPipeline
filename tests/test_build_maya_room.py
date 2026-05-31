@@ -256,3 +256,82 @@ def test_output_naming_follows_convention(tmp_path: Path, monkeypatch) -> None:
 
     assert plan.maya_output.parent.name == "maya"
     assert plan.maya_output.name == "tu_phuong_vo_lo_kho_main_maya_v001.ma"
+
+
+FIXTURE_DIR = Path(__file__).parent / "in"
+
+
+def test_dry_run_reports_candidate_and_usable_room_counts(tmp_path: Path, monkeypatch) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg = write_svg(tmp_path / "floorplan.svg")
+    args = builder.build_parser().parse_args(
+        ["--input", str(svg), "--room", "kho", "--output-dir", str(tmp_path / "o"), "--dry-run"]
+    )
+
+    plan = builder.build_plan(args)
+
+    assert plan.candidate_rooms == 2
+    assert plan.usable_rooms == 2
+
+
+def test_dry_run_with_illustrator_transform_fixture(tmp_path: Path, monkeypatch) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(FIXTURE_DIR / "illustrator_transforms_shapes.svg"),
+            "--room",
+            "phong_ngu",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+
+    plan = builder.build_plan(args)
+
+    assert plan.room.room_name == "phong_ngu"
+    assert plan.transform_applied is True
+    assert "rect" in plan.room.shape_kinds
+
+
+def test_dry_run_reports_unsupported_elements(tmp_path: Path, monkeypatch) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(FIXTURE_DIR / "illustrator_style_class.svg"),
+            "--room",
+            "bep",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+
+    plan = builder.build_plan(args)
+
+    assert any("circle" in item for item in plan.unsupported_elements)
+
+
+def test_dry_run_on_illustrator_fixture_leaves_manifest_untouched(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    manifest_path = isolated_manifest(monkeypatch, tmp_path)
+
+    exit_code = builder.main(
+        [
+            "--input",
+            str(FIXTURE_DIR / "illustrator_nested_groups.svg"),
+            "--room",
+            "phong_kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert not manifest_path.exists()
+    assert "không ghi manifest" in captured.out
