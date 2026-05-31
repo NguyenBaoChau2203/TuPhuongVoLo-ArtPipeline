@@ -27,6 +27,11 @@ DEFAULT_STYLE = "line_art_green_floor"
 DEFAULT_VARIANT = "main"
 SVG_TO_MAYA_SCALE = 0.01
 MAYA_STAGE = "maya"
+# PNG isometric preview render (Feature 005.2). The naming convention reserves
+# the "preview" stage for preview PNG renders mapped to outputs/preview/.
+RENDER_STAGE = "preview"
+DEFAULT_RENDER_WIDTH = 1280
+DEFAULT_RENDER_HEIGHT = 720
 
 
 @dataclass(frozen=True)
@@ -48,6 +53,11 @@ class MayaBuildPlan:
     usable_rooms: int = 0
     unsupported_elements: list[str] = field(default_factory=list)
     transform_applied: bool = False
+    render_preview: bool = False
+    render_output: Path | None = None
+    render_width: int = DEFAULT_RENDER_WIDTH
+    render_height: int = DEFAULT_RENDER_HEIGHT
+    render_command: list[str] = field(default_factory=list)
 
 
 def repo_root() -> Path:
@@ -143,6 +153,14 @@ def resolve_output_dirs(output_dir: Path, pipeline_config: dict[str, Any]) -> tu
     return maya_dir, temp_dir
 
 
+def resolve_render_dir(output_dir: Path, pipeline_config: dict[str, Any]) -> Path:
+    """Resolve the PNG preview render output directory."""
+
+    paths = pipeline_config.get("paths", {}) if isinstance(pipeline_config, dict) else {}
+    root = output_dir.resolve()
+    return root / Path(str(paths.get("output_preview", "outputs/preview/"))).name
+
+
 def output_filename(asset_name: str, stage: str, version: str, extension: str) -> str:
     """Generate one convention-compliant output filename."""
 
@@ -230,6 +248,30 @@ def build_maya_command(maya_executable: str, geometry_json: Path, maya_output: P
     ]
 
 
+def build_render_command(
+    maya_executable: str,
+    maya_output: Path,
+    render_output: Path,
+    render_width: int,
+    render_height: int,
+) -> list[str]:
+    """Build the mayapy subprocess command for the isometric PNG preview."""
+
+    script_path = repo_root() / "scripts" / "maya" / "render_maya_room_preview.py"
+    return [
+        maya_executable,
+        str(script_path),
+        "--scene",
+        str(maya_output),
+        "--render-output",
+        str(render_output),
+        "--width",
+        str(render_width),
+        "--height",
+        str(render_height),
+    ]
+
+
 def geometry_payload(
     room: RoomReport,
     style_name: str,
@@ -312,6 +354,32 @@ def build_plan(args: argparse.Namespace) -> MayaBuildPlan:
     )
     command = build_maya_command(maya_executable, geometry_json, maya_output)
 
+    render_preview = bool(getattr(args, "render_preview", False))
+    render_width = int(getattr(args, "render_width", DEFAULT_RENDER_WIDTH) or DEFAULT_RENDER_WIDTH)
+    render_height = int(
+        getattr(args, "render_height", DEFAULT_RENDER_HEIGHT) or DEFAULT_RENDER_HEIGHT
+    )
+    render_output: Path | None = None
+    render_command: list[str] = []
+    if render_preview:
+        if render_width <= 0 or render_height <= 0:
+            raise ValueError("Kích thước render phải là số dương.")
+        explicit_render = getattr(args, "render_output", None)
+        if explicit_render:
+            render_output = Path(explicit_render).resolve()
+        else:
+            render_dir = resolve_render_dir(output_dir, pipeline_config)
+            render_output = render_dir / output_filename(
+                room.room_name, RENDER_STAGE, version, ".png"
+            )
+        render_command = build_render_command(
+            maya_executable,
+            maya_output,
+            render_output,
+            render_width,
+            render_height,
+        )
+
     aggregated_unsupported: list[str] = []
     for report in reports:
         aggregated_unsupported.extend(report.unsupported_elements)
@@ -333,6 +401,11 @@ def build_plan(args: argparse.Namespace) -> MayaBuildPlan:
         usable_rooms=usable_rooms,
         unsupported_elements=list(dict.fromkeys(aggregated_unsupported)),
         transform_applied=room.transform_applied,
+        render_preview=render_preview,
+        render_output=render_output,
+        render_width=render_width,
+        render_height=render_height,
+        render_command=render_command,
     )
 
 
@@ -378,8 +451,20 @@ def print_plan(plan: MayaBuildPlan) -> None:
     print(f"Room preset: {plan.room_preset_name or '(không dùng)'}")
     print(f"Maya scene output: {plan.maya_output}")
     print(f"Geometry JSON: {plan.geometry_json}")
+    if plan.render_preview:
+        print(f"Render PNG preview: {plan.render_output}")
+        print(f"Kích thước render: {plan.render_width}x{plan.render_height}")
+    else:
+        print("Render PNG preview: (tắt) — dùng --render-preview để bật.")
     print("Maya command:")
     print(" ".join(f'"{part}"' if " " in part else part for part in plan.maya_command))
+    if plan.render_preview and plan.render_command:
+        print("Maya render command:")
+        print(
+            " ".join(
+                f'"{part}"' if " " in part else part for part in plan.render_command
+            )
+        )
     for warning in plan.warnings:
         print(f"Cảnh báo: {warning}")
 
@@ -399,6 +484,77 @@ def append_output_manifest_entries(plan: MayaBuildPlan) -> None:
         version=plan.version,
         root=repo_root(),
     )
+
+
+def append_render_manifest_entry(plan: MayaBuildPlan) -> None:
+    """Append a manifest entry for the verified PNG preview render.
+
+    Called only after the render PNG exists on disk. The "preview" stage is part
+    of the naming convention, so the manifest safely tracks render outputs the
+    same way it tracks the .ma scene.
+    """
+
+    if plan.render_output is None:
+        return
+    manifest_path = asset_manifest.resolve_manifest_path(root=repo_root())
+    asset_manifest.add_manifest_entry(
+        manifest_path=manifest_path,
+        source_file=plan.input_path,
+        output_path=plan.render_output,
+        stage=RENDER_STAGE,
+        asset_name=plan.room.room_name,
+        variant=DEFAULT_VARIANT,
+        pipeline_step=PIPELINE_STEP,
+        version=plan.version,
+        root=repo_root(),
+    )
+
+
+def run_render(plan: MayaBuildPlan, verbose: bool = False) -> int:
+    """Render the isometric PNG preview from the saved .ma scene.
+
+    Requires the .ma scene to already exist. The render command opens the scene
+    read-only (the .ma stays editable), produces the PNG, and the PNG is then
+    verified before a manifest entry is appended.
+    """
+
+    if plan.render_output is None or not plan.render_command:
+        return 0
+    if not plan.maya_output.exists():
+        print(
+            f"ERR_OUTPUT_MISSING: Cần file .ma trước khi render: {plan.maya_output}",
+            file=sys.stderr,
+        )
+        return 1
+    plan.render_output.parent.mkdir(parents=True, exist_ok=True)
+    result = subprocess.run(
+        plan.render_command,
+        cwd=repo_root(),
+        text=True,
+        capture_output=not verbose,
+        check=False,
+    )
+    if not verbose:
+        if result.stdout:
+            print(result.stdout)
+        if result.stderr:
+            print(result.stderr, file=sys.stderr)
+    if result.returncode != 0:
+        print(
+            f"ERR_RENDER_FAILED: Maya render trả về mã lỗi {result.returncode}.",
+            file=sys.stderr,
+        )
+        return result.returncode
+    if not plan.render_output.exists():
+        print(
+            "ERR_RENDER_MISSING: Maya render chạy xong nhưng thiếu PNG: "
+            f"{plan.render_output}",
+            file=sys.stderr,
+        )
+        return 1
+    append_render_manifest_entry(plan)
+    print(f"Hoàn tất render preview. Đã tạo PNG và cập nhật manifest: {plan.render_output}")
+    return 0
 
 
 def run_maya(plan: MayaBuildPlan, verbose: bool = False) -> int:
@@ -429,6 +585,8 @@ def run_maya(plan: MayaBuildPlan, verbose: bool = False) -> int:
         return 1
     append_output_manifest_entries(plan)
     print("Hoàn tất. Đã tạo .ma và cập nhật manifest.")
+    if plan.render_preview:
+        return run_render(plan, verbose=verbose)
     return 0
 
 
@@ -450,6 +608,28 @@ def build_parser() -> argparse.ArgumentParser:
         "--maya-path",
         type=Path,
         help="Đường dẫn mayapy.exe tùy chọn.",
+    )
+    parser.add_argument(
+        "--render-preview",
+        action="store_true",
+        help="Render thêm ảnh PNG isometric preview từ scene .ma (cần mayapy).",
+    )
+    parser.add_argument(
+        "--render-output",
+        type=Path,
+        help="Đường dẫn PNG preview tùy chọn; mặc định theo quy ước tên file.",
+    )
+    parser.add_argument(
+        "--render-width",
+        type=int,
+        default=DEFAULT_RENDER_WIDTH,
+        help=f"Chiều rộng render (mặc định {DEFAULT_RENDER_WIDTH}).",
+    )
+    parser.add_argument(
+        "--render-height",
+        type=int,
+        default=DEFAULT_RENDER_HEIGHT,
+        help=f"Chiều cao render (mặc định {DEFAULT_RENDER_HEIGHT}).",
     )
     parser.add_argument(
         "--dry-run",
@@ -484,6 +664,11 @@ def main(argv: list[str] | None = None) -> int:
             "Dry-run: chỉ kiểm tra kế hoạch, không chạy Maya và không ghi manifest. "
             "File gốc không bị thay đổi."
         )
+        if plan.render_preview:
+            print(
+                "Dry-run render: chỉ in đường dẫn/kích thước PNG, "
+                "không render và không tạo file PNG."
+            )
         return 0
 
     try:

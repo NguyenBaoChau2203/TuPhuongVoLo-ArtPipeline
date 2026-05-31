@@ -294,3 +294,72 @@ def test_planned_maya_outputs_follow_naming_convention(tmp_path: Path, monkeypat
 
     assert job.planned_maya_output is not None
     assert job.planned_maya_output.name == "tu_phuong_vo_lo_kho_main_maya_v001.ma"
+
+
+def test_dry_run_without_render_has_no_render_output(tmp_path: Path, monkeypatch) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg = write_svg(tmp_path / "one.svg")
+
+    args = parser_args(
+        [
+            "--input-file",
+            str(svg),
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+    report = batch.run_batch(args)
+
+    assert report.jobs[0].planned_render_output is None
+
+
+def test_dry_run_render_preview_plans_png_path(tmp_path: Path, monkeypatch) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg = write_svg(tmp_path / "one.svg")
+
+    args = parser_args(
+        [
+            "--input-file",
+            str(svg),
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--render-preview",
+            "--dry-run",
+        ]
+    )
+    report = batch.run_batch(args)
+    job = report.jobs[0]
+
+    assert job.planned_render_output is not None
+    assert job.planned_render_output.parent.name == "preview"
+    assert job.planned_render_output.name == "tu_phuong_vo_lo_kho_main_preview_v001.png"
+
+
+def test_dry_run_render_preview_reports_planned_png_and_no_manifest(
+    tmp_path: Path, monkeypatch
+) -> None:
+    manifest_path = isolated_manifest(monkeypatch, tmp_path)
+    svg = write_svg(tmp_path / "one.svg")
+    report_path = tmp_path / "reports" / "batch.json"
+
+    exit_code = batch.main(
+        [
+            "--input-file",
+            str(svg),
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--render-preview",
+            "--dry-run",
+            "--json-report",
+            str(report_path),
+        ]
+    )
+
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+    assert exit_code == 0
+    assert payload["jobs"][0]["planned_render_output"].endswith(
+        "tu_phuong_vo_lo_kho_main_preview_v001.png"
+    )
+    assert "--render-preview" in payload["jobs"][0]["feature005_command"]
+    assert not manifest_path.exists()
