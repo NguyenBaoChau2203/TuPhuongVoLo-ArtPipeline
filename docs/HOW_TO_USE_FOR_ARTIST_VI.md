@@ -156,4 +156,4 @@ Các file sinh ra sau đây không nên commit trừ khi developer cố ý cần
 
 ## Hiện tại
 
-Feature 002 đã có xuất/làm sạch/kiểm tra SVG. Feature 003 đã có naming và manifest. Feature 001/004 là Blender MVP và batch dry-run/report cũ. Feature 005 bổ sung Maya Bridge làm backend DCC production chính; actual Maya execution cần kiểm chứng trên máy có Autodesk Maya và mayapy.exe.
+Feature 002 đã có xuất/làm sạch/kiểm tra SVG. Feature 003 đã có naming và manifest. Feature 001/004 là Blender MVP và batch dry-run/report cũ. Feature 005 bổ sung Maya Bridge làm backend DCC production chính; quy trình launcher 005.4 đã được kiểm chứng trên máy DCC có Autodesk Maya 2024 và `mayapy.exe`.

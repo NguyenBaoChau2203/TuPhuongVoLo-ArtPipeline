@@ -2,6 +2,18 @@
 
 > Feature 006 — Future Phase | **Tier C: Advanced Agentic**
 
+## Current Sequencing After 005.4R
+
+Feature 006 remains deferred. After the verified Maya artist workflow checkpoint,
+the recommended path is:
+
+1. **007A** - Friendly desktop app MVP packaged as `.exe`
+2. **005.5A** - Optional AI polish evaluation/prototype only
+3. **Feature 006** - Natural-language control after the pipeline/app workflow is stable
+
+Do not integrate external AI APIs or production agent memory before API cost,
+privacy, secrets handling, and opt-in policy are ready.
+
 ## Vision
 
 Enable the artist to control the art pipeline using natural language commands instead of memorizing script names and arguments.

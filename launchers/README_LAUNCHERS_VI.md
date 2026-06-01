@@ -39,9 +39,9 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 1. Nhấp đúp `02_clean_svg.bat`
 2. File SVG sạch sẽ xuất hiện trong `assets/2d/svg_clean/`
 
-### Bước 4: Tạo phòng isometric
+### Bước 4: Tạo phòng isometric bằng Blender cũ/fallback
 1. Nhấp đúp `03_build_isometric_room.bat`
-2. Ảnh preview PNG + file Blender sẽ xuất hiện trong `outputs/`
+2. Ảnh preview PNG + file Blender sẽ xuất hiện trong `outputs/` nếu dùng backend Blender cũ
 
 ### Bước 5: Batch render nhiều phòng / nhiều SVG
 1. Nhấp đúp `04_batch_isometric_render.bat`
@@ -71,6 +71,6 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 
 ## Lưu ý
 
-⚠️ **Hiện tại**: Batch launcher chạy dry-run mặc định để an toàn khi máy chưa có Blender. Render thật cần Blender 4.x và nên do developer chạy/kiểm chứng.
+⚠️ **Blender cũ/fallback**: Batch launcher Blender chạy dry-run mặc định để an toàn khi máy chưa có Blender. Render thật cần Blender 4.x và nên do developer chạy/kiểm chứng.
 
-Với Maya launcher, dry-run cũng là mặc định. Chạy thật cần Autodesk Maya `mayapy.exe`; file sinh ra nằm trong `outputs/maya/`, ảnh preview trong `outputs/preview/`, file tạm trong `outputs/tmp/`, và report trong `outputs/reports/`.
+Với Maya launcher, dry-run cũng là mặc định. Chạy thật cần Autodesk Maya `mayapy.exe`; quy trình launcher Maya 005.4 đã được kiểm chứng trên máy DCC. File sinh ra nằm trong `outputs/maya/`, ảnh preview trong `outputs/preview/`, file tạm trong `outputs/tmp/`, và report trong `outputs/reports/`.
