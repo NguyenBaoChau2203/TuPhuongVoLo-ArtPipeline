@@ -99,6 +99,12 @@ là nguồn chính để polish cuối cùng. Phase này không sửa SVG, geome
 scene generation, render logic, manifest, source assets, hay Feature 006
 natural-language control.
 
+Checkpoint kiểm chứng 007G-R nằm ở:
+
+```text
+docs/verification/007G_desktop_app_ai_preview_verified.md
+```
+
 ## Cách chạy từ source
 
 ```powershell
