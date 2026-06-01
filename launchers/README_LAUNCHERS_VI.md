@@ -22,6 +22,7 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 | `07_build_maya_room.bat` | Dựng một phòng Maya từ SVG sạch | Chạy dry-run trước, sau đó tạo `.ma` nếu cần |
 | `08_batch_maya_room.bat` | Batch Maya nhiều SVG/phòng | Tạo report dry-run hoặc chạy nhiều job Maya |
 | `09_artist_desktop_app.bat` | Mở desktop app Maya MVP | Cách thân thiện nhất để chạy một SVG/một phòng |
+| `10_package_artist_app.bat` | Dry-run lệnh package desktop app | Dành cho developer muốn tạo `.exe` local bằng PyInstaller |
 
 ---
 
@@ -60,6 +61,12 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 4. Khi dry-run đúng, bỏ dry-run và cung cấp `mayapy.exe` để tạo `.ma` thật.
 5. Nếu muốn dùng CLI launcher cũ, chạy `07_build_maya_room.bat` cho một file SVG/phòng.
 6. Chạy `08_batch_maya_room.bat` nếu cần xử lý nhiều SVG hoặc nhiều phòng. Report JSON mặc định nằm trong `outputs/reports/batch_maya_report.json`.
+
+### Bước 8: Package desktop app thành .exe (developer-only)
+1. Chạy `10_package_artist_app.bat` để in lệnh package dry-run.
+2. PyInstaller là công cụ dev-only; launcher này không tự cài PyInstaller.
+3. Nếu máy dev đã cài PyInstaller, chạy `python scripts/python/package_artist_app.py --build`.
+4. File `.exe` dự kiến nằm trong `dist/TuPhuongVoLo_MayaArtistApp.exe` và không được commit.
 
 ---
 

@@ -44,9 +44,36 @@ launchers/09_artist_desktop_app.bat
 - `outputs/reports/`
 - Thư mục repo
 
-## Đóng gói .exe
+## Đóng gói .exe cho máy dev
 
-Phase 007A ưu tiên app local chạy được từ source và launcher. Đóng gói `.exe`
-có thể làm ở bước tiếp theo bằng PyInstaller, nhưng hiện chưa thêm dependency
-PyInstaller và chưa commit `build/`, `dist/`, file `.spec`, hay `.exe`.
+Phase 007B thêm workflow đóng gói local bằng PyInstaller. PyInstaller là công cụ
+dev-only, không phải dependency runtime của artist pipeline và không được cài tự
+động.
 
+Chạy dry-run để xem lệnh package:
+
+```powershell
+python scripts/python/package_artist_app.py --dry-run
+```
+
+Hoặc dùng launcher:
+
+```powershell
+launchers/10_package_artist_app.bat
+```
+
+Nếu máy dev đã cài PyInstaller, có thể build thật:
+
+```powershell
+python scripts/python/package_artist_app.py --build
+```
+
+Output dự kiến:
+
+```text
+dist/TuPhuongVoLo_MayaArtistApp.exe
+```
+
+Lưu ý: `.exe` MVP này vẫn là wrapper local cho repo/pipeline hiện có. Nó không
+bundle toàn bộ repo, không bundle Maya, và không bundle `mayapy.exe`. Không commit
+`build/`, `dist/`, file `.spec` sinh tự động, hoặc file `.exe`.

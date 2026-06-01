@@ -53,6 +53,26 @@ Desktop app chỉ bọc pipeline CLI đã kiểm chứng. App không sửa SVG g
 thay thế Maya, và output sinh ra vẫn nằm trong `outputs/maya/`,
 `outputs/preview/`, `outputs/reports/`.
 
+### Đóng gói desktop app thành .exe
+
+Developer có thể tạo `.exe` local bằng PyInstaller qua launcher:
+
+```powershell
+launchers/10_package_artist_app.bat
+```
+
+Launcher này mặc định chỉ dry-run và in lệnh package. Nếu máy dev đã cài
+PyInstaller, có thể build thật bằng:
+
+```powershell
+python scripts/python/package_artist_app.py --build
+```
+
+PyInstaller là công cụ dev-only, không phải dependency runtime của pipeline. File
+`.exe` sinh ra nằm trong `dist/TuPhuongVoLo_MayaArtistApp.exe`, vẫn cần repo và
+pipeline local để chạy, và không được commit cùng `build/`, `dist/`, hoặc file
+`.spec` sinh tự động.
+
 ### Cách cũ: launcher CLI một phòng
 
 1. Nhấp đúp `launchers/07_build_maya_room.bat`.
