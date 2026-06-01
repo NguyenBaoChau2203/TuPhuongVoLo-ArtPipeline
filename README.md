@@ -33,7 +33,8 @@ clean SVG -> Blender MVP isometric draft / batch dry-run
 | 3 | Floorplan to Isometric Room | `specs/001-floorplan-to-isometric-room/` | MVP done; Blender optional/fallback |
 | 4 | Batch Isometric Render | `specs/004-batch-isometric-render/` | MVP dry-run/report for previous backend |
 | 5 | Maya Bridge | `specs/005-maya-bridge/` | Primary DCC backend; launcher workflow verified |
-| 5.5A | AI Polish Preview Evaluation | `docs/ai_polish_preview_evaluation_vi.md` | Documentation only; implementation deferred |
+| 5.5A | AI Polish Preview Evaluation | `docs/ai_polish_preview_evaluation_vi.md` | Documentation only; evaluation complete |
+| 5.5B | AI Polish Preview Local Mock | `docs/ai_polish_preview_mock_vi.md` | Mock-only local workflow; no external API |
 | 6 | Natural Language Agent Control | `specs/006-natural-language-agent-control/` | Spec only; not implemented |
 | 7 | Artist Desktop App MVP | `specs/007-artist-desktop-app-mvp/` | Local Tkinter wrapper; packaged `.exe` verified on artist/DCC machine |
 
@@ -86,6 +87,19 @@ Generated `build/`, `dist/`, `.spec`, and `.exe` artifacts are local packaging
 outputs and must not be committed. The MVP executable still requires the local
 repo/pipeline files; it does not bundle Maya or `mayapy.exe`.
 
+AI polish preview local mock:
+
+```powershell
+python scripts/python/ai_polish_preview.py --help
+python scripts/python/ai_polish_preview.py --version
+python scripts/python/ai_polish_preview.py --dry-run --provider mock --input tests/in/sample_preview.png
+```
+
+Phase 005.5B is mock-only. It copies a PNG preview to `outputs/ai_preview/`
+with a versioned `_mock_ai_preview.png` name and writes a JSON report beside it.
+It does not call fal.ai, OpenAI, FLUX, or any external service, and the
+Maya-first pipeline continues to work without AI, API keys, or internet.
+
 Phase 007E adds small release metadata polish. The desktop app shows
 `TuPhuongVoLo Maya Artist App v0.7.5 (007E)` in the app title/UI and the
 packaging helper prints the same app version during dry-run. See
@@ -136,7 +150,10 @@ Core artist flow:
 
 Generated `.ma`, `.png`, `outputs/tmp/`, and normal batch reports are local outputs and should not be committed unless intentionally added as test fixtures.
 
-Phase 005.5A documents an optional future AI polish preview stage only. No external AI API integration exists yet, no AI provider dependency is added, and Feature 006 natural-language control remains deferred.
+Phase 005.5A documents an optional future AI polish preview stage. Phase 005.5B
+adds only a local mock preview workflow. No external AI API integration exists
+yet, no AI provider dependency is added, and Feature 006 natural-language
+control remains deferred.
 
 ## Repository Structure
 
@@ -159,7 +176,11 @@ TuPhuongVoLo-ArtPipeline/
 
 ## Not Implemented
 
-Feature 006 natural-language control/MCP is not implemented. AI polish preview is also not implemented; 005.5A is documentation-only evaluation. Actual Maya scene generation requires local Autodesk Maya with `mayapy.exe`; the 005.4 launcher workflow has been verified on the artist/DCC machine with Maya 2024.
+Feature 006 natural-language control/MCP is not implemented. AI polish preview
+has only a local mock workflow in 005.5B; there is no real AI provider
+integration. Actual Maya scene generation requires local Autodesk Maya with
+`mayapy.exe`; the 005.4 launcher workflow has been verified on the artist/DCC
+machine with Maya 2024.
 
 ## License
 

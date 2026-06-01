@@ -69,3 +69,13 @@ Verified manually on artist/DCC machine with Autodesk Maya 2024 mayapy.exe. .ma 
 - [X] T039 Document that AI polish preview is reference-only and must not replace clean SVG, geometry JSON, Maya `.ma`, or manual artist polish
 - [X] T040 Document safety/privacy policy for any future external AI API usage
 - [X] T041 Confirm no external API integration, provider SDK, dependency, `.env`, generated image, or Feature 006 implementation is added
+
+## Phase 8: AI Polish Preview Local Mock Architecture (005.5B)
+
+- [X] T042 Add `scripts/python/ai_polish_preview.py` local mock CLI
+- [X] T043 Support `--input`, `--output-dir`, `--provider mock`, optional prompt/preset, `--dry-run`, and `--version`
+- [X] T044 Validate PNG input and return clear Vietnamese errors for missing or non-PNG files
+- [X] T045 Create only local mock PNG copies and JSON reports under AI preview output folders
+- [X] T046 Add non-Maya, non-network tests for dry-run, mock output/report, validation errors, and version
+- [X] T047 Add Vietnamese mock workflow documentation
+- [X] T048 Confirm no external API calls, secrets, Feature 006, SVG/Maya/render/manifest changes, or generated outputs are added
