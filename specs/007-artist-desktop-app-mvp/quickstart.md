@@ -62,6 +62,13 @@ dry-run returned exit code 0, actual Maya execution returned exit code 0, and
 the generated `.ma` opened in Maya with the expected Outliner structure. Details
 are documented in `docs/verification/007C_desktop_app_polish_verified.md`.
 
+## Phase 007D Handoff Checklist
+
+The artist/developer handoff checklist is documented in
+`docs/artist_handoff_desktop_app_vi.md`. It covers DCC repo update commands,
+safe dry-run and actual Maya run steps, expected `phong_kho` Outliner contents,
+local packaging notes, and generated artifacts that must not be committed.
+
 ## Recommended Artist Flow
 
 1. Select a clean SVG file.
