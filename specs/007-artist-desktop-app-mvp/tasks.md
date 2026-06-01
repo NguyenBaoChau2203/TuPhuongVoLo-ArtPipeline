@@ -74,4 +74,15 @@
 - [X] T040 Verify `63c59bb` is present with a clean worktree before checkpoint work
 - [X] T041 Record app version, dry-run packaging output, and full pytest result
 - [X] T042 Confirm packaging remains local/dev-only and generated artifacts stay uncommitted
-- [X] T043 Confirm Feature 006 and AI polish implementation remain deferred
+- [X] T043 Confirm Feature 006 remains deferred after 007E-R
+
+## Phase 11: 007G Desktop App AI Polish Preview Integration
+
+- [X] T044 Bump desktop app metadata to `v0.7.6 (007G)`
+- [X] T045 Add pure AI preview options, validation, output-folder, and command-building helpers
+- [X] T046 Add desktop AI preview controls for PNG input, provider, model, prompt preset, optional prompt, skip-on-missing-config, and AI dry-run
+- [X] T047 Run `scripts/python/ai_polish_preview.py` through subprocess without importing `fal-client` in the desktop app
+- [X] T048 Keep Maya pipeline controls independent from AI preview controls
+- [X] T049 Add tests for AI command building, prompt handling, PNG validation, output folder helpers, and version metadata
+- [X] T050 Update Vietnamese docs, quickstart, launcher guide, README, and safety notes for optional AI preview
+- [X] T051 Confirm Feature 006, source SVG, Maya generation, render logic, manifest, dependencies, secrets, and generated outputs remain unchanged by 007G

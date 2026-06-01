@@ -13,11 +13,14 @@ MVP hiện tại cho phép:
 - Chạy `dry-run` trước để kiểm tra lệnh và output dự kiến.
 - Chạy thật bằng Autodesk Maya thông qua `mayapy.exe`.
 - Kiểm tra file `.ma` và ảnh PNG preview được tạo ra.
+- Tạo AI polish preview tùy chọn từ một PNG preview đã có, bằng nút riêng trong app.
 - Mở file `.ma` trong Maya để polish thủ công.
-- Xem phiên bản app trong title/UI hoặc bằng `--version`: `v0.7.5 (007E)`.
+- Xem phiên bản app trong title/UI hoặc bằng `--version`: `v0.7.6 (007G)`.
 
 Desktop app chỉ là wrapper local cho pipeline CLI đã kiểm chứng. App không thay
-thế Maya, không tự parse SVG, không sửa SVG gốc, và không gọi external API.
+thế Maya, không tự parse SVG, không sửa SVG gốc. AI `fal` chỉ có thể gọi external
+API khi người dùng tự chọn provider `fal`, tắt `AI dry-run`, và máy đã có cấu hình
+`FAL_KEY`/`fal-client`; mặc định AI vẫn là dry-run/mock an toàn.
 
 ## 2. Yêu cầu máy chạy
 
@@ -97,8 +100,12 @@ set TUPHUONGVOLO_PYTHON_EXE=C:\Path\To\python.exe
 9. Kiểm tra đường dẫn `mayapy.exe`.
 10. Chạy thật để tạo `.ma` và PNG preview.
 11. Mở file `.ma` trong Maya để kiểm tra Outliner và polish thủ công.
+12. Nếu cần ảnh AI reference, chọn PNG preview trong khu vực AI, giữ `AI dry-run`
+    cho lần đầu, rồi bấm `Tạo AI polish preview`.
 
 Dry-run không cần Maya và không tạo scene thật. Chạy thật cần `mayapy.exe` hợp lệ.
+AI preview không tự chạy sau Maya; đây là workflow riêng và output nằm trong
+`outputs\ai_preview\`.
 
 ## 6. Checklist retest nhanh trên máy DCC
 
@@ -106,7 +113,7 @@ Dùng checklist này khi bàn giao hoặc xác nhận lại build `.exe`:
 
 - [ ] Repo đang ở branch `workflow/maya-first-artist-pipeline`.
 - [ ] App hoặc `.exe` mở được.
-- [ ] App hiển thị phiên bản `v0.7.5 (007E)`.
+- [ ] App hiển thị phiên bản `v0.7.6 (007G)`.
 - [ ] App hiển thị repo root.
 - [ ] App hiển thị command preview.
 - [ ] SVG input là file SVG sạch.
@@ -116,6 +123,8 @@ Dùng checklist này khi bàn giao hoặc xác nhận lại build `.exe`:
 - [ ] Actual Maya run trả exit code 0.
 - [ ] File `.ma` được tạo trong `outputs\maya\`.
 - [ ] PNG preview được tạo trong `outputs\preview\` nếu bật preview.
+- [ ] Khu vực AI có thể dry-run với provider `mock` từ một PNG preview có sẵn.
+- [ ] Nút AI và nút Maya hoạt động độc lập; AI không tự chạy sau Maya.
 - [ ] File `.ma` mở được trong Maya.
 - [ ] Outliner có cấu trúc blockout mong đợi.
 
@@ -189,6 +198,8 @@ Không commit các artifact local sau:
 - `*.spec`
 - `outputs\maya\*.ma`
 - `outputs\preview\*.png`
+- `outputs\ai_preview\*.png`
+- `outputs\ai_preview\*.json`
 - `outputs\tmp\*`
 - `outputs\reports\*.json`
 
@@ -204,13 +215,12 @@ Nếu cần lưu output làm fixture/test case, phải làm riêng và có lý d
 | Không có PNG preview | Kiểm tra đã bật `Render PNG preview` và đọc log Maya render. |
 | File `.ma` mở được nhưng hình còn đơn giản | Đây là blockout kỹ thuật, chưa phải final art; họa sĩ polish tiếp trong Maya. |
 
-## 11. Phạm vi chưa làm
+## 11. Phạm vi chưa làm / giới hạn
 
-Các phần sau chưa thuộc MVP bàn giao này:
+Các phần sau chưa thuộc MVP bàn giao này hoặc vẫn là giới hạn an toàn:
 
 - Feature 006 natural-language control.
-- Tích hợp AI polish vào desktop app.
-- 005.5A/005.5B/005.5C đã có tài liệu, mock CLI, và provider `fal` tùy chọn tại `scripts\python\ai_polish_preview.py`; phần này vẫn là reference-only, không thay đổi app, không thay đổi Maya pipeline, và chỉ gọi fal.ai khi user tự chạy CLI với `--provider fal`.
+- AI polish preview hiện đã có nút riêng trong desktop app ở phase 007G, nhưng vẫn là reference-only, không thay đổi Maya pipeline, và chỉ gọi fal.ai khi user tự chọn provider `fal` trong workflow AI.
 - TencentDB-Agent-Memory integration.
 - Thay đổi SVG parser.
 - Thay đổi Maya scene generation.

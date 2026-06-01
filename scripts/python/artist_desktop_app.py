@@ -17,31 +17,47 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-APP_VERSION = "0.7.5"
-APP_PHASE = "007E"
+APP_VERSION = "0.7.6"
+APP_PHASE = "007G"
 APP_TITLE_BASE = "TuPhuongVoLo - Maya Artist App MVP"
 APP_TITLE = f"{APP_TITLE_BASE} v{APP_VERSION} ({APP_PHASE})"
 DEFAULT_ROOM_NAME = "phong_kho"
 DEFAULT_OUTPUT_DIR = "outputs"
+DEFAULT_AI_OUTPUT_DIR = Path("outputs") / "ai_preview"
 DEFAULT_MAYAPY_PATH = r"C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe"
 DEFAULT_RENDER_WIDTH = 1280
 DEFAULT_RENDER_HEIGHT = 720
+DEFAULT_AI_PROVIDER = "mock"
+AI_PROVIDER_MOCK = "mock"
+AI_PROVIDER_FAL = "fal"
+AI_PROVIDERS = (AI_PROVIDER_MOCK, AI_PROVIDER_FAL)
+DEFAULT_AI_MODEL = "fal-ai/flux-pro/kontext"
+DEFAULT_AI_PROMPT_PRESET = "tropical-island-room"
 STATUS_READY = "Sẵn sàng"
 STATUS_RUNNING = "Đang chạy..."
 RUN_FINISHED_PREFIX = "__RUN_FINISHED__:"
+AI_RUN_FINISHED_PREFIX = "__AI_RUN_FINISHED__:"
 SVG_EMPTY_ERROR = "Chưa chọn file SVG."
 SVG_NOT_FOUND_ERROR = "Không tìm thấy file SVG. Hãy kiểm tra lại đường dẫn."
 ROOM_EMPTY_ERROR = "Chưa nhập tên phòng/layer."
 OUTPUT_EMPTY_ERROR = "Chưa chọn thư mục output."
 BUILD_SCRIPT_MISSING_ERROR = "Không tìm thấy build_maya_room.py trong repo."
+AI_INPUT_EMPTY_ERROR = "Chưa chọn file PNG preview cho AI."
+AI_INPUT_NOT_FOUND_ERROR = "Không tìm thấy file PNG preview. Hãy kiểm tra lại đường dẫn."
+AI_INPUT_NOT_PNG_ERROR = "Input AI phải là file .png preview."
+AI_SCRIPT_MISSING_ERROR = "Không tìm thấy ai_polish_preview.py trong repo."
+AI_PROVIDER_ERROR = "Provider AI phải là mock hoặc fal."
 MAYAPY_REQUIRED_ERROR = "Chạy thật cần đường dẫn mayapy.exe hợp lệ."
 MAYAPY_NOT_FOUND_ERROR = "Không tìm thấy mayapy.exe. Hãy kiểm tra lại đường dẫn."
 OUTPUT_SUBDIRS = {
     "maya": "maya",
     "preview": "preview",
     "reports": "reports",
+    "ai_preview": "ai_preview",
 }
 BUILD_SCRIPT_RELATIVE_PATH = Path("scripts") / "python" / "build_maya_room.py"
+AI_SCRIPT_RELATIVE_PATH = Path("scripts") / "python" / "ai_polish_preview.py"
+REPO_MARKER_RELATIVE_PATHS = (BUILD_SCRIPT_RELATIVE_PATH, AI_SCRIPT_RELATIVE_PATH)
 REPO_ROOT_ENV_VAR = "TUPHUONGVOLO_REPO_ROOT"
 PIPELINE_PYTHON_ENV_VAR = "TUPHUONGVOLO_PYTHON_EXE"
 REPO_ROOT_ERROR = (
@@ -72,6 +88,20 @@ class ArtistAppOptions:
     render_preview: bool = False
     render_width: int = DEFAULT_RENDER_WIDTH
     render_height: int = DEFAULT_RENDER_HEIGHT
+
+
+@dataclass(frozen=True)
+class ArtistAiPreviewOptions:
+    """User inputs needed to run the optional AI polish preview CLI."""
+
+    input_png_path: Path
+    provider: str = DEFAULT_AI_PROVIDER
+    output_dir: Path = DEFAULT_AI_OUTPUT_DIR
+    model: str = DEFAULT_AI_MODEL
+    prompt_preset: str = DEFAULT_AI_PROMPT_PRESET
+    prompt: str = ""
+    skip_on_missing_config: bool = True
+    dry_run: bool = True
 
 
 def _candidate_with_parents(path: Path) -> list[Path]:
@@ -114,7 +144,7 @@ def find_repo_root(extra_candidates: Iterable[Path] | None = None) -> Path | Non
         candidates.extend(_candidate_with_parents(Path(__file__)))
 
     for candidate in _unique_paths(candidates):
-        if (candidate / BUILD_SCRIPT_RELATIVE_PATH).is_file():
+        if any((candidate / marker).is_file() for marker in REPO_MARKER_RELATIVE_PATHS):
             return candidate
 
     return None
@@ -133,6 +163,12 @@ def build_script_path(root: Path | None = None) -> Path:
     """Return the source-of-truth Maya room CLI path."""
 
     return (root or repo_root()) / BUILD_SCRIPT_RELATIVE_PATH
+
+
+def ai_script_path(root: Path | None = None) -> Path:
+    """Return the optional AI polish preview CLI path."""
+
+    return (root or repo_root()) / AI_SCRIPT_RELATIVE_PATH
 
 
 def default_mayapy_path(candidate: str | Path = DEFAULT_MAYAPY_PATH) -> str:
@@ -235,6 +271,34 @@ def options_from_strings(
     )
 
 
+def ai_options_from_strings(
+    *,
+    input_png_path: str,
+    provider: str,
+    model: str,
+    prompt_preset: str,
+    prompt: str,
+    skip_on_missing_config: bool,
+    dry_run: bool,
+    output_dir: str | Path = DEFAULT_AI_OUTPUT_DIR,
+) -> ArtistAiPreviewOptions:
+    """Create AI preview option values from UI strings."""
+
+    selected_output_dir = (
+        output_dir if isinstance(output_dir, Path) else Path(_clean_text(output_dir))
+    )
+    return ArtistAiPreviewOptions(
+        input_png_path=Path(_clean_text(input_png_path)),
+        provider=_clean_text(provider) or DEFAULT_AI_PROVIDER,
+        output_dir=selected_output_dir,
+        model=_clean_text(model) or DEFAULT_AI_MODEL,
+        prompt_preset=_clean_text(prompt_preset) or DEFAULT_AI_PROMPT_PRESET,
+        prompt=_clean_text(prompt),
+        skip_on_missing_config=skip_on_missing_config,
+        dry_run=dry_run,
+    )
+
+
 def validate_run_options(options: ArtistAppOptions) -> list[str]:
     """Return Vietnamese validation errors without touching the file system."""
 
@@ -281,6 +345,39 @@ def validate_run_paths(options: ArtistAppOptions, *, root: Path) -> list[str]:
     return errors
 
 
+def validate_ai_preview_options(options: ArtistAiPreviewOptions) -> list[str]:
+    """Return Vietnamese validation errors for AI preview inputs."""
+
+    errors: list[str] = []
+    if _is_empty_path(options.input_png_path):
+        errors.append(AI_INPUT_EMPTY_ERROR)
+    elif options.input_png_path.suffix.lower() != ".png":
+        errors.append(AI_INPUT_NOT_PNG_ERROR)
+
+    if options.provider not in AI_PROVIDERS:
+        errors.append(AI_PROVIDER_ERROR)
+
+    if _is_empty_path(options.output_dir):
+        errors.append(OUTPUT_EMPTY_ERROR)
+
+    return errors
+
+
+def validate_ai_preview_paths(options: ArtistAiPreviewOptions, *, root: Path) -> list[str]:
+    """Return Vietnamese validation errors for files needed by the AI subprocess."""
+
+    errors: list[str] = []
+    if not _is_empty_path(options.input_png_path):
+        input_path = resolve_repo_relative_path(options.input_png_path, root)
+        if not input_path.is_file():
+            errors.append(AI_INPUT_NOT_FOUND_ERROR)
+
+    if not ai_script_path(root).is_file():
+        errors.append(AI_SCRIPT_MISSING_ERROR)
+
+    return errors
+
+
 def validate_runtime_environment(*, root: Path | None = None) -> list[str]:
     """Return Vietnamese validation errors for repo and Python runtime discovery."""
 
@@ -290,6 +387,22 @@ def validate_runtime_environment(*, root: Path | None = None) -> list[str]:
         errors.append(REPO_ROOT_ERROR)
     elif not build_script_path(detected_root).is_file():
         errors.append(BUILD_SCRIPT_MISSING_ERROR)
+
+    if getattr(sys, "frozen", False) and pipeline_python_command_prefix() is None:
+        errors.append(PIPELINE_PYTHON_ERROR)
+
+    return errors
+
+
+def validate_ai_runtime_environment(*, root: Path | None = None) -> list[str]:
+    """Return Vietnamese validation errors for repo and Python runtime discovery for AI."""
+
+    errors: list[str] = []
+    detected_root = root or find_repo_root()
+    if detected_root is None:
+        errors.append(REPO_ROOT_ERROR)
+    elif not ai_script_path(detected_root).is_file():
+        errors.append(AI_SCRIPT_MISSING_ERROR)
 
     if getattr(sys, "frozen", False) and pipeline_python_command_prefix() is None:
         errors.append(PIPELINE_PYTHON_ERROR)
@@ -340,6 +453,45 @@ def build_maya_room_command(
     return command
 
 
+def build_ai_preview_command(
+    options: ArtistAiPreviewOptions,
+    *,
+    python_executable: str | None = None,
+    python_command_prefix: list[str] | None = None,
+    root: Path | None = None,
+) -> list[str]:
+    """Build the exact CLI command for the optional AI polish preview."""
+
+    root = root or repo_root()
+    prefix = python_command_prefix or pipeline_python_command_prefix(
+        python_executable=python_executable
+    )
+    if prefix is None:
+        raise RuntimeError(PIPELINE_PYTHON_ERROR)
+
+    command = [
+        *prefix,
+        str(ai_script_path(root)),
+        "--provider",
+        options.provider,
+        "--input",
+        str(options.input_png_path),
+        "--output-dir",
+        str(options.output_dir),
+        "--prompt-preset",
+        options.prompt_preset,
+    ]
+    if options.provider == AI_PROVIDER_FAL:
+        command.extend(["--model", options.model])
+        if options.skip_on_missing_config:
+            command.append("--skip-on-missing-config")
+    if options.prompt:
+        command.extend(["--prompt", options.prompt])
+    if options.dry_run:
+        command.append("--dry-run")
+    return command
+
+
 def command_to_display(command: list[str]) -> str:
     """Return a Windows-friendly command string for the log area."""
 
@@ -352,6 +504,12 @@ def output_subdir_path(output_dir: Path, subdir_key: str) -> Path:
     if subdir_key not in OUTPUT_SUBDIRS:
         raise ValueError(f"Unknown output folder: {subdir_key}")
     return output_dir / OUTPUT_SUBDIRS[subdir_key]
+
+
+def ai_output_dir_path(root: Path) -> Path:
+    """Return the default AI preview output folder under the repository."""
+
+    return root / DEFAULT_AI_OUTPUT_DIR
 
 
 class ArtistDesktopApp:
@@ -367,10 +525,11 @@ class ArtistDesktopApp:
         self.ttk = ttk
         self.root = tk.Tk()
         self.root.title(APP_TITLE)
-        self.root.geometry("900x680")
-        self.root.minsize(780, 560)
+        self.root.geometry("980x820")
+        self.root.minsize(840, 680)
         self.log_queue: queue.Queue[str] = queue.Queue()
         self.worker: threading.Thread | None = None
+        self.ai_worker: threading.Thread | None = None
 
         self.svg_var = tk.StringVar()
         self.room_var = tk.StringVar(value=DEFAULT_ROOM_NAME)
@@ -383,6 +542,15 @@ class ArtistDesktopApp:
         self.repo_root_var = tk.StringVar(value=repo_root_display_value())
         self.status_var = tk.StringVar(value=STATUS_READY)
         self.command_var = tk.StringVar(value="")
+        self.ai_png_var = tk.StringVar()
+        self.ai_provider_var = tk.StringVar(value=DEFAULT_AI_PROVIDER)
+        self.ai_model_var = tk.StringVar(value=DEFAULT_AI_MODEL)
+        self.ai_prompt_preset_var = tk.StringVar(value=DEFAULT_AI_PROMPT_PRESET)
+        self.ai_prompt_var = tk.StringVar()
+        self.ai_skip_missing_var = tk.BooleanVar(value=True)
+        self.ai_dry_run_var = tk.BooleanVar(value=True)
+        self.ai_status_var = tk.StringVar(value=STATUS_READY)
+        self.ai_command_var = tk.StringVar(value="")
 
         self._build_ui(scrolledtext)
         self.root.after(100, self._drain_log_queue)
@@ -394,7 +562,7 @@ class ArtistDesktopApp:
         outer = ttk.Frame(self.root, padding=12)
         outer.pack(fill=tk.BOTH, expand=True)
         outer.columnconfigure(1, weight=1)
-        outer.rowconfigure(13, weight=1)
+        outer.rowconfigure(16, weight=1)
 
         ttk.Label(outer, text=app_version_display()).grid(
             row=0,
@@ -485,27 +653,137 @@ class ArtistDesktopApp:
             padx=(8, 0),
         )
 
-        ttk.Label(outer, text="Trạng thái").grid(row=9, column=0, sticky=tk.W, pady=(8, 2))
+        self._build_ai_preview_section(outer, row=9)
+
+        ttk.Label(outer, text="Trạng thái Maya").grid(
+            row=10, column=0, sticky=tk.W, pady=(8, 2)
+        )
         ttk.Label(outer, textvariable=self.status_var).grid(
-            row=9,
+            row=10,
             column=1,
             columnspan=2,
             sticky=tk.W,
             pady=(8, 2),
         )
 
-        ttk.Label(outer, text="Lệnh").grid(row=10, column=0, sticky=tk.W, pady=4)
+        ttk.Label(outer, text="Lệnh Maya").grid(row=11, column=0, sticky=tk.W, pady=4)
         ttk.Entry(outer, textvariable=self.command_var, state="readonly").grid(
-            row=10,
+            row=11,
             column=1,
             columnspan=2,
             sticky=tk.EW,
             pady=4,
         )
 
-        ttk.Label(outer, text="Log").grid(row=12, column=0, sticky=tk.W, pady=(10, 2))
+        ttk.Label(outer, text="Trạng thái AI").grid(row=12, column=0, sticky=tk.W, pady=4)
+        ttk.Label(outer, textvariable=self.ai_status_var).grid(
+            row=12,
+            column=1,
+            columnspan=2,
+            sticky=tk.W,
+            pady=4,
+        )
+
+        ttk.Label(outer, text="Lệnh AI").grid(row=13, column=0, sticky=tk.W, pady=4)
+        ttk.Entry(outer, textvariable=self.ai_command_var, state="readonly").grid(
+            row=13,
+            column=1,
+            columnspan=2,
+            sticky=tk.EW,
+            pady=4,
+        )
+
+        ttk.Label(outer, text="Log").grid(row=15, column=0, sticky=tk.W, pady=(10, 2))
         self.log_text = scrolledtext_module.ScrolledText(outer, height=20, wrap=tk.WORD)
-        self.log_text.grid(row=13, column=0, columnspan=3, sticky=tk.NSEW)
+        self.log_text.grid(row=16, column=0, columnspan=3, sticky=tk.NSEW)
+
+    def _build_ai_preview_section(self, outer, *, row: int) -> None:
+        tk = self.tk
+        ttk = self.ttk
+
+        section = ttk.LabelFrame(outer, text="AI polish preview tùy chọn", padding=8)
+        section.grid(row=row, column=0, columnspan=3, sticky=tk.EW, pady=(12, 4))
+        section.columnconfigure(1, weight=1)
+
+        ttk.Label(section, text="PNG preview").grid(row=0, column=0, sticky=tk.W, pady=3)
+        ttk.Entry(section, textvariable=self.ai_png_var).grid(
+            row=0,
+            column=1,
+            sticky=tk.EW,
+            pady=3,
+        )
+        ttk.Button(section, text="Chọn PNG preview", command=self._choose_ai_png).grid(
+            row=0,
+            column=2,
+            padx=(8, 0),
+            pady=3,
+        )
+
+        provider_row = ttk.Frame(section)
+        provider_row.grid(row=1, column=0, columnspan=3, sticky=tk.EW, pady=3)
+        provider_row.columnconfigure(3, weight=1)
+
+        ttk.Label(provider_row, text="Provider").grid(row=0, column=0, sticky=tk.W)
+        ttk.Combobox(
+            provider_row,
+            textvariable=self.ai_provider_var,
+            values=AI_PROVIDERS,
+            state="readonly",
+            width=10,
+        ).grid(row=0, column=1, sticky=tk.W, padx=(8, 18))
+
+        ttk.Label(provider_row, text="Model").grid(row=0, column=2, sticky=tk.W)
+        ttk.Entry(provider_row, textvariable=self.ai_model_var, width=38).grid(
+            row=0,
+            column=3,
+            sticky=tk.EW,
+            padx=(8, 0),
+        )
+
+        prompt_row = ttk.Frame(section)
+        prompt_row.grid(row=2, column=0, columnspan=3, sticky=tk.EW, pady=3)
+        prompt_row.columnconfigure(3, weight=1)
+
+        ttk.Label(prompt_row, text="Prompt preset").grid(row=0, column=0, sticky=tk.W)
+        ttk.Combobox(
+            prompt_row,
+            textvariable=self.ai_prompt_preset_var,
+            values=[DEFAULT_AI_PROMPT_PRESET],
+            width=26,
+        ).grid(row=0, column=1, sticky=tk.W, padx=(8, 18))
+
+        ttk.Label(prompt_row, text="Prompt thêm").grid(row=0, column=2, sticky=tk.W)
+        ttk.Entry(prompt_row, textvariable=self.ai_prompt_var, width=44).grid(
+            row=0,
+            column=3,
+            sticky=tk.EW,
+            padx=(8, 0),
+        )
+
+        checks = ttk.Frame(section)
+        checks.grid(row=3, column=0, columnspan=3, sticky=tk.W, pady=(4, 2))
+        ttk.Checkbutton(
+            checks,
+            text="Bỏ qua nếu thiếu cấu hình AI",
+            variable=self.ai_skip_missing_var,
+        ).pack(side=tk.LEFT, padx=(0, 18))
+        ttk.Checkbutton(checks, text="AI dry-run", variable=self.ai_dry_run_var).pack(
+            side=tk.LEFT
+        )
+
+        actions = ttk.Frame(section)
+        actions.grid(row=4, column=0, columnspan=3, sticky=tk.W, pady=(6, 0))
+        self.ai_run_button = ttk.Button(
+            actions,
+            text="Tạo AI polish preview",
+            command=self._run_ai_clicked,
+        )
+        self.ai_run_button.pack(side=tk.LEFT)
+        ttk.Button(
+            actions,
+            text="Mở outputs/ai_preview",
+            command=self._open_ai_output,
+        ).pack(side=tk.LEFT, padx=(8, 0))
 
     def run(self) -> None:
         self.root.mainloop()
@@ -531,6 +809,14 @@ class ArtistDesktopApp:
         if path:
             self.mayapy_var.set(path)
 
+    def _choose_ai_png(self) -> None:
+        path = self.filedialog.askopenfilename(
+            title="Chọn PNG preview cho AI",
+            filetypes=[("PNG files", "*.png"), ("All files", "*.*")],
+        )
+        if path:
+            self.ai_png_var.set(path)
+
     def _current_options(self) -> ArtistAppOptions:
         return options_from_strings(
             svg_path=self.svg_var.get(),
@@ -541,6 +827,17 @@ class ArtistDesktopApp:
             render_preview=self.render_var.get(),
             render_width=self.width_var.get(),
             render_height=self.height_var.get(),
+        )
+
+    def _current_ai_options(self) -> ArtistAiPreviewOptions:
+        return ai_options_from_strings(
+            input_png_path=self.ai_png_var.get(),
+            provider=self.ai_provider_var.get(),
+            model=self.ai_model_var.get(),
+            prompt_preset=self.ai_prompt_preset_var.get(),
+            prompt=self.ai_prompt_var.get(),
+            skip_on_missing_config=self.ai_skip_missing_var.get(),
+            dry_run=self.ai_dry_run_var.get(),
         )
 
     def _run_clicked(self) -> None:
@@ -582,10 +879,67 @@ class ArtistDesktopApp:
         self._append_log(display_command + "\n\n")
         self.status_var.set(STATUS_RUNNING)
         self.run_button.configure(state=self.tk.DISABLED)
-        self.worker = threading.Thread(target=self._run_subprocess, args=(command, root), daemon=True)
+        self.worker = threading.Thread(
+            target=self._run_subprocess,
+            args=(command, root, RUN_FINISHED_PREFIX, "Lỗi khi chạy pipeline"),
+            daemon=True,
+        )
         self.worker.start()
 
-    def _run_subprocess(self, command: list[str], root: Path) -> None:
+    def _run_ai_clicked(self) -> None:
+        if self.ai_worker and self.ai_worker.is_alive():
+            self.messagebox.showinfo(
+                "AI đang chạy",
+                "AI polish preview đang chạy, hãy đợi log kết thúc.",
+            )
+            return
+
+        options = self._current_ai_options()
+        root = find_repo_root()
+        self.repo_root_var.set(repo_root_display_value(root))
+        errors = validate_ai_preview_options(options) + validate_ai_runtime_environment(
+            root=root
+        )
+        if root is not None:
+            errors.extend(validate_ai_preview_paths(options, root=root))
+        if errors:
+            self.messagebox.showerror("Cần kiểm tra lại", "\n".join(errors))
+            return
+
+        try:
+            if root is None:
+                raise RuntimeError(REPO_ROOT_ERROR)
+            command = build_ai_preview_command(options, root=root)
+        except RuntimeError as exc:
+            self.messagebox.showerror("Cần kiểm tra lại", str(exc))
+            return
+
+        display_command = command_to_display(command)
+        self.ai_command_var.set(display_command)
+        self._append_log("\n=== Lệnh AI sẽ chạy ===\n")
+        self._append_log(f"Repo root: {root}\n")
+        self._append_log(display_command + "\n\n")
+        self.ai_status_var.set(STATUS_RUNNING)
+        self.ai_run_button.configure(state=self.tk.DISABLED)
+        self.ai_worker = threading.Thread(
+            target=self._run_subprocess,
+            args=(
+                command,
+                root,
+                AI_RUN_FINISHED_PREFIX,
+                "Lỗi khi chạy AI polish preview",
+            ),
+            daemon=True,
+        )
+        self.ai_worker.start()
+
+    def _run_subprocess(
+        self,
+        command: list[str],
+        root: Path,
+        finish_prefix: str,
+        error_label: str,
+    ) -> None:
         try:
             process = subprocess.Popen(
                 command,
@@ -603,9 +957,9 @@ class ArtistDesktopApp:
             self.log_queue.put(f"\nExit code: {return_code}\n")
         except OSError as exc:
             return_code = -1
-            self.log_queue.put(f"\nLỗi khi chạy pipeline: {exc}\n")
+            self.log_queue.put(f"\n{error_label}: {exc}\n")
         finally:
-            self.log_queue.put(f"{RUN_FINISHED_PREFIX}{return_code}")
+            self.log_queue.put(f"{finish_prefix}{return_code}")
 
     def _drain_log_queue(self) -> None:
         while True:
@@ -620,6 +974,13 @@ class ArtistDesktopApp:
                     self.status_var.set("Hoàn tất: mã 0")
                 else:
                     self.status_var.set(f"Lỗi: mã {return_code}")
+            elif message.startswith(AI_RUN_FINISHED_PREFIX):
+                return_code = int(message.removeprefix(AI_RUN_FINISHED_PREFIX))
+                self.ai_run_button.configure(state=self.tk.NORMAL)
+                if return_code == 0:
+                    self.ai_status_var.set("Hoàn tất: mã 0")
+                else:
+                    self.ai_status_var.set(f"Lỗi: mã {return_code}")
             else:
                 self._append_log(message)
         self.root.after(100, self._drain_log_queue)
@@ -648,6 +1009,20 @@ class ArtistDesktopApp:
             return
         output_root = resolve_output_root(output_root, root)
         path = output_subdir_path(output_root, subdir_key)
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            self.messagebox.showerror("Không mở được thư mục", str(exc))
+            return
+        self._open_folder(path)
+
+    def _open_ai_output(self) -> None:
+        try:
+            root = repo_root()
+        except RuntimeError as exc:
+            self.messagebox.showerror("Cần kiểm tra lại", str(exc))
+            return
+        path = ai_output_dir_path(root)
         try:
             path.mkdir(parents=True, exist_ok=True)
         except OSError as exc:
