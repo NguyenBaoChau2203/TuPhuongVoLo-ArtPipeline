@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
 
@@ -52,7 +53,73 @@ def test_maya_scene_script_does_not_switch_viewports() -> None:
     script_path = builder.repo_root() / "scripts" / "maya" / "build_maya_room_scene.py"
     script_text = script_path.read_text(encoding="utf-8")
 
-    assert "lookThru(" not in script_text
+    for forbidden in ("lookThru(", "playblast(", "modelPanel(", "modelEditor("):
+        assert forbidden not in script_text
+
+
+def load_maya_scene_builder():
+    """Load the Maya scene script as a plain Python module without Maya."""
+
+    script_path = builder.repo_root() / "scripts" / "maya" / "build_maya_room_scene.py"
+    spec = importlib.util.spec_from_file_location("build_maya_room_scene", script_path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_maya_camera_framing_uses_room_bounds_and_padding() -> None:
+    """Camera framing should scale from room bounds instead of a close span."""
+
+    scene_builder = load_maya_scene_builder()
+
+    framing = scene_builder.camera_framing_from_bounds((0.0, 0.0, 4.0, 2.0), 3.0)
+
+    assert framing["center_x"] == 2.0
+    assert framing["center_z"] == 1.0
+    assert framing["max_dimension"] == 4.0
+    assert framing["camera_distance"] >= 4.0 * 2.4
+    assert framing["orthographic_width"] >= 4.0 * 2.0
+
+
+def test_maya_camera_framing_handles_wide_deep_and_tiny_rooms() -> None:
+    """Framing must be deterministic for common aspect extremes and tiny input."""
+
+    scene_builder = load_maya_scene_builder()
+
+    wide = scene_builder.camera_framing_from_bounds((0.0, 0.0, 8.0, 2.0), 3.0)
+    deep = scene_builder.camera_framing_from_bounds((0.0, 0.0, 2.0, 8.0), 3.0)
+    tiny = scene_builder.camera_framing_from_bounds((0.0, 0.0, 0.1, 0.1), 3.0)
+
+    assert wide["camera_distance"] >= 8.0 * 2.4
+    assert deep["camera_distance"] >= 8.0 * 2.4
+    assert wide["orthographic_width"] >= 8.0 * 2.0
+    assert deep["orthographic_width"] >= 8.0 * 2.0
+    assert tiny["max_dimension"] == 1.0
+    assert tiny["orthographic_width"] >= scene_builder.MIN_ORTHOGRAPHIC_WIDTH
+
+
+def test_maya_camera_framing_accounts_for_wall_height() -> None:
+    """Taller walls need a wider orthographic frame in a 16:9 render."""
+
+    scene_builder = load_maya_scene_builder()
+
+    low_walls = scene_builder.camera_framing_from_bounds((0.0, 0.0, 4.0, 4.0), 1.0)
+    tall_walls = scene_builder.camera_framing_from_bounds((0.0, 0.0, 4.0, 4.0), 4.0)
+
+    assert tall_walls["orthographic_width"] > low_walls["orthographic_width"]
+
+
+def test_maya_scene_camera_uses_orthographic_room_framing() -> None:
+    """The scene builder should create one room-aware orthographic iso camera."""
+
+    script_path = builder.repo_root() / "scripts" / "maya" / "build_maya_room_scene.py"
+    script_text = script_path.read_text(encoding="utf-8")
+
+    assert "camera_framing_from_bounds" in script_text
+    assert "orthographicWidth" in script_text
+    assert "wall_height" in script_text
 
 
 def test_dry_run_builds_expected_ma_output_path(tmp_path: Path, monkeypatch) -> None:
