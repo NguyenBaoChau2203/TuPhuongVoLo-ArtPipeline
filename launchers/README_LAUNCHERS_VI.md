@@ -67,6 +67,9 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 2. PyInstaller là công cụ dev-only; launcher này không tự cài PyInstaller.
 3. Nếu máy dev đã cài PyInstaller, chạy `python scripts/python/package_artist_app.py --build`.
 4. File `.exe` dự kiến nằm trong `dist/TuPhuongVoLo_MayaArtistApp.exe` và không được commit.
+5. `.exe` là wrapper local: hãy chạy từ thư mục repo hoặc đặt `TUPHUONGVOLO_REPO_ROOT`.
+6. `.exe` vẫn cần Python bên ngoài để chạy pipeline; nếu Python không nằm trong `PATH`, đặt `TUPHUONGVOLO_PYTHON_EXE`.
+7. `.exe` không bundle Autodesk Maya hoặc `mayapy.exe`; chạy thật vẫn cần đường dẫn `mayapy.exe` hợp lệ.
 
 ---
 

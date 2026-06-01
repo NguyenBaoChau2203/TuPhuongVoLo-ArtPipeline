@@ -74,6 +74,25 @@ Output dự kiến:
 dist/TuPhuongVoLo_MayaArtistApp.exe
 ```
 
+Khi chạy file `.exe`, app vẫn cần tìm thấy repo local để gọi script pipeline:
+
+```powershell
+scripts/python/build_maya_room.py
+```
+
+Nên chạy `.exe` từ thư mục repo hoặc đặt biến môi trường nếu cần chạy từ nơi khác:
+
+```powershell
+set TUPHUONGVOLO_REPO_ROOT=D:\TuPhuongVoLo_DCC_Test\TuPhuongVoLo-ArtPipeline
+```
+
+File `.exe` không tự bundle Python pipeline. Máy chạy `.exe` cần có Python trong `PATH`,
+hoặc đặt rõ Python bằng biến môi trường:
+
+```powershell
+set TUPHUONGVOLO_PYTHON_EXE=C:\Path\To\python.exe
+```
+
 Lưu ý: `.exe` MVP này vẫn là wrapper local cho repo/pipeline hiện có. Nó không
 bundle toàn bộ repo, không bundle Maya, và không bundle `mayapy.exe`. Không commit
 `build/`, `dist/`, file `.spec` sinh tự động, hoặc file `.exe`.
