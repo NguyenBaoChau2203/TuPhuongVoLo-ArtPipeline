@@ -30,6 +30,8 @@ Illustrator clean SVG
   -> manifest append after verified success
 ```
 
+Phase 005.3 extends the handoff with optional `prop_markers` detected from named SVG groups/layers nested under the selected room. Marker groups use `prop_`, `item_`, or `object_` prefixes and remain blockout-only; Maya creates placeholder cubes from the JSON and skips room-preset auto props when explicit markers exist.
+
 ## Project Structure
 
 ```text

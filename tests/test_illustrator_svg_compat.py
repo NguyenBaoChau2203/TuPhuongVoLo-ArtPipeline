@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from detect_rooms_from_svg import detect_rooms
+from detect_rooms_from_svg import detect_rooms, normalize_prop_marker_type
 
 FIXTURE_DIR = Path(__file__).parent / "in"
 
@@ -30,6 +30,20 @@ def _room(reports, name):
         if report.room_name == name:
             return report
     raise AssertionError(f"Room {name} not found in {[r.room_name for r in reports]}")
+
+
+def _prop(report, prop_type):
+    for marker in report.prop_markers:
+        if marker.prop_type == prop_type:
+            return marker
+    raise AssertionError(f"Prop {prop_type} not found in {[m.prop_type for m in report.prop_markers]}")
+
+
+def test_prop_marker_name_normalization() -> None:
+    assert normalize_prop_marker_type("prop_shelf_unit") == "shelf_unit"
+    assert normalize_prop_marker_type("item_cardboard_box") == "cardboard_box"
+    assert normalize_prop_marker_type("object_console_desk") == "console_desk"
+    assert normalize_prop_marker_type("room_kho") is None
 
 
 def test_nested_groups_fixture_detects_both_rooms() -> None:
@@ -158,3 +172,33 @@ def test_existing_simple_fixture_still_works() -> None:
     assert len(reports) == 1
     assert reports[0].room_name == "kho"
     assert reports[0].has_usable_boundary
+
+
+def test_nested_prop_markers_fixture_detects_room_markers() -> None:
+    reports = detect_rooms(FIXTURE_DIR / "illustrator_prop_markers.svg")
+    kho = _room(reports, "phong_kho")
+
+    assert kho.has_usable_boundary
+    assert kho.boundary is not None
+    assert kho.boundary.bbox == (15.0, 25.0, 135.0, 105.0)
+    assert [marker.prop_type for marker in kho.prop_markers] == [
+        "shelf_unit",
+        "wooden_crate",
+    ]
+    assert "hidden_box" not in {marker.prop_type for marker in kho.prop_markers}
+    assert kho.group_path == ["Layer 1", "Phòng Kho"]
+
+
+def test_prop_markers_preserve_group_path_and_transform_centers() -> None:
+    reports = detect_rooms(FIXTURE_DIR / "illustrator_prop_markers.svg")
+    kho = _room(reports, "phong_kho")
+    shelf = _prop(kho, "shelf_unit")
+    crate = _prop(kho, "wooden_crate")
+
+    assert shelf.group_path == ["Layer 1", "Phòng Kho", "prop_shelf_unit"]
+    assert shelf.source_kind == "rect"
+    assert shelf.bbox_svg == (35.0, 35.0, 55.0, 43.0)
+    assert shelf.center_svg == (45.0, 39.0)
+    assert crate.source_kind == "polygon"
+    assert crate.center_svg == (80.0, 60.0)
+    assert any("prop_decorative_text" in warning for warning in kho.warnings)

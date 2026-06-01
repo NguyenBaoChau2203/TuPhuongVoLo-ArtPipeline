@@ -287,6 +287,18 @@ def geometry_payload(
     local_points = normalize_points_to_origin(room.boundary.points)
     maya_points = scale_points_to_blender(local_points, SVG_TO_MAYA_SCALE)
     wall_segments = create_wall_segments(maya_points)
+    source_min_x, source_min_y, _, _ = room.boundary.bbox
+    prop_markers: list[dict[str, Any]] = []
+    for marker in room.prop_markers:
+        local_center = (
+            marker.center_svg[0] - source_min_x,
+            marker.center_svg[1] - source_min_y,
+        )
+        maya_center = scale_points_to_blender([local_center], SVG_TO_MAYA_SCALE)[0]
+        marker_payload = marker.to_dict()
+        marker_payload["center_local"] = [local_center[0], local_center[1]]
+        marker_payload["center_maya"] = [maya_center[0], maya_center[1]]
+        prop_markers.append(marker_payload)
 
     return {
         "room_name": room.room_name,
@@ -307,6 +319,7 @@ def geometry_payload(
         "style_preset": style_preset,
         "room_preset_name": room_preset_name,
         "room_preset": room_preset,
+        "prop_markers": prop_markers,
     }
 
 
@@ -438,6 +451,9 @@ def print_plan(plan: MayaBuildPlan) -> None:
             f"{kind}={count}" for kind, count in sorted(plan.room.shape_kinds.items())
         )
         print(f"Loại hình trong phòng: {kinds}")
+    if plan.room.prop_markers:
+        props = ", ".join(marker.prop_type for marker in plan.room.prop_markers)
+        print(f"Prop marker SVG: {props}")
     print(
         "Transform: "
         + ("đã áp dụng vào tọa độ phòng." if plan.transform_applied else "không có/không cần.")

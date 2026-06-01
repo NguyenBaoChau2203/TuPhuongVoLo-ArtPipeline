@@ -40,6 +40,12 @@ A batch wrapper scans one SVG, a folder of SVGs, or a job file and writes a JSON
 
 **Independent Test**: Run `batch_maya_room.py --dry-run --json-report ...` and verify planned jobs, failures, and output paths.
 
+### User Story 5 - SVG Prop Marker Placement (Priority: P2)
+
+An artist can place simple named SVG groups/layers such as `prop_shelf_unit`, `item_cardboard_box`, or `object_console_desk` inside a room group. Python detects the marker geometry, writes it to the Maya geometry JSON handoff, and Maya creates deterministic placeholder cubes at those positions.
+
+**Independent Test**: Run `build_maya_room.py --dry-run` against `tests/in/illustrator_prop_markers.svg`, write the geometry JSON, and verify the `prop_markers` payload contains SVG, local, and Maya-space centers.
+
 ## Requirements
 
 - **FR-001**: System MUST provide `scripts/python/build_maya_room.py`.
@@ -52,6 +58,8 @@ A batch wrapper scans one SVG, a folder of SVGs, or a job file and writes a JSON
 - **FR-008**: Source SVG files and `drops/` files MUST NOT be modified or deleted.
 - **FR-009**: Blender code MUST remain available as optional/fallback legacy MVP backend.
 - **FR-010**: Artist-facing launcher/docs MUST be Vietnamese-friendly.
+- **FR-011**: SVG prop markers MUST use simple `prop_`, `item_`, or `object_` group/layer names and normalize to a prop type without the prefix.
+- **FR-012**: Maya scene generation MUST prefer explicit SVG `prop_markers` over room-preset auto props to avoid duplicate placeholder placement.
 
 ## Success Criteria
 
@@ -60,3 +68,4 @@ A batch wrapper scans one SVG, a folder of SVGs, or a job file and writes a JSON
 - **SC-003**: Missing Maya executable fails gracefully in actual mode.
 - **SC-004**: Existing Feature 001/002/003/004 tests still pass.
 - **SC-005**: Actual Maya execution is documented as environment-dependent until verified locally.
+- **SC-006**: Prop marker tests pass without Autodesk Maya installed.

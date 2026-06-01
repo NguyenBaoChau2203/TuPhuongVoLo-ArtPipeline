@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,14 @@ DEFAULT_PREVIEW_ASPECT_RATIO = 16.0 / 9.0
 ISO_CAMERA_DISTANCE_FACTOR = 3.5
 ORTHOGRAPHIC_PADDING_FACTOR = 2.8
 MIN_ORTHOGRAPHIC_WIDTH = 6.0
+GENERIC_PROP_SIZE = (0.5, 0.6, 0.5)
+PROP_PLACEHOLDER_SIZES = {
+    "shelf_unit": (0.8, 1.8, 0.35),
+    "wooden_crate": (0.45, 0.45, 0.45),
+    "cardboard_box": (0.35, 0.35, 0.35),
+    "console_desk": (1.2, 0.75, 0.55),
+    "office_chair": (0.45, 0.8, 0.45),
+}
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -214,6 +223,60 @@ def create_prop_cube(
     return node
 
 
+def safe_maya_name(value: Any, fallback: str = "prop") -> str:
+    """Return a conservative Maya node-name token."""
+
+    text = re.sub(r"[^A-Za-z0-9_]+", "_", str(value or "").strip().lower()).strip("_")
+    if not text or not text[0].isalpha():
+        return fallback
+    return text
+
+
+def prop_placeholder_size(prop_type: str) -> tuple[float, float, float]:
+    """Return the deterministic placeholder size for one prop type."""
+
+    return PROP_PLACEHOLDER_SIZES.get(prop_type, GENERIC_PROP_SIZE)
+
+
+def marker_center_maya(marker: dict[str, Any]) -> tuple[float, float] | None:
+    """Return a prop marker center from geometry JSON, or None if invalid."""
+
+    try:
+        return point2(marker.get("center_maya"))
+    except (TypeError, ValueError):
+        return None
+
+
+def create_svg_prop_markers(
+    cmds: Any,
+    prop_markers: list[Any],
+    material: str,
+    parent: str,
+) -> int:
+    """Create placeholder props from explicit artist-authored SVG markers."""
+
+    created = 0
+    type_counts: dict[str, int] = {}
+    for raw_marker in prop_markers:
+        if not isinstance(raw_marker, dict):
+            continue
+        center = marker_center_maya(raw_marker)
+        if center is None:
+            continue
+        prop_type = safe_maya_name(raw_marker.get("prop_type"), fallback="generic")
+        type_counts[prop_type] = type_counts.get(prop_type, 0) + 1
+        create_prop_cube(
+            cmds,
+            f"prop_{prop_type}_{type_counts[prop_type]:02d}",
+            center,
+            prop_placeholder_size(prop_type),
+            material,
+            parent,
+        )
+        created += 1
+    return created
+
+
 def create_placeholder_props(
     cmds: Any,
     room_preset: dict[str, Any],
@@ -232,20 +295,13 @@ def create_placeholder_props(
     if not isinstance(props, list):
         return
 
-    known_sizes = {
-        "shelf_unit": (0.8, 1.8, 0.35),
-        "wooden_crate": (0.45, 0.45, 0.45),
-        "cardboard_box": (0.35, 0.35, 0.35),
-        "console_desk": (1.2, 0.75, 0.55),
-        "office_chair": (0.45, 0.8, 0.45),
-    }
     created = 0
     for raw_prop in props:
         if not isinstance(raw_prop, dict):
             continue
         prop_name = str(raw_prop.get("name", "prop"))
         count = max(1, min(int(raw_prop.get("count", 1)), 3))
-        size = known_sizes.get(prop_name, (0.5, 0.6, 0.5))
+        size = prop_placeholder_size(prop_name)
         for copy_index in range(count):
             created += 1
             offset_x = (copy_index % 3) * 0.65
@@ -318,6 +374,9 @@ def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
     room_name = str(data.get("room_name") or "room")
     style = data.get("style_preset", {}) if isinstance(data.get("style_preset"), dict) else {}
     room_preset = data.get("room_preset", {}) if isinstance(data.get("room_preset"), dict) else {}
+    prop_markers = data.get("prop_markers", [])
+    if not isinstance(prop_markers, list):
+        prop_markers = []
     points = [point2(point) for point in data["boundary_points"]]
     wall_segments = [
         (point2(segment["start"]), point2(segment["end"]))
@@ -363,7 +422,12 @@ def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
             parent=walls_group,
             index=index,
         )
-    create_placeholder_props(cmds, room_preset, bounds, prop_mat, props_group)
+    if prop_markers:
+        # Explicit SVG markers are artist-authored placement, so they replace
+        # room-preset auto props to avoid duplicate blockout placeholders.
+        create_svg_prop_markers(cmds, prop_markers, prop_mat, props_group)
+    else:
+        create_placeholder_props(cmds, room_preset, bounds, prop_mat, props_group)
     create_camera_and_lights(cmds, room_name, bounds, wall_height, lights_group)
 
     maya_output.parent.mkdir(parents=True, exist_ok=True)

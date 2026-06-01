@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+     width="160" height="120" viewBox="0 0 160 120">
+  <style>
+    .hidden_marker { display: none; }
+  </style>
+  <g id="layer1" inkscape:label="Layer 1" transform="translate(10 20)">
+    <g id="room_storage" inkscape:label="Phòng Kho" transform="translate(5 5)">
+      <path id="room_boundary" d="M0 0 L120 0 L120 80 L0 80 Z"/>
+
+      <g id="marker_shelf" inkscape:label="prop_shelf_unit" transform="translate(20 10)">
+        <rect x="0" y="0" width="20" height="8"/>
+      </g>
+
+      <g id="marker_crate" inkscape:label="prop_wooden_crate" transform="translate(60 30)">
+        <polygon points="0,0 10,0 10,10 0,10"/>
+      </g>
+
+      <g id="marker_hidden" inkscape:label="prop_hidden_box" class="hidden_marker">
+        <rect x="80" y="20" width="10" height="10"/>
+      </g>
+
+      <g id="marker_unsupported" inkscape:label="prop_decorative_text">
+        <text x="20" y="70">guide only</text>
+      </g>
+    </g>
+  </g>
+</svg>

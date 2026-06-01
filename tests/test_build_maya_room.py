@@ -331,6 +331,39 @@ def test_geometry_json_payload_contains_boundary_and_walls(tmp_path: Path, monke
     assert payload["units"]["maya_linear"] == "meter"
 
 
+def test_geometry_json_payload_contains_svg_prop_markers(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(FIXTURE_DIR / "illustrator_prop_markers.svg"),
+            "--room",
+            "phong_kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+    plan = builder.build_plan(args)
+
+    builder.write_geometry_json(plan)
+    payload = json.loads(plan.geometry_json.read_text(encoding="utf-8"))
+
+    markers = payload["prop_markers"]
+    assert [marker["prop_type"] for marker in markers] == ["shelf_unit", "wooden_crate"]
+    assert markers[0]["original_label"] == "prop_shelf_unit"
+    assert markers[0]["group_path"] == ["Layer 1", "Phòng Kho", "prop_shelf_unit"]
+    assert markers[0]["center_svg"] == [45.0, 39.0]
+    assert markers[0]["bbox_svg"] == [35.0, 35.0, 55.0, 43.0]
+    assert markers[0]["center_local"] == [30.0, 14.0]
+    assert markers[0]["center_maya"] == [0.3, -0.14]
+    assert markers[1]["center_maya"][0] == 0.65
+    assert round(markers[1]["center_maya"][1], 2) == -0.35
+
+
 def test_output_naming_follows_convention(tmp_path: Path, monkeypatch) -> None:
     isolated_manifest(monkeypatch, tmp_path)
     svg = write_svg(tmp_path / "floorplan.svg")
@@ -406,6 +439,48 @@ def test_dry_run_reports_unsupported_elements(tmp_path: Path, monkeypatch) -> No
     plan = builder.build_plan(args)
 
     assert any("circle" in item for item in plan.unsupported_elements)
+
+
+def test_dry_run_reports_svg_prop_markers(tmp_path: Path, monkeypatch) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(FIXTURE_DIR / "illustrator_prop_markers.svg"),
+            "--room",
+            "phong_kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+
+    plan = builder.build_plan(args)
+
+    assert [marker.prop_type for marker in plan.room.prop_markers] == [
+        "shelf_unit",
+        "wooden_crate",
+    ]
+
+
+def test_maya_scene_builder_has_marker_placeholder_helpers() -> None:
+    scene_builder = load_maya_scene_builder()
+
+    assert scene_builder.prop_placeholder_size("shelf_unit") == (0.8, 1.8, 0.35)
+    assert scene_builder.prop_placeholder_size("unknown_type") == scene_builder.GENERIC_PROP_SIZE
+    assert scene_builder.safe_maya_name("wooden crate") == "wooden_crate"
+    assert scene_builder.marker_center_maya({"center_maya": [0.3, -0.14]}) == (0.3, -0.14)
+
+
+def test_maya_scene_builder_prefers_svg_markers_over_preset_props() -> None:
+    script_path = builder.repo_root() / "scripts" / "maya" / "build_maya_room_scene.py"
+    script_text = script_path.read_text(encoding="utf-8")
+
+    assert "prop_markers" in script_text
+    assert "create_svg_prop_markers" in script_text
+    assert 'name="props"' in script_text
+    assert "prop_{prop_type}_" in script_text
+    assert "replace" in script_text or "room-preset auto props" in script_text
 
 
 def test_dry_run_on_illustrator_fixture_leaves_manifest_untouched(
