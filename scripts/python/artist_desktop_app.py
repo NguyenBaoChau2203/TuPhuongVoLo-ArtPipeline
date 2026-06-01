@@ -17,7 +17,10 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-APP_TITLE = "TuPhuongVoLo - Maya Artist App MVP"
+APP_VERSION = "0.7.5"
+APP_PHASE = "007E"
+APP_TITLE_BASE = "TuPhuongVoLo - Maya Artist App MVP"
+APP_TITLE = f"{APP_TITLE_BASE} v{APP_VERSION} ({APP_PHASE})"
 DEFAULT_ROOM_NAME = "phong_kho"
 DEFAULT_OUTPUT_DIR = "outputs"
 DEFAULT_MAYAPY_PATH = r"C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe"
@@ -49,6 +52,12 @@ PIPELINE_PYTHON_ERROR = (
     "Không tìm thấy Python để chạy pipeline. Hãy cài Python hoặc đặt "
     "TUPHUONGVOLO_PYTHON_EXE."
 )
+
+
+def app_version_display() -> str:
+    """Return the version label shown in CLI output and the desktop UI."""
+
+    return f"TuPhuongVoLo Maya Artist App v{APP_VERSION} ({APP_PHASE})"
 
 
 @dataclass(frozen=True)
@@ -385,36 +394,44 @@ class ArtistDesktopApp:
         outer = ttk.Frame(self.root, padding=12)
         outer.pack(fill=tk.BOTH, expand=True)
         outer.columnconfigure(1, weight=1)
-        outer.rowconfigure(12, weight=1)
+        outer.rowconfigure(13, weight=1)
 
-        ttk.Label(outer, text="File SVG sạch").grid(row=0, column=0, sticky=tk.W, pady=4)
-        ttk.Entry(outer, textvariable=self.svg_var).grid(row=0, column=1, sticky=tk.EW, pady=4)
+        ttk.Label(outer, text=app_version_display()).grid(
+            row=0,
+            column=0,
+            columnspan=3,
+            sticky=tk.W,
+            pady=(0, 8),
+        )
+
+        ttk.Label(outer, text="File SVG sạch").grid(row=1, column=0, sticky=tk.W, pady=4)
+        ttk.Entry(outer, textvariable=self.svg_var).grid(row=1, column=1, sticky=tk.EW, pady=4)
         ttk.Button(outer, text="Chọn SVG", command=self._choose_svg).grid(
-            row=0, column=2, padx=(8, 0), pady=4
+            row=1, column=2, padx=(8, 0), pady=4
         )
 
-        ttk.Label(outer, text="Tên phòng/layer").grid(row=1, column=0, sticky=tk.W, pady=4)
-        ttk.Entry(outer, textvariable=self.room_var).grid(row=1, column=1, sticky=tk.EW, pady=4)
+        ttk.Label(outer, text="Tên phòng/layer").grid(row=2, column=0, sticky=tk.W, pady=4)
+        ttk.Entry(outer, textvariable=self.room_var).grid(row=2, column=1, sticky=tk.EW, pady=4)
 
-        ttk.Label(outer, text="Thư mục output").grid(row=2, column=0, sticky=tk.W, pady=4)
-        ttk.Entry(outer, textvariable=self.output_var).grid(row=2, column=1, sticky=tk.EW, pady=4)
+        ttk.Label(outer, text="Thư mục output").grid(row=3, column=0, sticky=tk.W, pady=4)
+        ttk.Entry(outer, textvariable=self.output_var).grid(row=3, column=1, sticky=tk.EW, pady=4)
         ttk.Button(outer, text="Chọn thư mục", command=self._choose_output_dir).grid(
-            row=2, column=2, padx=(8, 0), pady=4
-        )
-
-        ttk.Label(outer, text="mayapy.exe").grid(row=3, column=0, sticky=tk.W, pady=4)
-        ttk.Entry(outer, textvariable=self.mayapy_var).grid(row=3, column=1, sticky=tk.EW, pady=4)
-        ttk.Button(outer, text="Chọn mayapy", command=self._choose_mayapy).grid(
             row=3, column=2, padx=(8, 0), pady=4
         )
 
-        ttk.Label(outer, text="Repo root").grid(row=4, column=0, sticky=tk.W, pady=4)
+        ttk.Label(outer, text="mayapy.exe").grid(row=4, column=0, sticky=tk.W, pady=4)
+        ttk.Entry(outer, textvariable=self.mayapy_var).grid(row=4, column=1, sticky=tk.EW, pady=4)
+        ttk.Button(outer, text="Chọn mayapy", command=self._choose_mayapy).grid(
+            row=4, column=2, padx=(8, 0), pady=4
+        )
+
+        ttk.Label(outer, text="Repo root").grid(row=5, column=0, sticky=tk.W, pady=4)
         ttk.Entry(outer, textvariable=self.repo_root_var, state="readonly").grid(
-            row=4, column=1, columnspan=2, sticky=tk.EW, pady=4
+            row=5, column=1, columnspan=2, sticky=tk.EW, pady=4
         )
 
         checks = ttk.Frame(outer)
-        checks.grid(row=5, column=0, columnspan=3, sticky=tk.W, pady=(8, 2))
+        checks.grid(row=6, column=0, columnspan=3, sticky=tk.W, pady=(8, 2))
         ttk.Checkbutton(checks, text="Dry-run", variable=self.dry_run_var).pack(
             side=tk.LEFT, padx=(0, 18)
         )
@@ -423,7 +440,7 @@ class ArtistDesktopApp:
         )
 
         render_frame = ttk.Frame(outer)
-        render_frame.grid(row=6, column=0, columnspan=3, sticky=tk.W, pady=4)
+        render_frame.grid(row=7, column=0, columnspan=3, sticky=tk.W, pady=4)
         ttk.Label(render_frame, text="Render width").pack(side=tk.LEFT)
         ttk.Entry(render_frame, textvariable=self.width_var, width=8).pack(
             side=tk.LEFT, padx=(6, 16)
@@ -434,7 +451,7 @@ class ArtistDesktopApp:
         )
 
         buttons = ttk.Frame(outer)
-        buttons.grid(row=7, column=0, columnspan=3, sticky=tk.EW, pady=(10, 4))
+        buttons.grid(row=8, column=0, columnspan=3, sticky=tk.EW, pady=(10, 4))
         self.run_button = ttk.Button(buttons, text="Chạy pipeline", command=self._run_clicked)
         self.run_button.pack(side=tk.LEFT)
         ttk.Button(buttons, text="Xóa log", command=self._clear_log).pack(
@@ -468,27 +485,27 @@ class ArtistDesktopApp:
             padx=(8, 0),
         )
 
-        ttk.Label(outer, text="Trạng thái").grid(row=8, column=0, sticky=tk.W, pady=(8, 2))
+        ttk.Label(outer, text="Trạng thái").grid(row=9, column=0, sticky=tk.W, pady=(8, 2))
         ttk.Label(outer, textvariable=self.status_var).grid(
-            row=8,
+            row=9,
             column=1,
             columnspan=2,
             sticky=tk.W,
             pady=(8, 2),
         )
 
-        ttk.Label(outer, text="Lệnh").grid(row=9, column=0, sticky=tk.W, pady=4)
+        ttk.Label(outer, text="Lệnh").grid(row=10, column=0, sticky=tk.W, pady=4)
         ttk.Entry(outer, textvariable=self.command_var, state="readonly").grid(
-            row=9,
+            row=10,
             column=1,
             columnspan=2,
             sticky=tk.EW,
             pady=4,
         )
 
-        ttk.Label(outer, text="Log").grid(row=11, column=0, sticky=tk.W, pady=(10, 2))
+        ttk.Label(outer, text="Log").grid(row=12, column=0, sticky=tk.W, pady=(10, 2))
         self.log_text = scrolledtext_module.ScrolledText(outer, height=20, wrap=tk.WORD)
-        self.log_text.grid(row=12, column=0, columnspan=3, sticky=tk.NSEW)
+        self.log_text.grid(row=13, column=0, columnspan=3, sticky=tk.NSEW)
 
     def run(self) -> None:
         self.root.mainloop()
@@ -655,6 +672,11 @@ class ArtistDesktopApp:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Mở desktop app MVP để chạy Maya-first pipeline cho họa sĩ."
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=app_version_display(),
     )
     return parser
 

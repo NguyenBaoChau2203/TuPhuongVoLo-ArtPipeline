@@ -13,8 +13,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+from artist_desktop_app import APP_VERSION, app_version_display
+
 APP_ENTRY = "scripts/python/artist_desktop_app.py"
 EXE_NAME = "TuPhuongVoLo_MayaArtistApp"
+PACKAGE_SCRIPT_VERSION = APP_VERSION
 PYINSTALLER_MISSING_MESSAGE = (
     "Chưa cài PyInstaller. Hãy cài trong môi trường dev bằng: "
     "python -m pip install pyinstaller"
@@ -156,6 +159,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Xóa build/ và dist/ trong repo trước khi in lệnh hoặc build.",
     )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"package_artist_app {PACKAGE_SCRIPT_VERSION} for {app_version_display()}",
+    )
     return parser
 
 
@@ -171,14 +179,15 @@ def main(argv: list[str] | None = None) -> int:
             print(message)
 
     if args.build:
+        print(f"App version: {app_version_display()}")
         print("Đang chạy PyInstaller:")
         print(command_to_display(command))
         return run_pyinstaller_build(command, root=root)
 
     if command_prefix is None:
         print(PYINSTALLER_MISSING_MESSAGE, file=sys.stderr)
-        return 2
 
+    print(f"App version: {app_version_display()}")
     print("Dry-run: lệnh PyInstaller dự kiến là:")
     print(command_to_display(command))
     print()

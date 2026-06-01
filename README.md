@@ -65,12 +65,14 @@ Artist desktop app MVP:
 
 ```powershell
 python scripts/python/artist_desktop_app.py
+python scripts/python/artist_desktop_app.py --version
 ```
 
 Desktop app packaging dry-run:
 
 ```powershell
 python scripts/python/package_artist_app.py --dry-run
+python scripts/python/package_artist_app.py --version
 ```
 
 PyInstaller is optional and dev-only. To build a local wrapper executable on a
@@ -83,6 +85,12 @@ python scripts/python/package_artist_app.py --build
 Generated `build/`, `dist/`, `.spec`, and `.exe` artifacts are local packaging
 outputs and must not be committed. The MVP executable still requires the local
 repo/pipeline files; it does not bundle Maya or `mayapy.exe`.
+
+Phase 007E adds small release metadata polish. The desktop app shows
+`TuPhuongVoLo Maya Artist App v0.7.5 (007E)` in the app title/UI and the
+packaging helper prints the same app version during dry-run. See
+`docs/release_packaging_checklist_vi.md` for the Vietnamese release packaging
+checklist.
 
 Phase 007B-R verification confirms `dist/TuPhuongVoLo_MayaArtistApp.exe`
 launches on the artist/DCC machine, dry-run returns exit code 0, actual Maya
@@ -109,6 +117,7 @@ Feature 005 MVP actual execution supports `mayapy.exe` only. `maya.exe` and
 Vietnamese guides:
 
 - [Bàn giao desktop app Maya](docs/artist_handoff_desktop_app_vi.md)
+- [Checklist release/packaging desktop app](docs/release_packaging_checklist_vi.md)
 - [Hướng dẫn cài đặt](docs/INSTALL_VI.md)
 - [Hướng dẫn sử dụng](docs/HOW_TO_USE_FOR_ARTIST_VI.md)
 - [Xử lý sự cố](docs/TROUBLESHOOTING_VI.md)

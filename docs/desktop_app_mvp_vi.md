@@ -34,6 +34,29 @@ Các nút tiện ích gồm `Xóa log`, `Copy lệnh`, mở repo, mở `outputs/
 `outputs/preview`, và `outputs/reports`. Các thư mục output này có thể được tạo
 an toàn khi bấm mở; app không tạo hoặc sửa thư mục source asset.
 
+## Cập nhật 007E: phiên bản app và checklist packaging
+
+Phase 007E thêm metadata phiên bản nhỏ cho app desktop:
+
+- App title và nhãn trong UI hiển thị `TuPhuongVoLo Maya Artist App v0.7.5 (007E)`.
+- CLI hỗ trợ kiểm tra phiên bản:
+
+```powershell
+python scripts/python/artist_desktop_app.py --version
+```
+
+- Packaging helper in phiên bản app trong dry-run và cũng hỗ trợ:
+
+```powershell
+python scripts/python/package_artist_app.py --version
+```
+
+Checklist release/packaging tiếng Việt nằm ở:
+
+```text
+docs/release_packaging_checklist_vi.md
+```
+
 ## Cách chạy từ source
 
 ```powershell
@@ -73,6 +96,10 @@ Chạy dry-run để xem lệnh package:
 ```powershell
 python scripts/python/package_artist_app.py --dry-run
 ```
+
+Dry-run sẽ in phiên bản app hiện tại và lệnh PyInstaller dự kiến. Nếu chưa cài
+PyInstaller, dry-run vẫn có thể dùng để kiểm tra metadata/lệnh dự kiến; chỉ
+`--build` mới cần PyInstaller thật.
 
 Hoặc dùng launcher:
 

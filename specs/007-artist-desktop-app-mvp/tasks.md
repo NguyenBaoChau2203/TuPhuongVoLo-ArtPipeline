@@ -60,3 +60,11 @@
 - [X] T032 Add Vietnamese artist/developer handoff checklist document
 - [X] T033 Document DCC repo update, retest, packaging, and safety checklist
 - [X] T034 Link the handoff checklist from existing desktop app documentation
+
+## Phase 9: 007E Small Packaging Polish
+
+- [X] T035 Add desktop app version metadata and display it in title/UI
+- [X] T036 Add `--version` support for the desktop app CLI
+- [X] T037 Print app version metadata from packaging dry-run/version output
+- [X] T038 Add Vietnamese release packaging checklist
+- [X] T039 Update focused desktop app docs, launcher docs, quickstart, and tests
