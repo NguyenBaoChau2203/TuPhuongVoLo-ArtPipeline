@@ -58,7 +58,7 @@ Expected:
 Actual execution is environment-dependent and requires `mayapy.exe`:
 
 ```powershell
-python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --room kho --maya-path "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe"
+python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --room kho --maya-path "C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe"
 ```
 
 Feature 005 MVP actual run supports `mayapy.exe` only. Direct `maya.exe` or
@@ -141,5 +141,7 @@ Phase 005.4 launcher verification:
 Generated outputs are expected under `outputs/maya/`, `outputs/preview/`, `outputs/tmp/`, and `outputs/reports/`. Do not commit generated `.ma`, `.png`, temporary handoff JSON, or batch reports unless intentionally adding a fixture.
 
 Actual Maya execution was verified manually on the artist/DCC machine with
-Autodesk Maya 2024 and `mayapy.exe`. The generated `.ma` opened successfully in
-Maya and contained floor, walls, props, camera, and lights.
+Autodesk Maya 2024 and `mayapy.exe`. Launcher 07 was verified with
+`tests/in/illustrator_prop_markers.svg`, room `phong_kho`, dry-run first, actual
+run after dry-run, and render preview enabled. The generated `.ma` opened
+successfully in Maya and contained floor, walls, props, camera, and lights.

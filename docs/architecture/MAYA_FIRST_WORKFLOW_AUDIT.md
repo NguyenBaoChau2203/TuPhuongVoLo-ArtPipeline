@@ -3,7 +3,7 @@
 > **Document type**: Architecture audit / developer reference (English)
 > **Phase**: 005.0A — Workflow alignment / architecture cleanup
 > **Audience**: AI coding agents and human developers
-> **Last updated**: 2026-05-31
+> **Last updated**: 2026-06-01
 
 This document is the authoritative reference for the project's current strategic
 direction. Any AI agent or developer starting work on this repository should read
@@ -15,8 +15,8 @@ this file first to understand that the project is now **Maya-first** and
 ## 1. Current Repository Status
 
 The repository is past the bootstrap phase. Several features are implemented as
-working, tested Python tooling. Test suite: **81 tests passing** (excluding the
-pre-existing `tests/tmp/` environment-permission quirk on this machine).
+working, tested Python tooling. The Maya-first workflow is verified through the
+launcher-based artist workflow in Phase 005.4 on the artist/DCC machine.
 
 ### Implemented features
 
@@ -26,7 +26,7 @@ pre-existing `tests/tmp/` environment-permission quirk on this machine).
 | 2 | Asset Naming & Manifest | `specs/003-asset-naming-and-manifest/` | Done |
 | 3 | Floorplan to Isometric Room | `specs/001-floorplan-to-isometric-room/` | MVP done; Blender path is legacy/fallback |
 | 4 | Batch Isometric Render | `specs/004-batch-isometric-render/` | MVP dry-run/report for legacy backend |
-| 5 | Maya Bridge | `specs/005-maya-bridge/` | **Primary DCC backend MVP** |
+| 5 | Maya Bridge | `specs/005-maya-bridge/` | **Primary DCC backend; verified through 005.4 launcher workflow** |
 | 6 | Natural Language Agent Control | `specs/006-natural-language-agent-control/` | Spec only — DO NOT implement yet |
 
 ### Key scripts (Python source-of-truth layer)
@@ -162,21 +162,22 @@ These continue to be tested and supported as a fallback draft path.
 
 ---
 
-## 6. What Must NOT Be Changed Yet
+## 6. What Must NOT Be Changed In Checkpoint Cleanup
 
-The following are explicitly out of scope for Phase 005.0A and must not be started:
+The following are explicitly out of scope for Phase 005.4R checkpoint cleanup and
+must not be started as part of documentation/state cleanup:
 
 - **Feature 006** natural-language agent control / MCP integration.
-- **Phase 005.1+** implementation work (real Illustrator SVG hardening, PNG render,
-  prop placement from SVG layers, etc.).
-- A large SVG parser refactor.
+- **Phase 005.5** AI polish implementation or production integration.
+- **Feature 007A** desktop app implementation.
+- SVG parser logic changes.
+- Maya scene generation logic changes.
 - External AI API integration (FLUX, fal.ai, or any cloud model).
-- GUI / desktop `.exe` packaging.
 - TencentDB-Agent-Memory integration (evaluation only — see `docs/dev/TENCENTDB_AGENT_MEMORY_EVALUATION.md`).
 - Switching the project back to a Blender-first default.
 
-Production Python/Maya/Blender logic should not be changed in this phase except a
-tiny fix strictly required to keep tests passing.
+Production Python/Maya/Blender logic should not be changed in this checkpoint
+except a tiny documentation mismatch fix that is required to keep the docs honest.
 
 ---
 
@@ -203,35 +204,31 @@ These rules apply to every agent and developer touching this repository:
 
 | Phase | Title | Scope summary | Status |
 |-------|-------|---------------|--------|
-| **005.0A** | Workflow alignment / architecture cleanup | Documentation + architecture notes + dev workflow docs + `.gitignore`. No production logic changes. | **This phase** |
-| **005.1** | Real Illustrator SVG compatibility hardening | Make room detection / geometry robust against real Illustrator SVG exports (transforms, nested groups, appearance, units). No new backend features. | Next |
-| **005.2** | Maya isometric base render PNG | Add PNG preview rendering from the Maya `.ma` blockout via `mayapy`. | Planned |
-| **005.3** | Prop placement from SVG group/layer names | Place props in Maya based on named SVG groups/layers, not just room presets. | Planned |
-| **005.4** | Artist-friendly launchers | Polish `.bat` launchers and Vietnamese guidance for the Maya-first flow. | Planned |
-| **005.5** | Optional FLUX.1 Kontext Pro AI polish preview | Optional, opt-in AI polish preview. External API; requires explicit approval and a separate feature/spec. | Optional / future |
-| **007** | Friendly desktop app packaged as `.exe` | Wrap the pipeline in an artist-friendly desktop app. | Future |
+| **005.0A** | Workflow alignment / architecture cleanup | Documentation + architecture notes + dev workflow docs + `.gitignore`. No production logic changes. | Complete |
+| **005.1** | Real Illustrator SVG compatibility hardening | Make room detection / geometry robust against real Illustrator SVG exports. | Complete |
+| **005.2** | Maya isometric base render PNG | Add PNG preview rendering from the Maya `.ma` blockout via `mayapy`. | Complete |
+| **005.3** | Prop placement from SVG group/layer names | Place props in Maya based on named SVG groups/layers, not just room presets. | Complete |
+| **005.4** | Artist-friendly launchers | Polish `.bat` launchers and Vietnamese guidance for the Maya-first flow. | Complete and verified |
+| **005.5A** | Optional AI polish evaluation/prototype | Optional evaluation only. External API/cost/privacy/secrets policy must be ready before any production integration. | Optional / deferred |
+| **007A** | Friendly desktop app MVP packaged as `.exe` | Wrap the verified Maya-first workflow in an artist-friendly local desktop app. | Recommended next |
 
 > Note: Feature **006** (natural-language control) remains spec-only and is **not**
-> on the near-term path. It must not be started in or before 005.x.
+> on the near-term path. It must not be started until the pipeline/app workflow is stable.
 
 ---
 
 ## 9. Next Recommended Phase
 
-**Feature 005.1 — Real Illustrator SVG compatibility hardening.**
+**007A — Friendly desktop app MVP packaged as `.exe`.**
 
-Rationale: The Maya-first backend (005) is implemented and tested with synthetic
-SVG fixtures. Before adding rendering (005.2) or prop placement (005.3), the
-pipeline must reliably parse the messy SVG that real Illustrator exports produce
-(nested groups, transforms, appearance/effects, varied units). Hardening the
-shared Python SVG/geometry layer increases the value of every downstream backend
-(Maya primary, Blender fallback) without expanding scope.
+Rationale: The Maya-first backend has been verified through launcher-based artist
+workflow, including real Maya `.ma` output and PNG preview generation. The next
+production usability step is to wrap the local workflow in a friendly desktop app
+so the artist does not need command-line knowledge.
 
-Do **not** begin 005.1 implementation as part of 005.0A. This audit only aligns
-documentation and developer workflow.
+Phase **005.5A** AI polish should remain optional/evaluation-only until API cost,
+privacy, secrets handling, and opt-in policy are ready. Feature **006**
+natural-language control remains deferred.
 
-### Foundation document for 005.1
-
-A lightweight, non-binding Vietnamese artist checklist has been added at
-`docs/artist_svg_export_checklist_vi.md` to help artists export cleaner SVG. It
-documents export hygiene only and does **not** change any parser code.
+The final 005.4R verification checkpoint is recorded in
+`docs/verification/005_4_maya_artist_workflow_verified.md`.

@@ -32,7 +32,7 @@ clean SVG -> Blender MVP isometric draft / batch dry-run
 | 2 | Asset Naming & Manifest | `specs/003-asset-naming-and-manifest/` | Done |
 | 3 | Floorplan to Isometric Room | `specs/001-floorplan-to-isometric-room/` | MVP done; Blender optional/fallback |
 | 4 | Batch Isometric Render | `specs/004-batch-isometric-render/` | MVP dry-run/report for previous backend |
-| 5 | Maya Bridge | `specs/005-maya-bridge/` | Primary DCC backend MVP |
+| 5 | Maya Bridge | `specs/005-maya-bridge/` | Primary DCC backend; launcher workflow verified |
 | 6 | Natural Language Agent Control | `specs/006-natural-language-agent-control/` | Spec only; not implemented |
 
 ## Developer Quickstart
@@ -62,7 +62,7 @@ python scripts/python/batch_maya_room.py --input-dir tests/in --dry-run --json-r
 Actual Maya run, when `mayapy.exe` is available:
 
 ```powershell
-python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --room kho --maya-path "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe"
+python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --room kho --maya-path "C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe"
 ```
 
 Feature 005 MVP actual execution supports `mayapy.exe` only. `maya.exe` and
@@ -108,7 +108,7 @@ TuPhuongVoLo-ArtPipeline/
 
 ## Not Implemented
 
-Feature 006 natural-language control/MCP is not implemented. Actual Maya scene generation requires local Autodesk Maya with `mayapy.exe` and is environment-dependent.
+Feature 006 natural-language control/MCP is not implemented. Actual Maya scene generation requires local Autodesk Maya with `mayapy.exe`; the 005.4 launcher workflow has been verified on the artist/DCC machine with Maya 2024.
 
 ## License
 

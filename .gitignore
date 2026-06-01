@@ -33,6 +33,7 @@ outputs/preview/*.png
 outputs/blender/*.blend
 outputs/blender/*.blend1
 outputs/maya/*
+outputs/tmp/*
 outputs/manifest/*.json
 outputs/manifest/*.csv
 outputs/reports/*.json
@@ -106,6 +107,7 @@ credentials.json
 !outputs/preview/.gitkeep
 !outputs/blender/.gitkeep
 !outputs/maya/.gitkeep
+!outputs/tmp/.gitkeep
 !outputs/manifest/.gitkeep
 !drops/.gitkeep
 !tests/in/.gitkeep

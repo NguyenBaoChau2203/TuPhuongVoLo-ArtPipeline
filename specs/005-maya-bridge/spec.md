@@ -4,7 +4,7 @@
 
 **Created**: 2026-05-29
 
-**Status**: MVP implemented; actual Maya execution pending local Maya verification
+**Status**: MVP implemented; actual Maya execution and 005.4 launcher workflow verified on the artist/DCC machine
 
 ## Correction
 
@@ -67,5 +67,5 @@ An artist can place simple named SVG groups/layers such as `prop_shelf_unit`, `i
 - **SC-002**: Batch dry-run writes `outputs/reports/batch_maya_report.json`.
 - **SC-003**: Missing Maya executable fails gracefully in actual mode.
 - **SC-004**: Existing Feature 001/002/003/004 tests still pass.
-- **SC-005**: Actual Maya execution is documented as environment-dependent until verified locally.
+- **SC-005**: Actual Maya execution is documented as verified on the artist/DCC machine and remains environment-dependent for other machines.
 - **SC-006**: Prop marker tests pass without Autodesk Maya installed.
