@@ -16,6 +16,24 @@ python scripts/python/build_maya_room.py
 App không thay thế Maya, không parse SVG trực tiếp, không tạo geometry riêng, và
 không sửa file SVG nguồn. Pipeline CLI vẫn là source of truth.
 
+## Cập nhật 007C: kiểm tra và trạng thái rõ hơn
+
+Phase 007C polish thêm kiểm tra trước khi chạy để họa sĩ thấy lỗi dễ hiểu hơn:
+
+- Chưa chọn SVG, SVG không tồn tại, tên phòng trống, hoặc output trống.
+- Không tìm thấy repo root hoặc `scripts/python/build_maya_room.py`.
+- Chạy thật nhưng chưa có `mayapy.exe` hợp lệ.
+- File `.exe` đóng gói không tìm thấy Python bên ngoài để gọi pipeline.
+
+App hiển thị repo root đang dùng, lệnh dự kiến, trạng thái `Sẵn sàng`,
+`Đang chạy...`, `Hoàn tất: mã 0`, hoặc `Lỗi: mã <code>`, và luôn ghi exit code
+vào log. Nút `Chạy pipeline` bị khóa trong lúc subprocess đang chạy và được mở
+lại sau khi kết thúc.
+
+Các nút tiện ích gồm `Xóa log`, `Copy lệnh`, mở repo, mở `outputs/maya`,
+`outputs/preview`, và `outputs/reports`. Các thư mục output này có thể được tạo
+an toàn khi bấm mở; app không tạo hoặc sửa thư mục source asset.
+
 ## Cách chạy từ source
 
 ```powershell
@@ -108,4 +126,5 @@ set TUPHUONGVOLO_PYTHON_EXE=C:\Path\To\python.exe
 
 Lưu ý: `.exe` MVP này vẫn là wrapper local cho repo/pipeline hiện có. Nó không
 bundle toàn bộ repo, không bundle Maya, và không bundle `mayapy.exe`. Không commit
-`build/`, `dist/`, file `.spec` sinh tự động, hoặc file `.exe`.
+`build/`, `dist/`, file `.spec` sinh tự động, file `.exe`, hoặc output sinh ra
+trong `outputs/maya/`, `outputs/preview/`, `outputs/tmp/`, `outputs/reports/`.

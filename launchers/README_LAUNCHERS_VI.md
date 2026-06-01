@@ -62,6 +62,11 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 5. Nếu muốn dùng CLI launcher cũ, chạy `07_build_maya_room.bat` cho một file SVG/phòng.
 6. Chạy `08_batch_maya_room.bat` nếu cần xử lý nhiều SVG hoặc nhiều phòng. Report JSON mặc định nằm trong `outputs/reports/batch_maya_report.json`.
 
+Desktop app đã được polish ở phase 007C: app kiểm tra lỗi trước khi chạy, hiển
+thị repo root, lệnh chuẩn bị chạy, trạng thái chạy, exit code cuối cùng, và có
+nút `Xóa log` / `Copy lệnh`. Hãy dry-run trước. Chạy thật cần `mayapy.exe` hợp
+lệ, ví dụ `C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe`.
+
 ### Bước 8: Package desktop app thành .exe (developer-only)
 1. Chạy `10_package_artist_app.bat` để in lệnh package dry-run.
 2. PyInstaller là công cụ dev-only; launcher này không tự cài PyInstaller.
@@ -70,6 +75,7 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 5. `.exe` là wrapper local: hãy chạy từ thư mục repo hoặc đặt `TUPHUONGVOLO_REPO_ROOT`.
 6. `.exe` vẫn cần Python bên ngoài để chạy pipeline; nếu Python không nằm trong `PATH`, đặt `TUPHUONGVOLO_PYTHON_EXE`.
 7. `.exe` không bundle Autodesk Maya hoặc `mayapy.exe`; chạy thật vẫn cần đường dẫn `mayapy.exe` hợp lệ.
+8. Không commit `build/`, `dist/`, `.exe`, `.spec`, hoặc output sinh ra trong `outputs/`.
 
 ---
 

@@ -49,6 +49,12 @@ Nếu cleanup báo lỗi path chưa đóng kín hoặc còn transform, hãy quay
 5. Bật `Render PNG preview` nếu cần ảnh xem nhanh.
 6. Khi dry-run đúng, bỏ chọn `Dry-run`, kiểm tra đường dẫn `mayapy.exe`, rồi chạy thật.
 
+Phase 007C giúp app kiểm tra lỗi trước khi chạy: thiếu SVG, SVG không tồn tại,
+tên phòng trống, output trống, thiếu repo root, thiếu `build_maya_room.py`,
+hoặc chạy thật nhưng `mayapy.exe` không hợp lệ. App cũng hiển thị trạng thái,
+lệnh đang chuẩn bị chạy, exit code cuối cùng, nút xóa log, nút copy lệnh, và các
+nút mở nhanh `outputs/maya`, `outputs/preview`, `outputs/reports`.
+
 Desktop app chỉ bọc pipeline CLI đã kiểm chứng. App không sửa SVG gốc, không
 thay thế Maya, và output sinh ra vẫn nằm trong `outputs/maya/`,
 `outputs/preview/`, `outputs/reports/`.
@@ -72,6 +78,11 @@ PyInstaller là công cụ dev-only, không phải dependency runtime của pipe
 `.exe` sinh ra nằm trong `dist/TuPhuongVoLo_MayaArtistApp.exe`, vẫn cần repo và
 pipeline local để chạy, và không được commit cùng `build/`, `dist/`, hoặc file
 `.spec` sinh tự động.
+
+File `.exe` vẫn là wrapper local: nó cần repo files, Python bên ngoài, Maya và
+`mayapy.exe` trên máy đang chạy. Trước khi chạy thật, hãy dry-run trước; khi chạy
+thật phải dùng đường dẫn `mayapy.exe` hợp lệ, ví dụ
+`C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe`.
 
 ### Cách cũ: launcher CLI một phòng
 
@@ -178,6 +189,7 @@ Các file sinh ra sau đây không nên commit trừ khi developer cố ý cần
 - `outputs/preview/*.png`
 - `outputs/tmp/*`
 - `outputs/reports/*.json`
+- `build/`, `dist/`, file `.exe`, file `.spec`
 - File `.ma` hoặc `.png` sinh từ Maya launcher
 
 ## Xử lý sự cố nhanh

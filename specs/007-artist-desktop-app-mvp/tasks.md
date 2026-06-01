@@ -38,3 +38,11 @@
 - [X] T019 Document artist/DCC machine verification for packaged `.exe`
 - [X] T020 Confirm generated package artifacts and Maya outputs remain uncommitted
 - [X] T021 Record recommended next step as 007C desktop app UX/reliability polish
+
+## Phase 6: 007C Desktop App UX/Reliability Polish
+
+- [X] T022 Add default mayapy detection, repo-root display, and repo-relative path helpers
+- [X] T023 Add pre-run validation for SVG, room name, output folder, repo root, build script, mayapy, and frozen Python
+- [X] T024 Add status label, run-button lock/unlock, command preview/copy, log clearing, and safer output folder buttons
+- [X] T025 Update pure helper tests without Tkinter, Maya, PyInstaller, external APIs, or generated output artifacts
+- [X] T026 Update Vietnamese artist docs and quickstart for 007C behavior
