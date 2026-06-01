@@ -113,7 +113,9 @@ without AI, API keys, `fal-client`, or internet. AI output is reference-only and
 is written under `outputs/ai_preview/` with a versioned `_fal_ai_preview.png`
 name plus a JSON report. See `docs/ai_polish_preview_fal_vi.md`.
 Phase 005.5B-R verification is recorded in
-`docs/verification/005_5B_ai_polish_mock_verified.md`.
+`docs/verification/005_5B_ai_polish_mock_verified.md`. Phase 005.5C-R
+verification is recorded in
+`docs/verification/005_5C_ai_polish_fal_verified.md`.
 
 Phase 007E adds small release metadata polish. The desktop app shows
 `TuPhuongVoLo Maya Artist App v0.7.5 (007E)` in the app title/UI and the

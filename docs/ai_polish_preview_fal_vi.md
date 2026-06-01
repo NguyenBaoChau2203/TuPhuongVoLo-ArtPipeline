@@ -4,6 +4,7 @@
 > Provider: `fal`
 > Model mặc định: `fal-ai/flux-pro/kontext`
 > Output: `outputs/ai_preview/`
+> Checkpoint: `docs/verification/005_5C_ai_polish_fal_verified.md`
 
 ## Mục tiêu
 
