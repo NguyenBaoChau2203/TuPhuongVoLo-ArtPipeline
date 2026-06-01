@@ -237,4 +237,5 @@ Các phần sau chưa thuộc MVP bàn giao này hoặc vẫn là giới hạn a
 - `launchers\README_LAUNCHERS_VI.md`
 - `docs\verification\007B_desktop_app_exe_verified.md`
 - `docs\verification\007C_desktop_app_polish_verified.md`
+- `docs\verification\007G_desktop_app_ai_preview_verified.md`
 - `specs\007-artist-desktop-app-mvp\quickstart.md`

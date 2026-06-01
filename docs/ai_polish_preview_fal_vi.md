@@ -43,6 +43,12 @@ Với provider `fal`, nếu thiếu `FAL_KEY` và tùy chọn skip đang bật, 
 toàn và exit `0`. Muốn gọi fal.ai thật thì tắt `AI dry-run`, chọn provider `fal`, cài
 optional `fal-client`, và đặt `FAL_KEY` trên máy chạy.
 
+Checkpoint desktop app 007G-R nằm ở:
+
+```text
+docs/verification/007G_desktop_app_ai_preview_verified.md
+```
+
 ## Cài đặt tùy chọn
 
 Chỉ cài khi thật sự muốn gọi fal.ai:

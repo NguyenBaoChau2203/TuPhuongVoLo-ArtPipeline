@@ -86,3 +86,10 @@
 - [X] T049 Add tests for AI command building, prompt handling, PNG validation, output folder helpers, and version metadata
 - [X] T050 Update Vietnamese docs, quickstart, launcher guide, README, and safety notes for optional AI preview
 - [X] T051 Confirm Feature 006, source SVG, Maya generation, render logic, manifest, dependencies, secrets, and generated outputs remain unchanged by 007G
+
+## Phase 12: 007G-R AI Preview Verification Checkpoint
+
+- [X] T052 Re-run desktop app, AI CLI, compileall, and full pytest validation from commit `fc036c0`
+- [X] T053 Add Vietnamese verification checkpoint document for 007G-R
+- [X] T054 Link checkpoint from relevant desktop app and AI preview docs
+- [X] T055 Confirm fal-client remains optional, no external API calls were made, and generated `outputs/ai_preview/` artifacts remain uncommitted

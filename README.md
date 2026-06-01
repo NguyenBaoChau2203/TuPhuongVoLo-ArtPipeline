@@ -124,8 +124,9 @@ Phase 007G adds desktop app AI polish preview controls and bumps the app to
 `TuPhuongVoLo Maya Artist App v0.7.6 (007G)` in the app title/UI. The
 packaging helper prints the same app version during dry-run. See
 `docs/release_packaging_checklist_vi.md` for the Vietnamese release packaging
-checklist. Phase 007E-R verification is recorded in
-`docs/verification/007E_packaging_metadata_verified.md`.
+checklist. Phase 007G-R verification is recorded in
+`docs/verification/007G_desktop_app_ai_preview_verified.md`. Phase 007E-R
+verification is recorded in `docs/verification/007E_packaging_metadata_verified.md`.
 
 Phase 007B-R verification confirms `dist/TuPhuongVoLo_MayaArtistApp.exe`
 launches on the artist/DCC machine, dry-run returns exit code 0, actual Maya
