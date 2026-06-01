@@ -12,6 +12,12 @@ from typing import Any
 DEFAULT_WALL_HEIGHT = 3.0
 DEFAULT_WALL_THICKNESS = 0.12
 DEFAULT_PROP_COLOR = "#8A7F72"
+DEFAULT_PREVIEW_ASPECT_RATIO = 16.0 / 9.0
+ISO_CAMERA_ROTATION = (-35.264, 45.0, 0.0)
+ISO_CAMERA_DISTANCE_FACTOR = 2.4
+ISO_CAMERA_HEIGHT_FACTOR = 0.95
+ORTHOGRAPHIC_PADDING_FACTOR = 1.25
+MIN_ORTHOGRAPHIC_WIDTH = 2.0
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -110,6 +116,40 @@ def room_bounds(points: list[tuple[float, float]]) -> tuple[float, float, float,
     xs = [point[0] for point in points]
     zs = [point[1] for point in points]
     return min(xs), min(zs), max(xs), max(zs)
+
+
+def camera_framing_from_bounds(
+    bounds: tuple[float, float, float, float],
+    wall_height: float,
+    aspect_ratio: float = DEFAULT_PREVIEW_ASPECT_RATIO,
+) -> dict[str, float]:
+    """Return deterministic isometric camera framing values for room bounds."""
+
+    min_x, min_z, max_x, max_z = bounds
+    room_width = max(max_x - min_x, 0.0)
+    room_depth = max(max_z - min_z, 0.0)
+    safe_wall_height = max(float(wall_height), 0.0)
+    safe_aspect = max(float(aspect_ratio), 1.0)
+    max_dimension = max(room_width, room_depth, 1.0)
+    diagonal = max(math.hypot(room_width, room_depth), max_dimension)
+
+    # Approximate the projected isometric extents. Maya's orthographicWidth is
+    # horizontal, so vertical framing must be converted by the render aspect.
+    horizontal_extent = max(diagonal, max_dimension)
+    vertical_extent = (room_width + room_depth) * 0.45 + safe_wall_height * 0.9
+    required_width = max(horizontal_extent, vertical_extent * safe_aspect, max_dimension)
+
+    return {
+        "center_x": (min_x + max_x) / 2.0,
+        "center_z": (min_z + max_z) / 2.0,
+        "max_dimension": max_dimension,
+        "camera_distance": max(max_dimension * ISO_CAMERA_DISTANCE_FACTOR, diagonal * 1.4),
+        "orthographic_width": max(
+            required_width * ORTHOGRAPHIC_PADDING_FACTOR,
+            max_dimension * 2.0,
+            MIN_ORTHOGRAPHIC_WIDTH,
+        ),
+    }
 
 
 def create_floor(
@@ -223,23 +263,25 @@ def create_camera_and_lights(
     cmds: Any,
     room_name: str,
     bounds: tuple[float, float, float, float],
+    wall_height: float,
     parent: str,
 ) -> None:
     """Create an orthographic isometric camera and simple lights."""
 
-    min_x, min_z, max_x, max_z = bounds
-    center_x = (min_x + max_x) / 2.0
-    center_z = (min_z + max_z) / 2.0
-    span = max(max_x - min_x, max_z - min_z, 1.0)
+    framing = camera_framing_from_bounds(bounds, wall_height)
     camera_transform, camera_shape = cmds.camera(name=f"cam_{room_name}_iso")
-    distance = span * 1.8
+    distance = framing["camera_distance"]
     cmds.xform(
         camera_transform,
-        translation=(center_x + distance, distance * 0.8, center_z + distance),
-        rotation=(-35.264, 45.0, 0.0),
+        translation=(
+            framing["center_x"] + distance,
+            distance * ISO_CAMERA_HEIGHT_FACTOR,
+            framing["center_z"] + distance,
+        ),
+        rotation=ISO_CAMERA_ROTATION,
     )
     cmds.setAttr(f"{camera_shape}.orthographic", True)
-    cmds.setAttr(f"{camera_shape}.orthographicWidth", span * 1.4)
+    cmds.setAttr(f"{camera_shape}.orthographicWidth", framing["orthographic_width"])
     # mayapy runs headless and has no active viewport; the camera is saved
     # into the scene without switching the current viewport.
     cmds.parent(camera_transform, parent)
@@ -306,7 +348,7 @@ def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
             index=index,
         )
     create_placeholder_props(cmds, room_preset, bounds, prop_mat, props_group)
-    create_camera_and_lights(cmds, room_name, bounds, lights_group)
+    create_camera_and_lights(cmds, room_name, bounds, wall_height, lights_group)
 
     maya_output.parent.mkdir(parents=True, exist_ok=True)
     cmds.file(rename=str(maya_output))
