@@ -68,3 +68,10 @@
 - [X] T037 Print app version metadata from packaging dry-run/version output
 - [X] T038 Add Vietnamese release packaging checklist
 - [X] T039 Update focused desktop app docs, launcher docs, quickstart, and tests
+
+## Phase 10: 007E-R Packaging Metadata Verification Checkpoint
+
+- [X] T040 Verify `63c59bb` is present with a clean worktree before checkpoint work
+- [X] T041 Record app version, dry-run packaging output, and full pytest result
+- [X] T042 Confirm packaging remains local/dev-only and generated artifacts stay uncommitted
+- [X] T043 Confirm Feature 006 and AI polish implementation remain deferred

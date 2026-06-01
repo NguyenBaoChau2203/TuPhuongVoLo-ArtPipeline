@@ -57,6 +57,12 @@ Checklist release/packaging tiếng Việt nằm ở:
 docs/release_packaging_checklist_vi.md
 ```
 
+Checkpoint kiểm chứng 007E-R nằm ở:
+
+```text
+docs/verification/007E_packaging_metadata_verified.md
+```
+
 ## Cách chạy từ source
 
 ```powershell

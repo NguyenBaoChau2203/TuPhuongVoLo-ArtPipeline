@@ -19,6 +19,12 @@ python scripts/python/artist_desktop_app.py --version
 python scripts/python/package_artist_app.py --version
 ```
 
+Checkpoint kiểm chứng metadata packaging 007E-R:
+
+```text
+docs/verification/007E_packaging_metadata_verified.md
+```
+
 ## Checklist trước khi đóng gói
 
 - [ ] Đang ở branch `workflow/maya-first-artist-pipeline`.

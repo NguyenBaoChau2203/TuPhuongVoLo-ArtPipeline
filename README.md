@@ -90,7 +90,8 @@ Phase 007E adds small release metadata polish. The desktop app shows
 `TuPhuongVoLo Maya Artist App v0.7.5 (007E)` in the app title/UI and the
 packaging helper prints the same app version during dry-run. See
 `docs/release_packaging_checklist_vi.md` for the Vietnamese release packaging
-checklist.
+checklist. Phase 007E-R verification is recorded in
+`docs/verification/007E_packaging_metadata_verified.md`.
 
 Phase 007B-R verification confirms `dist/TuPhuongVoLo_MayaArtistApp.exe`
 launches on the artist/DCC machine, dry-run returns exit code 0, actual Maya
