@@ -62,3 +62,10 @@
 ## Notes
 
 Verified manually on artist/DCC machine with Autodesk Maya 2024 mayapy.exe. .ma output generated and opened successfully in Maya. Scene contained floor, walls, props, camera, and lights.
+
+## Phase 7: AI Polish Preview Evaluation (005.5A)
+
+- [X] T038 Create Vietnamese evaluation document for optional future AI polish preview
+- [X] T039 Document that AI polish preview is reference-only and must not replace clean SVG, geometry JSON, Maya `.ma`, or manual artist polish
+- [X] T040 Document safety/privacy policy for any future external AI API usage
+- [X] T041 Confirm no external API integration, provider SDK, dependency, `.env`, generated image, or Feature 006 implementation is added

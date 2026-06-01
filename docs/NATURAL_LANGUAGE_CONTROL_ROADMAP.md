@@ -2,14 +2,17 @@
 
 > Feature 006 — Future Phase | **Tier C: Advanced Agentic**
 
-## Current Sequencing After 005.4R
+## Current Sequencing After 007D / 005.5A
 
-Feature 006 remains deferred. After the verified Maya artist workflow checkpoint,
-the recommended path is:
+Feature 006 remains deferred. The verified Maya artist workflow, desktop app MVP,
+packaging workflow, UX/reliability polish, and artist handoff notes are already
+documented. Phase 005.5A now records an AI polish preview evaluation only.
 
-1. **007A** - Friendly desktop app MVP packaged as `.exe`
-2. **005.5A** - Optional AI polish evaluation/prototype only
-3. **Feature 006** - Natural-language control after the pipeline/app workflow is stable
+Current status:
+
+1. **007A-007D** - Friendly desktop app MVP, packaging, polish, and handoff docs completed.
+2. **005.5A** - Optional AI polish preview evaluation completed as documentation only.
+3. **Feature 006** - Natural-language control remains deferred and separate.
 
 Do not integrate external AI APIs or production agent memory before API cost,
 privacy, secrets handling, and opt-in policy are ready.

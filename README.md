@@ -33,6 +33,7 @@ clean SVG -> Blender MVP isometric draft / batch dry-run
 | 3 | Floorplan to Isometric Room | `specs/001-floorplan-to-isometric-room/` | MVP done; Blender optional/fallback |
 | 4 | Batch Isometric Render | `specs/004-batch-isometric-render/` | MVP dry-run/report for previous backend |
 | 5 | Maya Bridge | `specs/005-maya-bridge/` | Primary DCC backend; launcher workflow verified |
+| 5.5A | AI Polish Preview Evaluation | `docs/ai_polish_preview_evaluation_vi.md` | Documentation only; implementation deferred |
 | 6 | Natural Language Agent Control | `specs/006-natural-language-agent-control/` | Spec only; not implemented |
 | 7 | Artist Desktop App MVP | `specs/007-artist-desktop-app-mvp/` | Local Tkinter wrapper; packaged `.exe` verified on artist/DCC machine |
 
@@ -125,6 +126,8 @@ Core artist flow:
 
 Generated `.ma`, `.png`, `outputs/tmp/`, and normal batch reports are local outputs and should not be committed unless intentionally added as test fixtures.
 
+Phase 005.5A documents an optional future AI polish preview stage only. No external AI API integration exists yet, no AI provider dependency is added, and Feature 006 natural-language control remains deferred.
+
 ## Repository Structure
 
 ```text
@@ -146,7 +149,7 @@ TuPhuongVoLo-ArtPipeline/
 
 ## Not Implemented
 
-Feature 006 natural-language control/MCP is not implemented. Actual Maya scene generation requires local Autodesk Maya with `mayapy.exe`; the 005.4 launcher workflow has been verified on the artist/DCC machine with Maya 2024.
+Feature 006 natural-language control/MCP is not implemented. AI polish preview is also not implemented; 005.5A is documentation-only evaluation. Actual Maya scene generation requires local Autodesk Maya with `mayapy.exe`; the 005.4 launcher workflow has been verified on the artist/DCC machine with Maya 2024.
 
 ## License
 
