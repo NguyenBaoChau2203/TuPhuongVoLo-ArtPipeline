@@ -78,9 +78,12 @@ def test_maya_camera_framing_uses_room_bounds_and_padding() -> None:
 
     assert framing["center_x"] == 2.0
     assert framing["center_z"] == 1.0
+    assert framing["target_y"] == 1.5
     assert framing["max_dimension"] == 4.0
-    assert framing["camera_distance"] >= 4.0 * 2.4
-    assert framing["orthographic_width"] >= 4.0 * 2.0
+    assert framing["camera_distance"] >= 4.0 * scene_builder.ISO_CAMERA_DISTANCE_FACTOR
+    assert framing["orthographic_width"] >= (
+        3.0 * 2.0 * scene_builder.ORTHOGRAPHIC_PADDING_FACTOR
+    )
 
 
 def test_maya_camera_framing_handles_wide_deep_and_tiny_rooms() -> None:
@@ -92,10 +95,10 @@ def test_maya_camera_framing_handles_wide_deep_and_tiny_rooms() -> None:
     deep = scene_builder.camera_framing_from_bounds((0.0, 0.0, 2.0, 8.0), 3.0)
     tiny = scene_builder.camera_framing_from_bounds((0.0, 0.0, 0.1, 0.1), 3.0)
 
-    assert wide["camera_distance"] >= 8.0 * 2.4
-    assert deep["camera_distance"] >= 8.0 * 2.4
-    assert wide["orthographic_width"] >= 8.0 * 2.0
-    assert deep["orthographic_width"] >= 8.0 * 2.0
+    assert wide["camera_distance"] >= 8.0 * scene_builder.ISO_CAMERA_DISTANCE_FACTOR
+    assert deep["camera_distance"] >= 8.0 * scene_builder.ISO_CAMERA_DISTANCE_FACTOR
+    assert wide["orthographic_width"] >= 8.0 * scene_builder.ORTHOGRAPHIC_PADDING_FACTOR
+    assert deep["orthographic_width"] >= 8.0 * scene_builder.ORTHOGRAPHIC_PADDING_FACTOR
     assert tiny["max_dimension"] == 1.0
     assert tiny["orthographic_width"] >= scene_builder.MIN_ORTHOGRAPHIC_WIDTH
 
@@ -109,6 +112,19 @@ def test_maya_camera_framing_accounts_for_wall_height() -> None:
     tall_walls = scene_builder.camera_framing_from_bounds((0.0, 0.0, 4.0, 4.0), 4.0)
 
     assert tall_walls["orthographic_width"] > low_walls["orthographic_width"]
+    assert tall_walls["target_y"] > low_walls["target_y"]
+
+
+def test_maya_camera_framing_is_more_conservative_than_previous_polish() -> None:
+    """005.2P2 prefers extra whitespace over any remaining top-edge crop."""
+
+    scene_builder = load_maya_scene_builder()
+
+    framing = scene_builder.camera_framing_from_bounds((0.0, 0.0, 4.0, 2.0), 3.0)
+    previous_width = 4.0 * 2.0
+
+    assert scene_builder.ORTHOGRAPHIC_PADDING_FACTOR >= 2.8
+    assert framing["orthographic_width"] > previous_width * 2.0
 
 
 def test_maya_scene_camera_uses_orthographic_room_framing() -> None:
@@ -120,6 +136,8 @@ def test_maya_scene_camera_uses_orthographic_room_framing() -> None:
     assert "camera_framing_from_bounds" in script_text
     assert "orthographicWidth" in script_text
     assert "wall_height" in script_text
+    assert "aimConstraint" in script_text
+    assert "target_y" in script_text
 
 
 def test_dry_run_builds_expected_ma_output_path(tmp_path: Path, monkeypatch) -> None:

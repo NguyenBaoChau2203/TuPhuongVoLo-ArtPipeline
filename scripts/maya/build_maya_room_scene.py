@@ -13,11 +13,9 @@ DEFAULT_WALL_HEIGHT = 3.0
 DEFAULT_WALL_THICKNESS = 0.12
 DEFAULT_PROP_COLOR = "#8A7F72"
 DEFAULT_PREVIEW_ASPECT_RATIO = 16.0 / 9.0
-ISO_CAMERA_ROTATION = (-35.264, 45.0, 0.0)
-ISO_CAMERA_DISTANCE_FACTOR = 2.4
-ISO_CAMERA_HEIGHT_FACTOR = 0.95
-ORTHOGRAPHIC_PADDING_FACTOR = 1.25
-MIN_ORTHOGRAPHIC_WIDTH = 2.0
+ISO_CAMERA_DISTANCE_FACTOR = 3.5
+ORTHOGRAPHIC_PADDING_FACTOR = 2.8
+MIN_ORTHOGRAPHIC_WIDTH = 6.0
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -123,7 +121,7 @@ def camera_framing_from_bounds(
     wall_height: float,
     aspect_ratio: float = DEFAULT_PREVIEW_ASPECT_RATIO,
 ) -> dict[str, float]:
-    """Return deterministic isometric camera framing values for room bounds."""
+    """Return conservative isometric camera framing values for room bounds."""
 
     min_x, min_z, max_x, max_z = bounds
     room_width = max(max_x - min_x, 0.0)
@@ -133,20 +131,25 @@ def camera_framing_from_bounds(
     max_dimension = max(room_width, room_depth, 1.0)
     diagonal = max(math.hypot(room_width, room_depth), max_dimension)
 
-    # Approximate the projected isometric extents. Maya's orthographicWidth is
-    # horizontal, so vertical framing must be converted by the render aspect.
-    horizontal_extent = max(diagonal, max_dimension)
-    vertical_extent = (room_width + room_depth) * 0.45 + safe_wall_height * 0.9
-    required_width = max(horizontal_extent, vertical_extent * safe_aspect, max_dimension)
+    # OrthographicWidth is horizontal, but the real crop risk in a 16:9 preview
+    # is often vertical: wall height projects upward and can touch the top edge.
+    projected_vertical_extent = (room_width + room_depth) * 0.35 + safe_wall_height
+    vertical_width_requirement = projected_vertical_extent * safe_aspect
+    framing_base = max(
+        max_dimension,
+        diagonal * 0.85,
+        safe_wall_height * 2.0,
+        vertical_width_requirement,
+    )
 
     return {
         "center_x": (min_x + max_x) / 2.0,
+        "target_y": safe_wall_height / 2.0,
         "center_z": (min_z + max_z) / 2.0,
         "max_dimension": max_dimension,
         "camera_distance": max(max_dimension * ISO_CAMERA_DISTANCE_FACTOR, diagonal * 1.4),
         "orthographic_width": max(
-            required_width * ORTHOGRAPHIC_PADDING_FACTOR,
-            max_dimension * 2.0,
+            framing_base * ORTHOGRAPHIC_PADDING_FACTOR,
             MIN_ORTHOGRAPHIC_WIDTH,
         ),
     }
@@ -271,15 +274,28 @@ def create_camera_and_lights(
     framing = camera_framing_from_bounds(bounds, wall_height)
     camera_transform, camera_shape = cmds.camera(name=f"cam_{room_name}_iso")
     distance = framing["camera_distance"]
+    target_locator = cmds.spaceLocator(name=f"LOC_{room_name}_camera_target")[0]
+    cmds.xform(
+        target_locator,
+        translation=(framing["center_x"], framing["target_y"], framing["center_z"]),
+    )
     cmds.xform(
         camera_transform,
         translation=(
             framing["center_x"] + distance,
-            distance * ISO_CAMERA_HEIGHT_FACTOR,
+            framing["target_y"] + distance,
             framing["center_z"] + distance,
         ),
-        rotation=ISO_CAMERA_ROTATION,
     )
+    aim = cmds.aimConstraint(
+        target_locator,
+        camera_transform,
+        aimVector=(0.0, 0.0, -1.0),
+        upVector=(0.0, 1.0, 0.0),
+        worldUpType="vector",
+        worldUpVector=(0.0, 1.0, 0.0),
+    )[0]
+    cmds.delete(aim, target_locator)
     cmds.setAttr(f"{camera_shape}.orthographic", True)
     cmds.setAttr(f"{camera_shape}.orthographicWidth", framing["orthographic_width"])
     # mayapy runs headless and has no active viewport; the camera is saved
