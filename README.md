@@ -99,6 +99,8 @@ Phase 005.5B is mock-only. It copies a PNG preview to `outputs/ai_preview/`
 with a versioned `_mock_ai_preview.png` name and writes a JSON report beside it.
 It does not call fal.ai, OpenAI, FLUX, or any external service, and the
 Maya-first pipeline continues to work without AI, API keys, or internet.
+Phase 005.5B-R verification is recorded in
+`docs/verification/005_5B_ai_polish_mock_verified.md`.
 
 Phase 007E adds small release metadata polish. The desktop app shows
 `TuPhuongVoLo Maya Artist App v0.7.5 (007E)` in the app title/UI and the
