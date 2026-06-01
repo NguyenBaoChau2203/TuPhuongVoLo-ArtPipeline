@@ -40,6 +40,21 @@ Nếu cleanup báo lỗi path chưa đóng kín hoặc còn transform, hãy quay
 
 ## Tạo phòng Maya từ SVG sạch
 
+### Cách dễ nhất: desktop app MVP
+
+1. Nhấp đúp `launchers/09_artist_desktop_app.bat`.
+2. Chọn file SVG sạch.
+3. Nhập tên phòng/layer, ví dụ `phong_kho`.
+4. Giữ `Dry-run` cho lần đầu để kiểm tra an toàn.
+5. Bật `Render PNG preview` nếu cần ảnh xem nhanh.
+6. Khi dry-run đúng, bỏ chọn `Dry-run`, kiểm tra đường dẫn `mayapy.exe`, rồi chạy thật.
+
+Desktop app chỉ bọc pipeline CLI đã kiểm chứng. App không sửa SVG gốc, không
+thay thế Maya, và output sinh ra vẫn nằm trong `outputs/maya/`,
+`outputs/preview/`, `outputs/reports/`.
+
+### Cách cũ: launcher CLI một phòng
+
 1. Nhấp đúp `launchers/07_build_maya_room.bat`.
 2. Có thể kéo-thả một file `.svg` sạch vào launcher.
 3. Nếu không kéo-thả file, launcher sẽ lấy SVG mới nhất trong `assets/2d/svg_clean/`.
@@ -115,11 +130,12 @@ tu_phuong_vo_lo_kho_main_preview_v001.png
 
 1. Vẽ và export SVG sạch từ Illustrator.
 2. Đặt SVG vào `assets/2d/svg_clean/` hoặc `drops/`.
-3. Chạy `launchers/07_build_maya_room.bat` và chọn dry-run trước.
-4. Đọc kết quả dry-run: kiểm tra tên phòng được chọn, prop marker phát hiện được, đường dẫn `.ma` và PNG preview dự kiến.
-5. Khi dry-run đúng, chạy lại launcher và chọn không dry-run để tạo `.ma` thật bằng `mayapy.exe`.
-6. Nếu cần ảnh kiểm tra nhanh, bật lựa chọn PNG preview.
-7. Mở file `.ma` trong Maya, kiểm tra Outliner và polish thủ công.
+3. Ưu tiên chạy `launchers/09_artist_desktop_app.bat` và giữ dry-run trước.
+4. Nếu muốn dùng launcher CLI cũ, chạy `launchers/07_build_maya_room.bat` và chọn dry-run trước.
+5. Đọc kết quả dry-run: kiểm tra tên phòng được chọn, prop marker phát hiện được, đường dẫn `.ma` và PNG preview dự kiến.
+6. Khi dry-run đúng, chạy lại và chọn không dry-run để tạo `.ma` thật bằng `mayapy.exe`.
+7. Nếu cần ảnh kiểm tra nhanh, bật lựa chọn PNG preview.
+8. Mở file `.ma` trong Maya, kiểm tra Outliner và polish thủ công.
 
 Launcher `07_build_maya_room.bat` dùng cho một SVG/một phòng. Launcher `08_batch_maya_room.bat` dùng cho nhiều SVG hoặc nhiều phòng và luôn in đường dẫn report JSON để kiểm tra.
 

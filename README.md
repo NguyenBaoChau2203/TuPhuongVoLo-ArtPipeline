@@ -34,6 +34,7 @@ clean SVG -> Blender MVP isometric draft / batch dry-run
 | 4 | Batch Isometric Render | `specs/004-batch-isometric-render/` | MVP dry-run/report for previous backend |
 | 5 | Maya Bridge | `specs/005-maya-bridge/` | Primary DCC backend; launcher workflow verified |
 | 6 | Natural Language Agent Control | `specs/006-natural-language-agent-control/` | Spec only; not implemented |
+| 7 | Artist Desktop App MVP | `specs/007-artist-desktop-app-mvp/` | Local Tkinter wrapper for verified Maya pipeline |
 
 ## Developer Quickstart
 
@@ -59,6 +60,12 @@ python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --r
 python scripts/python/batch_maya_room.py --input-dir tests/in --dry-run --json-report outputs/reports/batch_maya_report.json
 ```
 
+Artist desktop app MVP:
+
+```powershell
+python scripts/python/artist_desktop_app.py
+```
+
 Actual Maya run, when `mayapy.exe` is available:
 
 ```powershell
@@ -81,9 +88,10 @@ Core artist flow:
 
 1. Draw/export clean SVG from Illustrator.
 2. Optional: run `launchers/00_maya_env_check.bat` to check Python, PyYAML, and `mayapy.exe`.
-3. Run `launchers/07_build_maya_room.bat` for one room dry-run before creating `.ma`.
-4. Run `launchers/08_batch_maya_room.bat` for multi-SVG or multi-room dry-run/report.
-5. After dry-run looks correct, run actual Maya execution and open generated `.ma` scenes from `outputs/maya/` in Maya.
+3. Recommended: run `launchers/09_artist_desktop_app.bat` for a friendly local app wrapper.
+4. Alternative CLI launcher: run `launchers/07_build_maya_room.bat` for one room dry-run before creating `.ma`.
+5. Run `launchers/08_batch_maya_room.bat` for multi-SVG or multi-room dry-run/report.
+6. After dry-run looks correct, run actual Maya execution and open generated `.ma` scenes from `outputs/maya/` in Maya.
 
 Generated `.ma`, `.png`, `outputs/tmp/`, and normal batch reports are local outputs and should not be committed unless intentionally added as test fixtures.
 
