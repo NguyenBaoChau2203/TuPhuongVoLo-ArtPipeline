@@ -3,6 +3,7 @@
 > Trạng thái: local mock-only.
 > Phạm vi: tạo bản sao PNG preview và report JSON trong `outputs/ai_preview/`.
 > Không gọi API, không cần internet, không cần API key.
+> Checkpoint: `docs/verification/005_5B_ai_polish_mock_verified.md`.
 
 ## Mục tiêu
 
