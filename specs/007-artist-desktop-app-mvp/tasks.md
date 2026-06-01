@@ -24,3 +24,11 @@
 - [X] T011 Add tests for actual-run validation without `mayapy.exe`
 - [X] T012 Add tests for output folder helper paths
 - [X] T013 Run full test suite and CLI help validation
+
+## Phase 4: 007B Packaging Workflow
+
+- [X] T014 Add `scripts/python/package_artist_app.py` for PyInstaller dry-run/build
+- [X] T015 Add `launchers/10_package_artist_app.bat`
+- [X] T016 Ignore generated package artifacts: `build/`, `dist/`, `.spec`, `.exe`
+- [X] T017 Document source run, launcher run, and package workflow
+- [X] T018 Add packaging helper tests that do not require PyInstaller or Maya

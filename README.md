@@ -66,6 +66,23 @@ Artist desktop app MVP:
 python scripts/python/artist_desktop_app.py
 ```
 
+Desktop app packaging dry-run:
+
+```powershell
+python scripts/python/package_artist_app.py --dry-run
+```
+
+PyInstaller is optional and dev-only. To build a local wrapper executable on a
+dev machine that already has PyInstaller installed:
+
+```powershell
+python scripts/python/package_artist_app.py --build
+```
+
+Generated `build/`, `dist/`, `.spec`, and `.exe` artifacts are local packaging
+outputs and must not be committed. The MVP executable still requires the local
+repo/pipeline files; it does not bundle Maya or `mayapy.exe`.
+
 Actual Maya run, when `mayapy.exe` is available:
 
 ```powershell
@@ -89,9 +106,10 @@ Core artist flow:
 1. Draw/export clean SVG from Illustrator.
 2. Optional: run `launchers/00_maya_env_check.bat` to check Python, PyYAML, and `mayapy.exe`.
 3. Recommended: run `launchers/09_artist_desktop_app.bat` for a friendly local app wrapper.
-4. Alternative CLI launcher: run `launchers/07_build_maya_room.bat` for one room dry-run before creating `.ma`.
-5. Run `launchers/08_batch_maya_room.bat` for multi-SVG or multi-room dry-run/report.
-6. After dry-run looks correct, run actual Maya execution and open generated `.ma` scenes from `outputs/maya/` in Maya.
+4. Developer-only: run `launchers/10_package_artist_app.bat` to dry-run desktop app packaging.
+5. Alternative CLI launcher: run `launchers/07_build_maya_room.bat` for one room dry-run before creating `.ma`.
+6. Run `launchers/08_batch_maya_room.bat` for multi-SVG or multi-room dry-run/report.
+7. After dry-run looks correct, run actual Maya execution and open generated `.ma` scenes from `outputs/maya/` in Maya.
 
 Generated `.ma`, `.png`, `outputs/tmp/`, and normal batch reports are local outputs and should not be committed unless intentionally added as test fixtures.
 
