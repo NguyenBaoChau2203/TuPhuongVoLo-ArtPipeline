@@ -67,15 +67,23 @@ thị repo root, lệnh chuẩn bị chạy, trạng thái chạy, exit code cu�
 nút `Xóa log` / `Copy lệnh`. Hãy dry-run trước. Chạy thật cần `mayapy.exe` hợp
 lệ, ví dụ `C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe`.
 
+Từ phase 007E, app hiển thị phiên bản `v0.7.5 (007E)` trong title/UI. Developer
+có thể kiểm tra nhanh bằng:
+
+```powershell
+python scripts/python/artist_desktop_app.py --version
+```
+
 ### Bước 8: Package desktop app thành .exe (developer-only)
 1. Chạy `10_package_artist_app.bat` để in lệnh package dry-run.
-2. PyInstaller là công cụ dev-only; launcher này không tự cài PyInstaller.
-3. Nếu máy dev đã cài PyInstaller, chạy `python scripts/python/package_artist_app.py --build`.
-4. File `.exe` dự kiến nằm trong `dist/TuPhuongVoLo_MayaArtistApp.exe` và không được commit.
-5. `.exe` là wrapper local: hãy chạy từ thư mục repo hoặc đặt `TUPHUONGVOLO_REPO_ROOT`.
-6. `.exe` vẫn cần Python bên ngoài để chạy pipeline; nếu Python không nằm trong `PATH`, đặt `TUPHUONGVOLO_PYTHON_EXE`.
-7. `.exe` không bundle Autodesk Maya hoặc `mayapy.exe`; chạy thật vẫn cần đường dẫn `mayapy.exe` hợp lệ.
-8. Không commit `build/`, `dist/`, `.exe`, `.spec`, hoặc output sinh ra trong `outputs/`.
+2. Dry-run sẽ in phiên bản app hiện tại và lệnh PyInstaller dự kiến.
+3. PyInstaller là công cụ dev-only; launcher này không tự cài PyInstaller.
+4. Nếu máy dev đã cài PyInstaller, chạy `python scripts/python/package_artist_app.py --build`.
+5. File `.exe` dự kiến nằm trong `dist/TuPhuongVoLo_MayaArtistApp.exe` và không được commit.
+6. `.exe` là wrapper local: hãy chạy từ thư mục repo hoặc đặt `TUPHUONGVOLO_REPO_ROOT`.
+7. `.exe` vẫn cần Python bên ngoài để chạy pipeline; nếu Python không nằm trong `PATH`, đặt `TUPHUONGVOLO_PYTHON_EXE`.
+8. `.exe` không bundle Autodesk Maya hoặc `mayapy.exe`; chạy thật vẫn cần đường dẫn `mayapy.exe` hợp lệ.
+9. Không commit `build/`, `dist/`, `.exe`, `.spec`, hoặc output sinh ra trong `outputs/`.
 
 ---
 

@@ -14,6 +14,7 @@ MVP hiện tại cho phép:
 - Chạy thật bằng Autodesk Maya thông qua `mayapy.exe`.
 - Kiểm tra file `.ma` và ảnh PNG preview được tạo ra.
 - Mở file `.ma` trong Maya để polish thủ công.
+- Xem phiên bản app trong title/UI hoặc bằng `--version`: `v0.7.5 (007E)`.
 
 Desktop app chỉ là wrapper local cho pipeline CLI đã kiểm chứng. App không thay
 thế Maya, không tự parse SVG, không sửa SVG gốc, và không gọi external API.
@@ -105,6 +106,7 @@ Dùng checklist này khi bàn giao hoặc xác nhận lại build `.exe`:
 
 - [ ] Repo đang ở branch `workflow/maya-first-artist-pipeline`.
 - [ ] App hoặc `.exe` mở được.
+- [ ] App hiển thị phiên bản `v0.7.5 (007E)`.
 - [ ] App hiển thị repo root.
 - [ ] App hiển thị command preview.
 - [ ] SVG input là file SVG sạch.
@@ -146,6 +148,14 @@ Developer có thể kiểm tra lệnh package bằng:
 
 ```powershell
 python scripts\python\package_artist_app.py --dry-run
+```
+
+Dry-run sẽ in phiên bản app và lệnh PyInstaller dự kiến. Có thể kiểm tra riêng
+phiên bản bằng:
+
+```powershell
+python scripts\python\artist_desktop_app.py --version
+python scripts\python\package_artist_app.py --version
 ```
 
 Hoặc dùng launcher:
@@ -210,6 +220,7 @@ Các phần sau chưa thuộc MVP bàn giao này:
 ## 12. Tài liệu liên quan
 
 - `docs\desktop_app_mvp_vi.md`
+- `docs\release_packaging_checklist_vi.md`
 - `docs\HOW_TO_USE_FOR_ARTIST_VI.md`
 - `docs\ai_polish_preview_evaluation_vi.md`
 - `launchers\README_LAUNCHERS_VI.md`

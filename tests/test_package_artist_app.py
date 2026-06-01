@@ -8,6 +8,28 @@ from pathlib import Path
 import package_artist_app as package_app
 
 
+def test_packaging_version_matches_desktop_app() -> None:
+    assert package_app.PACKAGE_SCRIPT_VERSION == package_app.APP_VERSION
+    assert package_app.PACKAGE_SCRIPT_VERSION in package_app.app_version_display()
+
+
+def test_dry_run_prints_app_version_when_pyinstaller_missing(
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.setattr(package_app.shutil, "which", lambda name: None)
+    monkeypatch.setattr(package_app.importlib.util, "find_spec", lambda name: None)
+
+    return_code = package_app.main(["--dry-run"])
+
+    captured = capsys.readouterr()
+    assert return_code == 0
+    assert "App version:" in captured.out
+    assert package_app.PACKAGE_SCRIPT_VERSION in captured.out
+    assert "pyinstaller" in captured.out
+    assert "Chưa cài PyInstaller" in captured.err
+
+
 def test_path_pyinstaller_command_contains_expected_flags(monkeypatch) -> None:
     monkeypatch.setattr(package_app.shutil, "which", lambda name: "C:/Tools/pyinstaller.exe")
 

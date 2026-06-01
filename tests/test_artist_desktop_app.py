@@ -8,6 +8,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 import artist_desktop_app as app
 
 
@@ -16,6 +18,24 @@ def _fake_repo(root: Path) -> Path:
     script_path.parent.mkdir(parents=True)
     script_path.write_text("print('fake pipeline')\n", encoding="utf-8")
     return root
+
+
+def test_app_version_metadata_is_display_ready() -> None:
+    assert app.APP_VERSION
+    assert app.APP_PHASE == "007E"
+    assert f"v{app.APP_VERSION}" in app.APP_TITLE
+    assert app.APP_PHASE in app.APP_TITLE
+    assert app.APP_VERSION in app.app_version_display()
+
+
+def test_app_version_cli_exits_before_opening_tkinter(capsys) -> None:
+    with pytest.raises(SystemExit) as exc:
+        app.build_parser().parse_args(["--version"])
+
+    captured = capsys.readouterr()
+    assert exc.value.code == 0
+    assert app.APP_VERSION in captured.out
+    assert app.APP_PHASE in captured.out
 
 
 def test_dry_run_command_wraps_build_maya_room(tmp_path: Path) -> None:

@@ -4,6 +4,7 @@
 
 ```powershell
 python scripts/python/artist_desktop_app.py
+python scripts/python/artist_desktop_app.py --version
 ```
 
 ## Run With Launcher
@@ -17,6 +18,7 @@ launchers/09_artist_desktop_app.bat
 ```powershell
 launchers/10_package_artist_app.bat
 python scripts/python/package_artist_app.py --dry-run
+python scripts/python/package_artist_app.py --version
 ```
 
 ## Package App Build
@@ -29,6 +31,19 @@ PyInstaller is optional and dev-only. Generated `build/`, `dist/`, `.spec`, and
 `.exe` files are local packaging outputs and should not be committed. The MVP
 `.exe` still needs the local repo/pipeline files and does not bundle Maya or
 `mayapy.exe`.
+
+## Phase 007E Packaging Metadata Polish
+
+The desktop app has a small version constant and shows
+`TuPhuongVoLo Maya Artist App v0.7.5 (007E)` in the app title/UI. The app CLI
+supports `--version`, and the packaging helper prints the same app version
+during dry-run and supports its own `--version`.
+
+Vietnamese release packaging checklist:
+
+```text
+docs/release_packaging_checklist_vi.md
+```
 
 ## Package App Verification Checkpoint
 
@@ -82,7 +97,9 @@ local packaging notes, and generated artifacts that must not be committed.
 
 ```powershell
 python scripts/python/artist_desktop_app.py --help
+python scripts/python/artist_desktop_app.py --version
 python scripts/python/package_artist_app.py --dry-run
+python scripts/python/package_artist_app.py --version
 pytest tests/test_artist_desktop_app.py tests/test_package_artist_app.py -v
 pytest tests/ -v --ignore=tests/tmp
 ```
