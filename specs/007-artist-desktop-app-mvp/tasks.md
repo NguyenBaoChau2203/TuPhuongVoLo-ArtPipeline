@@ -46,3 +46,11 @@
 - [X] T024 Add status label, run-button lock/unlock, command preview/copy, log clearing, and safer output folder buttons
 - [X] T025 Update pure helper tests without Tkinter, Maya, PyInstaller, external APIs, or generated output artifacts
 - [X] T026 Update Vietnamese artist docs and quickstart for 007C behavior
+
+## Phase 7: 007C-R Desktop App UX/Reliability Verification Checkpoint
+
+- [X] T027 Document 007C packaged `.exe` rebuild on artist/DCC machine
+- [X] T028 Record dry-run exit code 0 verification
+- [X] T029 Record actual Maya run exit code 0 verification
+- [X] T030 Record verified Maya Outliner structure
+- [X] T031 Confirm generated package and output artifacts remain uncommitted

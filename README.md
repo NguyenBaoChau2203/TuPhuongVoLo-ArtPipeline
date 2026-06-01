@@ -88,6 +88,12 @@ launches on the artist/DCC machine, dry-run returns exit code 0, actual Maya
 execution returns exit code 0, and generated `.ma` plus PNG preview outputs open
 successfully. See `docs/verification/007B_desktop_app_exe_verified.md`.
 
+Phase 007C-R verification confirms the polished packaged `.exe` was rebuilt and
+tested on the artist/DCC machine with repo root display, command preview,
+dry-run exit code 0, actual Maya run exit code 0, PNG preview generation, and
+the expected Maya Outliner structure. See
+`docs/verification/007C_desktop_app_polish_verified.md`.
+
 Actual Maya run, when `mayapy.exe` is available:
 
 ```powershell

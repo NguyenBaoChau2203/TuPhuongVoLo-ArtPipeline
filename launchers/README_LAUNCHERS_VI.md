@@ -98,3 +98,12 @@ Với Maya launcher, dry-run cũng là mặc định. Chạy thật cần Autode
 File `dist/TuPhuongVoLo_MayaArtistApp.exe` đã được kiểm chứng trên máy artist/DCC với Maya 2024. App mở được, dry-run trả exit code 0, chạy thật Maya trả exit code 0, sinh `.ma` trong `outputs/maya/` và PNG preview trong `outputs/preview/`.
 
 Chi tiết checkpoint nằm trong `docs/verification/007B_desktop_app_exe_verified.md`.
+
+## Checkpoint 007C-R cho desktop app sau polish
+
+Bản `.exe` sau polish 007C đã được build lại và kiểm chứng trên máy
+artist/DCC. App hiển thị repo root, hiển thị lệnh dự kiến, dry-run trả exit
+code 0, chạy thật Maya trả exit code 0, sinh PNG preview, và file `.ma` mở
+được trong Maya với Outliner đúng.
+
+Chi tiết checkpoint nằm trong `docs/verification/007C_desktop_app_polish_verified.md`.

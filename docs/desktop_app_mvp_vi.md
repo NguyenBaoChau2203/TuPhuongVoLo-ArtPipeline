@@ -105,6 +105,19 @@ Chi tiết checkpoint nằm ở:
 docs/verification/007B_desktop_app_exe_verified.md
 ```
 
+## Kiểm chứng 007C-R sau polish UX/reliability
+
+Sau polish 007C, file `.exe` đã được build lại và kiểm chứng trên máy
+artist/DCC. App hiển thị repo root, hiển thị lệnh dự kiến, dry-run trả exit
+code 0, chạy thật Maya trả exit code 0, sinh PNG preview, và file `.ma` mở
+được trong Maya với Outliner đúng cấu trúc blockout.
+
+Chi tiết checkpoint nằm ở:
+
+```text
+docs/verification/007C_desktop_app_polish_verified.md
+```
+
 Khi chạy file `.exe`, app vẫn cần tìm thấy repo local để gọi script pipeline:
 
 ```powershell

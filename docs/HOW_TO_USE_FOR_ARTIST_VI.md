@@ -84,6 +84,12 @@ File `.exe` vẫn là wrapper local: nó cần repo files, Python bên ngoài, M
 thật phải dùng đường dẫn `mayapy.exe` hợp lệ, ví dụ
 `C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe`.
 
+Checkpoint 007C-R đã kiểm chứng bản `.exe` sau polish trên máy artist/DCC:
+app mở được, hiển thị repo root và lệnh dự kiến, dry-run trả exit code 0,
+chạy thật Maya trả exit code 0, sinh PNG preview, và file `.ma` mở được
+trong Maya với Outliner đúng. Chi tiết nằm trong
+`docs/verification/007C_desktop_app_polish_verified.md`.
+
 ### Cách cũ: launcher CLI một phòng
 
 1. Nhấp đúp `launchers/07_build_maya_room.bat`.
