@@ -32,6 +32,7 @@ Desktop.ini
 outputs/svg/*.svg
 outputs/png/*.png
 outputs/preview/*
+outputs/ai_preview/*
 outputs/blender/*.blend
 outputs/blender/*.blend1
 outputs/maya/*
