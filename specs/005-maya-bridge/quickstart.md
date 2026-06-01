@@ -123,6 +123,39 @@ Optional if installed:
 python -m ruff check scripts/python tests
 ```
 
+## Step 7: Optional AI Polish Preview fal Provider (Phase 005.5C)
+
+AI polish preview is reference-only. It does not modify clean SVG, geometry
+JSON, Maya `.ma`, manifest, render logic, prop placement, or source assets.
+
+Mock dry-run:
+
+```powershell
+python scripts/python/ai_polish_preview.py --dry-run --provider mock --input tests/in/sample_preview.png
+```
+
+fal dry-run, no API call:
+
+```powershell
+python scripts/python/ai_polish_preview.py --dry-run --provider fal --input tests/in/sample_preview.png --model fal-ai/flux-pro/kontext
+```
+
+fal missing-key skip path, no API call when `FAL_KEY` is absent:
+
+```powershell
+python scripts/python/ai_polish_preview.py --provider fal --input tests/in/sample_preview.png --skip-on-missing-config
+```
+
+Optional dependency for real fal runs only:
+
+```powershell
+python -m pip install fal-client
+```
+
+Real fal calls require the user to set `FAL_KEY` in the environment and run
+`--provider fal` without `--dry-run`. Generated reference PNG/report artifacts
+go under `outputs/ai_preview/` and must not be committed.
+
 ## Artist Launchers
 
 - Environment check: `launchers/00_maya_env_check.bat`

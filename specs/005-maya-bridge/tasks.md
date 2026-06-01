@@ -86,3 +86,15 @@ Verified manually on artist/DCC machine with Autodesk Maya 2024 mayapy.exe. .ma 
 - [X] T050 Add `docs/verification/005_5B_ai_polish_mock_verified.md`
 - [X] T051 Confirm dry-run creates no output and AI preview artifacts remain ignored/uncommitted
 - [X] T052 Confirm no external API calls, secrets, `.env`, provider SDKs, Feature 006, SVG/Maya/render/manifest changes, or generated artifacts are added
+
+## Phase 10: Real Optional fal Provider Integration (005.5C)
+
+- [X] T053 Extend `scripts/python/ai_polish_preview.py` with `--provider mock|fal`, `--model`, `--timeout-seconds`, and `--skip-on-missing-config`
+- [X] T054 Keep provider `mock` behavior unchanged for dry-run, PNG copy output, and local JSON report
+- [X] T055 Read fal API configuration only from `FAL_KEY`, lazy-import optional `fal-client`, and keep `fal-client` out of required dependencies
+- [X] T056 Implement fal upload/subscribe/download path for `fal-ai/flux-pro/kontext` with versioned `_fal_ai_preview` PNG/report outputs
+- [X] T057 Write safe fal report JSON with provider, model, prompt, prompt preset, status, external API call flag, skipped flag, and error type without secrets
+- [X] T058 Add non-network pytest coverage for fal dry-run, missing key skip/fail, missing optional dependency, fake successful provider result, report safety, and model override
+- [X] T059 Add Vietnamese fal provider documentation and update README/quickstart
+- [X] T060 Confirm generated `outputs/ai_preview/` PNG/report artifacts remain ignored
+- [X] T061 Confirm no Feature 006, SVG, geometry JSON, Maya scene, render, prop placement, manifest, required dependency, `.env`, secret, or generated output changes are added

@@ -209,9 +209,8 @@ Nếu cần lưu output làm fixture/test case, phải làm riêng và có lý d
 Các phần sau chưa thuộc MVP bàn giao này:
 
 - Feature 006 natural-language control.
-- 005.5 AI polish implementation.
-- 005.5A AI polish preview evaluation đã có tại `docs\ai_polish_preview_evaluation_vi.md`, nhưng chỉ là tài liệu đánh giá; chưa có API, chưa có output AI, và chưa có thay đổi app.
-- FLUX/fal.ai integration.
+- Tích hợp AI polish vào desktop app.
+- 005.5A/005.5B/005.5C đã có tài liệu, mock CLI, và provider `fal` tùy chọn tại `scripts\python\ai_polish_preview.py`; phần này vẫn là reference-only, không thay đổi app, không thay đổi Maya pipeline, và chỉ gọi fal.ai khi user tự chạy CLI với `--provider fal`.
 - TencentDB-Agent-Memory integration.
 - Thay đổi SVG parser.
 - Thay đổi Maya scene generation.
@@ -223,6 +222,8 @@ Các phần sau chưa thuộc MVP bàn giao này:
 - `docs\release_packaging_checklist_vi.md`
 - `docs\HOW_TO_USE_FOR_ARTIST_VI.md`
 - `docs\ai_polish_preview_evaluation_vi.md`
+- `docs\ai_polish_preview_mock_vi.md`
+- `docs\ai_polish_preview_fal_vi.md`
 - `launchers\README_LAUNCHERS_VI.md`
 - `docs\verification\007B_desktop_app_exe_verified.md`
 - `docs\verification\007C_desktop_app_polish_verified.md`

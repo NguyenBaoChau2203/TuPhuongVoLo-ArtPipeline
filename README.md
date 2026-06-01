@@ -35,6 +35,7 @@ clean SVG -> Blender MVP isometric draft / batch dry-run
 | 5 | Maya Bridge | `specs/005-maya-bridge/` | Primary DCC backend; launcher workflow verified |
 | 5.5A | AI Polish Preview Evaluation | `docs/ai_polish_preview_evaluation_vi.md` | Documentation only; evaluation complete |
 | 5.5B | AI Polish Preview Local Mock | `docs/ai_polish_preview_mock_vi.md` | Mock-only local workflow; no external API |
+| 5.5C | AI Polish Preview fal Provider | `docs/ai_polish_preview_fal_vi.md` | Optional fal.ai reference workflow; no required dependency |
 | 6 | Natural Language Agent Control | `specs/006-natural-language-agent-control/` | Spec only; not implemented |
 | 7 | Artist Desktop App MVP | `specs/007-artist-desktop-app-mvp/` | Local Tkinter wrapper; packaged `.exe` verified on artist/DCC machine |
 
@@ -87,18 +88,30 @@ Generated `build/`, `dist/`, `.spec`, and `.exe` artifacts are local packaging
 outputs and must not be committed. The MVP executable still requires the local
 repo/pipeline files; it does not bundle Maya or `mayapy.exe`.
 
-AI polish preview local mock:
+AI polish preview optional workflow:
 
 ```powershell
 python scripts/python/ai_polish_preview.py --help
 python scripts/python/ai_polish_preview.py --version
 python scripts/python/ai_polish_preview.py --dry-run --provider mock --input tests/in/sample_preview.png
+python scripts/python/ai_polish_preview.py --dry-run --provider fal --input tests/in/sample_preview.png --model fal-ai/flux-pro/kontext
+python scripts/python/ai_polish_preview.py --provider fal --input tests/in/sample_preview.png --skip-on-missing-config
 ```
 
-Phase 005.5B is mock-only. It copies a PNG preview to `outputs/ai_preview/`
-with a versioned `_mock_ai_preview.png` name and writes a JSON report beside it.
-It does not call fal.ai, OpenAI, FLUX, or any external service, and the
-Maya-first pipeline continues to work without AI, API keys, or internet.
+Phase 005.5B keeps the local `mock` provider. Phase 005.5C adds an optional
+`fal` provider for `fal-ai/flux-pro/kontext`. `fal-client` is not a required
+dependency; install it only on a machine that will call fal.ai:
+
+```powershell
+python -m pip install fal-client
+```
+
+Provider `fal` reads the API key only from `FAL_KEY`, never from code or `.env`.
+Dry-run does not call API. Missing `FAL_KEY` can be skipped with
+`--skip-on-missing-config`, and the Maya-first pipeline continues to work
+without AI, API keys, `fal-client`, or internet. AI output is reference-only and
+is written under `outputs/ai_preview/` with a versioned `_fal_ai_preview.png`
+name plus a JSON report. See `docs/ai_polish_preview_fal_vi.md`.
 Phase 005.5B-R verification is recorded in
 `docs/verification/005_5B_ai_polish_mock_verified.md`.
 
@@ -152,10 +165,10 @@ Core artist flow:
 
 Generated `.ma`, `.png`, `outputs/tmp/`, and normal batch reports are local outputs and should not be committed unless intentionally added as test fixtures.
 
-Phase 005.5A documents an optional future AI polish preview stage. Phase 005.5B
-adds only a local mock preview workflow. No external AI API integration exists
-yet, no AI provider dependency is added, and Feature 006 natural-language
-control remains deferred.
+Phase 005.5A documents the optional AI polish preview stage. Phase 005.5B adds
+a local mock preview workflow. Phase 005.5C adds optional fal.ai integration
+behind `--provider fal`; it remains reference-only and does not change the Maya
+source-of-truth workflow. Feature 006 natural-language control remains deferred.
 
 ## Repository Structure
 
@@ -179,10 +192,10 @@ TuPhuongVoLo-ArtPipeline/
 ## Not Implemented
 
 Feature 006 natural-language control/MCP is not implemented. AI polish preview
-has only a local mock workflow in 005.5B; there is no real AI provider
-integration. Actual Maya scene generation requires local Autodesk Maya with
-`mayapy.exe`; the 005.4 launcher workflow has been verified on the artist/DCC
-machine with Maya 2024.
+has a local mock provider and an optional fal.ai provider, but it is still only
+a reference-image workflow and does not drive pipeline automation. Actual Maya
+scene generation requires local Autodesk Maya with `mayapy.exe`; the 005.4
+launcher workflow has been verified on the artist/DCC machine with Maya 2024.
 
 ## License
 
