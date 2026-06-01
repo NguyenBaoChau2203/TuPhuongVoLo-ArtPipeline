@@ -83,6 +83,40 @@ python -m pytest tests/test_build_maya_room.py tests/test_batch_maya_room.py -v
 python -m compileall scripts/python
 ```
 
+## Step 6: Prop Marker Dry-Run (Phase 005.3)
+
+Use the prop-marker fixture to verify artist-authored placeholder placement without Maya:
+
+```powershell
+python scripts/python/build_maya_room.py `
+  --input tests/in/illustrator_prop_markers.svg `
+  --room phong_kho `
+  --output-dir outputs `
+  --render-preview `
+  --dry-run
+```
+
+Expected:
+
+- Detected room is `phong_kho`
+- `prop_shelf_unit` becomes `shelf_unit`
+- `prop_wooden_crate` becomes `wooden_crate`
+- Dry-run prints planned `.ma`, geometry JSON, and preview PNG paths
+- Manifest is not updated
+
+Actual Maya render on a DCC machine:
+
+```powershell
+python scripts/python/build_maya_room.py `
+  --input tests/in/illustrator_prop_markers.svg `
+  --room phong_kho `
+  --output-dir outputs `
+  --maya-path "C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe" `
+  --render-preview `
+  --render-width 1280 `
+  --render-height 720
+```
+
 Optional if installed:
 
 ```powershell

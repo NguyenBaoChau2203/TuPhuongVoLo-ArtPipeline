@@ -49,6 +49,16 @@
 - [X] T029 Dry-run does not update manifest
 - [X] T030 Existing Feature 001/002/003/004 tests remain supported
 
+## Phase 6: SVG Prop Marker Placement (005.3)
+
+- [X] T031 Define `prop_`, `item_`, and `object_` marker naming convention
+- [X] T032 Detect nested SVG prop marker geometry in the Python SVG layer
+- [X] T033 Include `prop_markers` with SVG/local/Maya centers in geometry JSON
+- [X] T034 Create deterministic Maya placeholder cubes from `prop_markers`
+- [X] T035 Prefer explicit SVG markers over room-preset auto props
+- [X] T036 Add `tests/in/illustrator_prop_markers.svg` fixture and non-Maya tests
+- [X] T037 Update Vietnamese artist checklist with prop marker guidance
+
 ## Notes
 
 Verified manually on artist/DCC machine with Autodesk Maya 2024 mayapy.exe. .ma output generated and opened successfully in Maya. Scene contained floor, walls, props, camera, and lights.

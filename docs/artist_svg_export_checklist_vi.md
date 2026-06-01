@@ -63,6 +63,16 @@ python scripts/python/build_maya_room.py --input drops/phong_cua_ban.svg --room 
 
 ---
 
+## Đánh dấu prop placeholder trong SVG
+
+- [ ] Nếu muốn Maya tạo khối placeholder theo vị trí bạn đặt trong Illustrator, hãy tạo group/layer con bên trong group phòng và đặt tên theo mẫu đơn giản:
+      `prop_shelf_unit`, `prop_wooden_crate`, `item_cardboard_box`, `object_console_desk`.
+- [ ] Pipeline sẽ bỏ phần prefix `prop_`, `item_`, hoặc `object_` và hiểu loại prop là `shelf_unit`, `wooden_crate`, `cardboard_box`, `console_desk`.
+- [ ] Trong group prop, dùng một hình marker đơn giản như `rect`, `polygon`, `polyline`, hoặc path thẳng đơn giản. Maya sẽ lấy tâm của marker để đặt cube placeholder.
+- [ ] Đây chỉ là blockout để kiểm tra bố cục, **không phải model 3D cuối cùng**. Họa sĩ vẫn polish và thay asset thật trong Maya sau.
+
+---
+
 ## Quy tắc an toàn (rất quan trọng)
 
 - Pipeline **không bao giờ** sửa hay xóa file gốc `.ai`, SVG thô, ảnh tham khảo.

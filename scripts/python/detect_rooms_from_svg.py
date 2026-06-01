@@ -46,6 +46,33 @@ from svg_shapes import (
 )
 
 INKSCAPE_LABEL_ATTR = "{http://www.inkscape.org/namespaces/inkscape}label"
+PROP_MARKER_PREFIXES = ("prop_", "item_", "object_")
+
+
+@dataclass(frozen=True)
+class PropMarker:
+    """Artist-authored placeholder prop marker from a named SVG group/layer."""
+
+    prop_type: str
+    original_label: str
+    group_path: list[str]
+    center_svg: Point2D
+    bbox_svg: tuple[float, float, float, float]
+    source_kind: str
+    warnings: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-friendly representation."""
+
+        return {
+            "prop_type": self.prop_type,
+            "original_label": self.original_label,
+            "group_path": list(self.group_path),
+            "center_svg": [self.center_svg[0], self.center_svg[1]],
+            "bbox_svg": list(self.bbox_svg),
+            "source_kind": self.source_kind,
+            "warnings": list(self.warnings),
+        }
 
 
 @dataclass
@@ -63,6 +90,7 @@ class RoomReport:
     unsupported_elements: list[str] = field(default_factory=list)
     transform_applied: bool = False
     group_path: list[str] = field(default_factory=list)
+    prop_markers: list[PropMarker] = field(default_factory=list)
 
     @property
     def has_usable_boundary(self) -> bool:
@@ -75,6 +103,7 @@ class RoomReport:
 
         data = asdict(self)
         data["bbox"] = list(self.bbox) if self.bbox else None
+        data["prop_markers"] = [marker.to_dict() for marker in self.prop_markers]
         if include_boundary and self.boundary is not None:
             data["boundary"] = self.boundary.to_dict()
         else:
@@ -100,6 +129,16 @@ def normalize_room_name(label: str) -> str:
             clean = clean[len(prefix) :]
             break
     return normalize_asset_name(clean)
+
+
+def normalize_prop_marker_type(label: str) -> str | None:
+    """Return the normalized prop type for prop/item/object marker labels."""
+
+    normalized = normalize_asset_name(label.strip())
+    for prefix in PROP_MARKER_PREFIXES:
+        if normalized.startswith(prefix) and len(normalized) > len(prefix):
+            return normalized[len(prefix) :]
+    return None
 
 
 def _element_label(element: object) -> str:
@@ -165,7 +204,122 @@ class _RoomBucket:
     candidates: list[ShapeCandidate] = field(default_factory=list)
     unsupported: list[str] = field(default_factory=list)
     transform_warnings: list[str] = field(default_factory=list)
+    prop_warnings: list[str] = field(default_factory=list)
+    prop_markers: list[PropMarker] = field(default_factory=list)
     transform_applied: bool = False
+
+
+@dataclass
+class _PropMarkerBucket:
+    """Mutable accumulator for one prop marker group/layer."""
+
+    prop_type: str
+    original_label: str
+    group_path: list[str]
+    candidates: list[ShapeCandidate] = field(default_factory=list)
+    unsupported: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    transform_applied: bool = False
+
+
+def _collect_prop_marker_shapes(
+    element: object,
+    matrix: Matrix,
+    css_rules: dict[str, dict[str, str]],
+    marker: _PropMarkerBucket,
+) -> None:
+    """Collect supported marker geometry inside one prop marker group."""
+
+    for child in list(element):  # type: ignore[call-overload]
+        tag_raw = getattr(child, "tag", None)
+        if not isinstance(tag_raw, str):
+            continue
+        tag = local_name(tag_raw).lower()
+        if tag in SKIP_SUBTREE_TAGS:
+            continue
+        if _element_hidden(child, css_rules):
+            continue
+
+        child_matrix, transform_warnings = matrix, []
+        own_transform = child.get("transform")  # type: ignore[attr-defined]
+        if own_transform:
+            own_matrix, transform_warnings = parse_transform(own_transform)
+            child_matrix = matrix_multiply(matrix, own_matrix)
+            marker.warnings.extend(transform_warnings)
+
+        if tag in CONTAINER_TAGS:
+            _collect_prop_marker_shapes(child, child_matrix, css_rules, marker)
+            continue
+
+        if tag in SUPPORTED_SHAPES:
+            points, closed, kind, warnings = _shape_points(child, child_matrix)
+            if not is_identity(child_matrix):
+                marker.transform_applied = True
+            marker.candidates.append(
+                ShapeCandidate(
+                    points=points,
+                    closed=closed,
+                    source_index=len(marker.candidates),
+                    source_kind=kind,
+                    warnings=warnings,
+                )
+            )
+            continue
+
+        if tag in UNSUPPORTED_DRAWABLE:
+            element_id = child.get("id") or ""  # type: ignore[attr-defined]
+            label = f"<{tag}>" + (f" id={element_id}" if element_id else "")
+            marker.unsupported.append(label)
+            continue
+
+        marker.unsupported.append(f"<{tag}>")
+
+
+def _make_prop_marker(marker: _PropMarkerBucket) -> tuple[PropMarker | None, list[str]]:
+    """Create a prop marker from collected geometry, or return skip warnings."""
+
+    warnings: list[str] = list(marker.warnings)
+    all_points: list[Point2D] = []
+    source_kinds: list[str] = []
+    for candidate in marker.candidates:
+        warnings.extend(
+            f"shape {candidate.source_index} ({candidate.source_kind}): {warning}"
+            for warning in candidate.warnings
+        )
+        if candidate.points:
+            all_points.extend(candidate.points)
+            source_kinds.append(candidate.source_kind)
+
+    if marker.unsupported:
+        unique_unsupported = list(dict.fromkeys(marker.unsupported))
+        warnings.append(
+            f"Prop marker '{marker.original_label}' có phần tử chưa hỗ trợ, đã bỏ qua: "
+            + ", ".join(unique_unsupported)
+            + "."
+        )
+
+    if not all_points:
+        warnings.append(
+            f"Prop marker '{marker.original_label}' không có rect/path/polygon/polyline hợp lệ; bỏ qua."
+        )
+        return None, list(dict.fromkeys(warnings))
+
+    bbox = calculate_bbox(all_points)
+    min_x, min_y, max_x, max_y = bbox
+    unique_kinds = list(dict.fromkeys(source_kinds))
+    source_kind = unique_kinds[0] if len(unique_kinds) == 1 else "mixed"
+    return (
+        PropMarker(
+            prop_type=marker.prop_type,
+            original_label=marker.original_label,
+            group_path=list(marker.group_path),
+            center_svg=((min_x + max_x) / 2.0, (min_y + max_y) / 2.0),
+            bbox_svg=bbox,
+            source_kind=source_kind,
+            warnings=list(dict.fromkeys(warnings)),
+        ),
+        [],
+    )
 
 
 def _collect_shapes(
@@ -193,19 +347,38 @@ def _collect_shapes(
         if own_transform:
             own_matrix, transform_warnings = parse_transform(own_transform)
             child_matrix = matrix_multiply(matrix, own_matrix)
-            current.transform_warnings.extend(transform_warnings)
 
         if tag in CONTAINER_TAGS:
             label = _element_label(child)
             if label:
+                prop_type = normalize_prop_marker_type(label)
+                if prop_type:
+                    marker_bucket = _PropMarkerBucket(
+                        prop_type=prop_type,
+                        original_label=label,
+                        group_path=[*group_path, label],
+                        warnings=list(transform_warnings),
+                    )
+                    _collect_prop_marker_shapes(child, child_matrix, css_rules, marker_bucket)
+                    prop_marker, prop_warnings = _make_prop_marker(marker_bucket)
+                    if prop_marker is not None:
+                        current.prop_markers.append(prop_marker)
+                    current.prop_warnings.extend(prop_warnings)
+                    if marker_bucket.transform_applied:
+                        current.transform_applied = True
+                    continue
+
+                current.transform_warnings.extend(transform_warnings)
                 bucket = _RoomBucket(label=label, group_path=[*group_path, label])
                 buckets.append(bucket)
                 _collect_shapes(child, child_matrix, css_rules, bucket, buckets, bucket.group_path)
             else:
+                current.transform_warnings.extend(transform_warnings)
                 _collect_shapes(child, child_matrix, css_rules, current, buckets, group_path)
             continue
 
         if tag in SUPPORTED_SHAPES:
+            current.transform_warnings.extend(transform_warnings)
             points, closed, kind, warnings = _shape_points(child, child_matrix)
             if not is_identity(child_matrix):
                 current.transform_applied = True
@@ -221,18 +394,20 @@ def _collect_shapes(
             continue
 
         if tag in UNSUPPORTED_DRAWABLE:
+            current.transform_warnings.extend(transform_warnings)
             element_id = child.get("id") or ""  # type: ignore[attr-defined]
             label = f"<{tag}>" + (f" id={element_id}" if element_id else "")
             current.unsupported.append(label)
             continue
 
         # Unknown/decorative element: warn but keep going.
+        current.transform_warnings.extend(transform_warnings)
         current.unsupported.append(f"<{tag}>")
 
 
 def _make_room_report_from_bucket(label: str, bucket: _RoomBucket) -> RoomReport:
     room_name = normalize_room_name(label)
-    warnings: list[str] = list(bucket.transform_warnings)
+    warnings: list[str] = [*bucket.transform_warnings, *bucket.prop_warnings]
     boundary = choose_largest_closed_boundary_from_candidates(bucket.candidates)
     closed_count = sum(
         1
@@ -276,6 +451,7 @@ def _make_room_report_from_bucket(label: str, bucket: _RoomBucket) -> RoomReport
         unsupported_elements=list(dict.fromkeys(bucket.unsupported)),
         transform_applied=bucket.transform_applied,
         group_path=list(bucket.group_path),
+        prop_markers=list(bucket.prop_markers),
     )
 
 
@@ -358,6 +534,12 @@ def print_room_report(report: RoomReport) -> None:
         print(f"  BBox: ({min_x:.3f}, {min_y:.3f}) - ({max_x:.3f}, {max_y:.3f})")
     if report.unsupported_elements:
         print(f"  Phần tử bỏ qua: {', '.join(report.unsupported_elements)}")
+    if report.prop_markers:
+        props = ", ".join(marker.prop_type for marker in report.prop_markers)
+        print(f"  Prop marker: {props}")
+        for marker in report.prop_markers:
+            for warning in marker.warnings:
+                print(f"  Cảnh báo prop {marker.original_label}: {warning}")
     for warning in report.warnings:
         print(f"  Cảnh báo: {warning}")
 
