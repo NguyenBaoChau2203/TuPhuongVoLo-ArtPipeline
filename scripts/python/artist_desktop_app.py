@@ -9,9 +9,11 @@ from __future__ import annotations
 import argparse
 import os
 import queue
+import shutil
 import subprocess
 import sys
 import threading
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -26,6 +28,17 @@ OUTPUT_SUBDIRS = {
     "preview": "preview",
     "reports": "reports",
 }
+BUILD_SCRIPT_RELATIVE_PATH = Path("scripts") / "python" / "build_maya_room.py"
+REPO_ROOT_ENV_VAR = "TUPHUONGVOLO_REPO_ROOT"
+PIPELINE_PYTHON_ENV_VAR = "TUPHUONGVOLO_PYTHON_EXE"
+REPO_ROOT_ERROR = (
+    "Không tìm thấy repo root. Hãy chạy app từ thư mục repo hoặc đặt biến môi trường "
+    "TUPHUONGVOLO_REPO_ROOT."
+)
+PIPELINE_PYTHON_ERROR = (
+    "Không tìm thấy Python để chạy pipeline. Hãy cài Python hoặc đặt "
+    "TUPHUONGVOLO_PYTHON_EXE."
+)
 
 
 @dataclass(frozen=True)
@@ -42,20 +55,97 @@ class ArtistAppOptions:
     render_height: int = DEFAULT_RENDER_HEIGHT
 
 
-def repo_root() -> Path:
-    """Return repository root from this script location."""
+def _candidate_with_parents(path: Path) -> list[Path]:
+    resolved = path.resolve()
+    start = resolved if resolved.is_dir() else resolved.parent
+    return [start, *start.parents]
 
-    return Path(__file__).resolve().parents[2]
+
+def _unique_paths(paths: Iterable[Path]) -> list[Path]:
+    unique: list[Path] = []
+    seen: set[str] = set()
+    for path in paths:
+        try:
+            key = str(path.resolve()).lower()
+        except OSError:
+            key = str(path).lower()
+        if key not in seen:
+            seen.add(key)
+            unique.append(path)
+    return unique
+
+
+def find_repo_root(extra_candidates: Iterable[Path] | None = None) -> Path | None:
+    """Find a repo checkout that contains the source-of-truth pipeline script."""
+
+    candidates: list[Path] = []
+    env_root = _clean_text(os.environ.get(REPO_ROOT_ENV_VAR))
+    if env_root:
+        candidates.extend(_candidate_with_parents(Path(env_root)))
+
+    if extra_candidates is not None:
+        for candidate in extra_candidates:
+            candidates.extend(_candidate_with_parents(candidate))
+
+    candidates.extend(_candidate_with_parents(Path.cwd()))
+
+    if getattr(sys, "frozen", False):
+        candidates.extend(_candidate_with_parents(Path(sys.executable)))
+    else:
+        candidates.extend(_candidate_with_parents(Path(__file__)))
+
+    for candidate in _unique_paths(candidates):
+        if (candidate / BUILD_SCRIPT_RELATIVE_PATH).is_file():
+            return candidate
+
+    return None
+
+
+def repo_root() -> Path:
+    """Return repository root or raise a Vietnamese runtime error."""
+
+    root = find_repo_root()
+    if root is None:
+        raise RuntimeError(REPO_ROOT_ERROR)
+    return root
 
 
 def build_script_path(root: Path | None = None) -> Path:
     """Return the source-of-truth Maya room CLI path."""
 
-    return (root or repo_root()) / "scripts" / "python" / "build_maya_room.py"
+    return (root or repo_root()) / BUILD_SCRIPT_RELATIVE_PATH
 
 
 def _clean_text(value: str | None) -> str:
     return (value or "").strip().strip('"')
+
+
+def pipeline_python_command_prefix(
+    *,
+    python_executable: str | None = None,
+) -> list[str] | None:
+    """Return the Python command prefix used to run the CLI pipeline."""
+
+    explicit_python = _clean_text(python_executable)
+    if explicit_python:
+        return [explicit_python]
+
+    env_python = _clean_text(os.environ.get(PIPELINE_PYTHON_ENV_VAR))
+    if env_python:
+        return [env_python]
+
+    if not getattr(sys, "frozen", False):
+        return [sys.executable or "python"]
+
+    python_path = shutil.which("python")
+    if python_path:
+        return [python_path]
+
+    py_launcher = shutil.which("py")
+    if py_launcher:
+        return [py_launcher, "-3"]
+
+    return None
 
 
 def configure_stdio() -> None:
@@ -120,16 +210,40 @@ def validate_run_options(options: ArtistAppOptions) -> list[str]:
     return errors
 
 
+def validate_runtime_environment(*, root: Path | None = None) -> list[str]:
+    """Return Vietnamese validation errors for repo and Python runtime discovery."""
+
+    errors: list[str] = []
+    detected_root = root or find_repo_root()
+    if detected_root is None:
+        errors.append(REPO_ROOT_ERROR)
+    elif not build_script_path(detected_root).is_file():
+        errors.append(REPO_ROOT_ERROR)
+
+    if getattr(sys, "frozen", False) and pipeline_python_command_prefix() is None:
+        errors.append(PIPELINE_PYTHON_ERROR)
+
+    return errors
+
+
 def build_maya_room_command(
     options: ArtistAppOptions,
     *,
     python_executable: str | None = None,
+    python_command_prefix: list[str] | None = None,
     root: Path | None = None,
 ) -> list[str]:
     """Build the exact CLI command for the existing Maya pipeline."""
 
+    root = root or repo_root()
+    prefix = python_command_prefix or pipeline_python_command_prefix(
+        python_executable=python_executable
+    )
+    if prefix is None:
+        raise RuntimeError(PIPELINE_PYTHON_ERROR)
+
     command = [
-        python_executable or sys.executable or "python",
+        *prefix,
         str(build_script_path(root)),
         "--input",
         str(options.svg_path),
@@ -332,23 +446,28 @@ class ArtistDesktopApp:
             )
             return
 
-        errors = validate_run_options(options)
+        errors = validate_run_options(options) + validate_runtime_environment()
         if errors:
             self.messagebox.showerror("Cần kiểm tra lại", "\n".join(errors))
             return
 
-        command = build_maya_room_command(options)
+        try:
+            root = repo_root()
+            command = build_maya_room_command(options, root=root)
+        except RuntimeError as exc:
+            self.messagebox.showerror("Cần kiểm tra lại", str(exc))
+            return
         self._append_log("\n=== Lệnh sẽ chạy ===\n")
         self._append_log(command_to_display(command) + "\n\n")
         self.run_button.configure(state=self.tk.DISABLED)
-        self.worker = threading.Thread(target=self._run_subprocess, args=(command,), daemon=True)
+        self.worker = threading.Thread(target=self._run_subprocess, args=(command, root), daemon=True)
         self.worker.start()
 
-    def _run_subprocess(self, command: list[str]) -> None:
+    def _run_subprocess(self, command: list[str], root: Path) -> None:
         try:
             process = subprocess.Popen(
                 command,
-                cwd=repo_root(),
+                cwd=root,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
