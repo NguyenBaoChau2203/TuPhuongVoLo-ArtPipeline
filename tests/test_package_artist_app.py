@@ -2,19 +2,33 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import package_artist_app as package_app
 
 
-def test_dry_run_packaging_command_contains_expected_pyinstaller_flags() -> None:
+def test_path_pyinstaller_command_contains_expected_flags(monkeypatch) -> None:
+    monkeypatch.setattr(package_app.shutil, "which", lambda name: "C:/Tools/pyinstaller.exe")
+
     command = package_app.build_pyinstaller_command()
 
-    assert command[0] == "pyinstaller"
+    assert command[0] == "C:/Tools/pyinstaller.exe"
     assert "--onefile" in command
     assert "--windowed" in command
     assert "--name" in command
     assert command[command.index("--name") + 1] == "TuPhuongVoLo_MayaArtistApp"
+    assert "scripts/python/artist_desktop_app.py" in command
+
+
+def test_module_pyinstaller_fallback_uses_current_python(monkeypatch) -> None:
+    monkeypatch.setattr(package_app.shutil, "which", lambda name: None)
+    monkeypatch.setattr(package_app.importlib.util, "find_spec", lambda name: object())
+
+    command = package_app.build_pyinstaller_command()
+
+    assert command[:3] == [sys.executable, "-m", "PyInstaller"]
+    assert "--onefile" in command
     assert "scripts/python/artist_desktop_app.py" in command
 
 
@@ -24,6 +38,7 @@ def test_pyinstaller_missing_returns_clear_vietnamese_message(
     tmp_path: Path,
 ) -> None:
     monkeypatch.setattr(package_app.shutil, "which", lambda name: None)
+    monkeypatch.setattr(package_app.importlib.util, "find_spec", lambda name: None)
 
     return_code = package_app.run_pyinstaller_build(["pyinstaller", "--version"], root=tmp_path)
 

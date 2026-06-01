@@ -7,6 +7,7 @@ install PyInstaller, bundle Maya, or change the existing pipeline logic.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import shutil
 import subprocess
 import sys
@@ -31,15 +32,33 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
+def resolve_pyinstaller_command_prefix() -> list[str] | None:
+    """Return a runnable PyInstaller command prefix for the current Python env."""
+
+    pyinstaller_path = shutil.which("pyinstaller")
+    if pyinstaller_path is not None:
+        return [pyinstaller_path]
+
+    if importlib.util.find_spec("PyInstaller") is not None:
+        return [sys.executable, "-m", "PyInstaller"]
+
+    return None
+
+
 def build_pyinstaller_command(
     *,
+    command_prefix: list[str] | None = None,
     app_entry: str = APP_ENTRY,
     exe_name: str = EXE_NAME,
 ) -> list[str]:
     """Build the PyInstaller command without running it."""
 
+    prefix = command_prefix
+    if prefix is None:
+        prefix = resolve_pyinstaller_command_prefix() or ["pyinstaller"]
+
     return [
-        "pyinstaller",
+        *prefix,
         "--onefile",
         "--windowed",
         "--name",
@@ -107,7 +126,7 @@ def clean_packaging_outputs(root: Path) -> list[str]:
 def run_pyinstaller_build(command: list[str], *, root: Path) -> int:
     """Run PyInstaller if it is available in the active dev environment."""
 
-    if shutil.which("pyinstaller") is None:
+    if resolve_pyinstaller_command_prefix() is None:
         print(PYINSTALLER_MISSING_MESSAGE, file=sys.stderr)
         return 2
 
@@ -144,7 +163,8 @@ def main(argv: list[str] | None = None) -> int:
     configure_stdio()
     root = repo_root()
     args = build_parser().parse_args(argv)
-    command = build_pyinstaller_command()
+    command_prefix = resolve_pyinstaller_command_prefix()
+    command = build_pyinstaller_command(command_prefix=command_prefix)
 
     if args.clean_output:
         for message in clean_packaging_outputs(root):
@@ -154,6 +174,10 @@ def main(argv: list[str] | None = None) -> int:
         print("Đang chạy PyInstaller:")
         print(command_to_display(command))
         return run_pyinstaller_build(command, root=root)
+
+    if command_prefix is None:
+        print(PYINSTALLER_MISSING_MESSAGE, file=sys.stderr)
+        return 2
 
     print("Dry-run: lệnh PyInstaller dự kiến là:")
     print(command_to_display(command))
