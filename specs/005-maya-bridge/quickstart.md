@@ -125,8 +125,20 @@ python -m ruff check scripts/python tests
 
 ## Artist Launchers
 
-- Single room dry-run: `launchers/07_build_maya_room.bat`
-- Batch dry-run/report: `launchers/08_batch_maya_room.bat`
+- Environment check: `launchers/00_maya_env_check.bat`
+- Single room dry-run or actual run: `launchers/07_build_maya_room.bat`
+- Batch dry-run/report or actual run: `launchers/08_batch_maya_room.bat`
+
+Phase 005.4 launcher verification:
+
+1. Run `launchers/00_maya_env_check.bat` to check Python, PyYAML, and mayapy discovery.
+2. Run `launchers/07_build_maya_room.bat`, accept dry-run, use `tests/in/illustrator_prop_markers.svg`, room `phong_kho`, and optionally enable render-preview planning.
+3. Confirm the dry-run prints the selected room, detected prop markers, planned `.ma`, planned geometry JSON, optional PNG preview path, and the exact Python command.
+4. On a DCC machine with Maya, rerun `07_build_maya_room.bat`, choose no dry-run, provide `mayapy.exe` if config/PATH does not resolve it, and enable render preview if needed.
+5. Run `launchers/08_batch_maya_room.bat`, choose an input directory or file, keep dry-run/report enabled, and confirm the JSON report path is printed.
+6. Open the generated `.ma` in Maya after an actual run and check the Outliner for `walls`, `props`, prop placeholders such as `prop_shelf_unit_01`, `lights`, and `floor_blockout`.
+
+Generated outputs are expected under `outputs/maya/`, `outputs/preview/`, `outputs/tmp/`, and `outputs/reports/`. Do not commit generated `.ma`, `.png`, temporary handoff JSON, or batch reports unless intentionally adding a fixture.
 
 Actual Maya execution was verified manually on the artist/DCC machine with
 Autodesk Maya 2024 and `mayapy.exe`. The generated `.ma` opened successfully in

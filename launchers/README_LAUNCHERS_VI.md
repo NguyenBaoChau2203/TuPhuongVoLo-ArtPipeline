@@ -18,6 +18,9 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 | `04_batch_isometric_render.bat` | Lập kế hoạch batch render | Khi muốn xử lý nhiều phòng/nhiều SVG |
 | `04_batch_render.bat` | Wrapper tương thích | Gọi lại launcher batch mới |
 | `05_open_outputs.bat` | Mở thư mục kết quả | Khi muốn xem file đã tạo |
+| `00_maya_env_check.bat` | Kiểm tra Python/PyYAML/mayapy | Khi chuẩn bị chạy Maya thật |
+| `07_build_maya_room.bat` | Dựng một phòng Maya từ SVG sạch | Chạy dry-run trước, sau đó tạo `.ma` nếu cần |
+| `08_batch_maya_room.bat` | Batch Maya nhiều SVG/phòng | Tạo report dry-run hoặc chạy nhiều job Maya |
 
 ---
 
@@ -49,6 +52,13 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 1. Nhấp đúp `05_open_outputs.bat`
 2. Thư mục `outputs/` sẽ mở ra trong Explorer
 
+### Bước 7: Dựng Maya blockout
+1. Chạy `00_maya_env_check.bat` nếu chưa chắc máy đã có Python/PyYAML/mayapy.
+2. Chạy `07_build_maya_room.bat` cho một file SVG/phòng. Nên giữ lựa chọn dry-run mặc định trước.
+3. Kiểm tra tên phòng, prop marker, đường dẫn `.ma` và PNG preview dự kiến.
+4. Khi dry-run đúng, chạy lại và chọn không dry-run để tạo `.ma` thật bằng `mayapy.exe`.
+5. Chạy `08_batch_maya_room.bat` nếu cần xử lý nhiều SVG hoặc nhiều phòng. Report JSON mặc định nằm trong `outputs/reports/batch_maya_report.json`.
+
 ---
 
 ## Gặp lỗi?
@@ -62,3 +72,5 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 ## Lưu ý
 
 ⚠️ **Hiện tại**: Batch launcher chạy dry-run mặc định để an toàn khi máy chưa có Blender. Render thật cần Blender 4.x và nên do developer chạy/kiểm chứng.
+
+Với Maya launcher, dry-run cũng là mặc định. Chạy thật cần Autodesk Maya `mayapy.exe`; file sinh ra nằm trong `outputs/maya/`, ảnh preview trong `outputs/preview/`, file tạm trong `outputs/tmp/`, và report trong `outputs/reports/`.
