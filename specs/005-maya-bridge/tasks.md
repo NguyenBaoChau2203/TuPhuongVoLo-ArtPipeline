@@ -98,3 +98,11 @@ Verified manually on artist/DCC machine with Autodesk Maya 2024 mayapy.exe. .ma 
 - [X] T059 Add Vietnamese fal provider documentation and update README/quickstart
 - [X] T060 Confirm generated `outputs/ai_preview/` PNG/report artifacts remain ignored
 - [X] T061 Confirm no Feature 006, SVG, geometry JSON, Maya scene, render, prop placement, manifest, required dependency, `.env`, secret, or generated output changes are added
+
+## Phase 11: fal Provider Verification Checkpoint (005.5C-R)
+
+- [X] T062 Run 005.5C CLI, compileall, and pytest validation checkpoint
+- [X] T063 Add `docs/verification/005_5C_ai_polish_fal_verified.md`
+- [X] T064 Confirm `fal-client` remains optional-only and no external API calls are made during validation
+- [X] T065 Confirm generated AI preview artifacts remain ignored/uncommitted
+- [X] T066 Confirm no secrets, `.env`, Feature 006, UI/app integration, SVG/Maya/render/manifest changes, or generated outputs are added
