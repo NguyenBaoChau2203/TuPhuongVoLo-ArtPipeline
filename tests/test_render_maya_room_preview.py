@@ -90,3 +90,35 @@ def test_render_script_imports_only_inside_maya_initializer() -> None:
     # No top-level Maya imports; they live inside initialize_maya().
     assert "\nimport maya" not in script_text
     assert "import maya.cmds" in script_text
+
+
+def test_render_script_configures_camera_renderable() -> None:
+    """The render script must mark the selected camera shape as renderable.
+
+    This is the fix for the 005.2 bug where Maya silently skipped the
+    camera with 'Warning: Camera is not renderable at this time'.
+    """
+
+    script_text = render_script_text()
+
+    assert "configure_render_camera" in script_text
+    assert ".renderable" in script_text
+    assert "setAttr" in script_text
+
+
+def test_render_script_finds_camera_shape_via_list_relatives() -> None:
+    """configure_render_camera must use listRelatives to get the camera shape."""
+
+    script_text = render_script_text()
+
+    assert "listRelatives" in script_text
+    assert "shapes=True" in script_text
+
+
+def test_render_script_does_not_save_scene() -> None:
+    """The render script must not save/rename the .ma (no cmds.file(save=...))."""
+
+    script_text = render_script_text()
+
+    assert "save=True" not in script_text
+    assert "rename=" not in script_text

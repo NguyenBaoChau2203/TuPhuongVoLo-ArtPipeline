@@ -136,6 +136,38 @@ def find_render_camera(cmds: Any, explicit: str | None) -> str:
     )
 
 
+def configure_render_camera(cmds: Any, camera_transform: str) -> str:
+    """Ensure the selected camera shape is renderable for offline rendering.
+
+    Maya's ``cmds.render()`` silently skips cameras whose shape node has
+    ``.renderable`` set to ``False`` — producing the error::
+
+        Warning: Camera is not renderable at this time; skipping image ...
+
+    This helper:
+        1. Finds the camera shape under *camera_transform* via ``listRelatives``.
+        2. Sets ``.renderable`` to ``True`` on that shape.
+        3. Sets ``.renderable`` to ``False`` on **all other** camera shapes so
+           the render result is deterministic (only one camera is renderable).
+
+    No viewport/UI commands are used — safe for headless ``mayapy``.
+    """
+
+    shapes = cmds.listRelatives(camera_transform, shapes=True, type="camera", fullPath=True) or []
+    if not shapes:
+        raise ValueError(
+            f"Không tìm thấy camera shape dưới transform: {camera_transform}"
+        )
+    target_shape = shapes[0]
+
+    # Disable renderable on every other camera shape for deterministic output.
+    all_camera_shapes = cmds.ls(type="camera", long=True) or []
+    for shape in all_camera_shapes:
+        cmds.setAttr(f"{shape}.renderable", shape == target_shape)
+
+    return target_shape
+
+
 def configure_render_settings(cmds: Any, width: int, height: int) -> None:
     """Configure deterministic, headless-safe PNG render settings."""
 
@@ -188,6 +220,7 @@ def render_scene(
     cmds = initialize_maya()
     open_scene(cmds, scene_path)
     render_camera = find_render_camera(cmds, camera)
+    configure_render_camera(cmds, render_camera)
     configure_render_settings(cmds, width, height)
     return render_to_png(cmds, render_camera, width, height, render_output.resolve())
 
