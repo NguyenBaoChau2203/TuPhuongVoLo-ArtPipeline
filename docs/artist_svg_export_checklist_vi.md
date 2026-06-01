@@ -50,6 +50,8 @@ gọn gàng, mọi bước sau sẽ chạy ổn định và ít lỗi hơn.
 
 ## Trước khi dựng Maya thật
 
+- [ ] **Kiểm tra môi trường nếu chưa chắc chắn.** Có thể chạy
+      `launchers/00_maya_env_check.bat` để xem Python, PyYAML và `mayapy.exe` đã sẵn sàng chưa.
 - [ ] **Chạy thử bằng dry-run trước.** Dry-run chỉ lập kế hoạch, **không** chạy Maya
       và **không** ghi manifest. Đây là cách an toàn để kiểm tra phòng và đường dẫn
       output trước khi tạo file thật.
@@ -60,6 +62,9 @@ python scripts/python/build_maya_room.py --input drops/phong_cua_ban.svg --room 
 
 - [ ] Khi dry-run hiển thị đúng phòng và đường dẫn `.ma` mong muốn, bạn mới chạy
       bản thật (cần Maya `mayapy.exe`).
+- [ ] Sau khi chạy thật, kiểm tra output trong `outputs/maya/` và preview PNG trong
+      `outputs/preview/` nếu bạn bật render preview. Geometry JSON tạm nằm trong `outputs/tmp/`;
+      report batch nằm trong `outputs/reports/`.
 
 ---
 

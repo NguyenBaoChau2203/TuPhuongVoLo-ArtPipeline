@@ -125,6 +125,14 @@ Trong chế độ `--dry-run`:
 
 - Đây là render preview kỹ thuật, dùng renderer offline mặc định của Maya
   (`mayaSoftware`); chưa tinh chỉnh ánh sáng/vật liệu cho art cuối.
-- Chưa đặt prop theo tên layer/group SVG (đó là Phase 005.3).
+- Prop marker theo tên layer/group SVG đã được hỗ trợ ở Phase 005.3, nhưng vẫn chỉ
+  tạo cube placeholder để kiểm tra bố cục.
 - Không gọi AI ngoài, không FLUX/fal.ai.
 - Camera dùng camera iso do scene builder tạo (`cam_<phòng>_iso`).
+
+## Gợi ý dùng launcher ở Phase 005.4
+
+- Chạy `launchers/00_maya_env_check.bat` nếu không chắc Python, PyYAML hoặc `mayapy.exe` đã sẵn sàng.
+- Chạy `launchers/07_build_maya_room.bat` cho một SVG/một phòng và bật dry-run trước.
+- Chạy `launchers/08_batch_maya_room.bat` cho nhiều SVG hoặc nhiều phòng; report JSON nằm mặc định ở `outputs/reports/batch_maya_report.json`.
+- Khi dry-run đã đúng, chạy actual run và bật PNG preview nếu muốn kiểm tra nhanh hình isometric.

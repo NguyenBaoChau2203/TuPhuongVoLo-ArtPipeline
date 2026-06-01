@@ -80,9 +80,12 @@ Vietnamese guides:
 Core artist flow:
 
 1. Draw/export clean SVG from Illustrator.
-2. Run `launchers/07_build_maya_room.bat` for one room dry-run.
-3. Run `launchers/08_batch_maya_room.bat` for multi-SVG or multi-room planning.
-4. Open generated `.ma` scenes from `outputs/maya/` in Maya after actual Maya execution.
+2. Optional: run `launchers/00_maya_env_check.bat` to check Python, PyYAML, and `mayapy.exe`.
+3. Run `launchers/07_build_maya_room.bat` for one room dry-run before creating `.ma`.
+4. Run `launchers/08_batch_maya_room.bat` for multi-SVG or multi-room dry-run/report.
+5. After dry-run looks correct, run actual Maya execution and open generated `.ma` scenes from `outputs/maya/` in Maya.
+
+Generated `.ma`, `.png`, `outputs/tmp/`, and normal batch reports are local outputs and should not be committed unless intentionally added as test fixtures.
 
 ## Repository Structure
 
