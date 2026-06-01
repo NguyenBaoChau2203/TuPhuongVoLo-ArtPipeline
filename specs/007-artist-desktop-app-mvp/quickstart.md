@@ -30,6 +30,14 @@ PyInstaller is optional and dev-only. Generated `build/`, `dist/`, `.spec`, and
 `.exe` still needs the local repo/pipeline files and does not bundle Maya or
 `mayapy.exe`.
 
+## Package App Verification Checkpoint
+
+Phase 007B-R verified `dist/TuPhuongVoLo_MayaArtistApp.exe` on the artist/DCC
+machine. The app launched successfully, dry-run returned exit code 0, actual
+Maya execution returned exit code 0, and the run generated an editable `.ma`
+scene plus PNG preview. Details are documented in
+`docs/verification/007B_desktop_app_exe_verified.md`.
+
 ## Recommended Artist Flow
 
 1. Select a clean SVG file.

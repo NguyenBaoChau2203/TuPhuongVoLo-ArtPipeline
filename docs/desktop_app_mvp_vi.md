@@ -74,6 +74,19 @@ Output dự kiến:
 dist/TuPhuongVoLo_MayaArtistApp.exe
 ```
 
+## Kiểm chứng 007B-R trên máy artist/DCC
+
+File `.exe` đóng gói `dist/TuPhuongVoLo_MayaArtistApp.exe` đã được kiểm chứng
+trên máy artist/DCC với Maya 2024. Kết quả: app mở được, dry-run trả exit code
+0, chạy thật Maya trả exit code 0, sinh file `.ma` trong `outputs/maya/`, sinh
+PNG preview trong `outputs/preview/`, và file `.ma` mở được trong Maya.
+
+Chi tiết checkpoint nằm ở:
+
+```text
+docs/verification/007B_desktop_app_exe_verified.md
+```
+
 Khi chạy file `.exe`, app vẫn cần tìm thấy repo local để gọi script pipeline:
 
 ```powershell

@@ -32,3 +32,9 @@
 - [X] T016 Ignore generated package artifacts: `build/`, `dist/`, `.spec`, `.exe`
 - [X] T017 Document source run, launcher run, and package workflow
 - [X] T018 Add packaging helper tests that do not require PyInstaller or Maya
+
+## Phase 5: 007B-R Packaged .exe Verification Checkpoint
+
+- [X] T019 Document artist/DCC machine verification for packaged `.exe`
+- [X] T020 Confirm generated package artifacts and Maya outputs remain uncommitted
+- [X] T021 Record recommended next step as 007C desktop app UX/reliability polish

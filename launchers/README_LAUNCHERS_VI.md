@@ -86,3 +86,9 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 ⚠️ **Blender cũ/fallback**: Batch launcher Blender chạy dry-run mặc định để an toàn khi máy chưa có Blender. Render thật cần Blender 4.x và nên do developer chạy/kiểm chứng.
 
 Với Maya launcher, dry-run cũng là mặc định. Chạy thật cần Autodesk Maya `mayapy.exe`; quy trình launcher Maya 005.4 đã được kiểm chứng trên máy DCC. File sinh ra nằm trong `outputs/maya/`, ảnh preview trong `outputs/preview/`, file tạm trong `outputs/tmp/`, và report trong `outputs/reports/`.
+
+## Checkpoint 007B-R cho desktop app .exe
+
+File `dist/TuPhuongVoLo_MayaArtistApp.exe` đã được kiểm chứng trên máy artist/DCC với Maya 2024. App mở được, dry-run trả exit code 0, chạy thật Maya trả exit code 0, sinh `.ma` trong `outputs/maya/` và PNG preview trong `outputs/preview/`.
+
+Chi tiết checkpoint nằm trong `docs/verification/007B_desktop_app_exe_verified.md`.
