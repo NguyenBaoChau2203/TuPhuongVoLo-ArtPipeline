@@ -38,7 +38,7 @@ an toàn khi bấm mở; app không tạo hoặc sửa thư mục source asset.
 
 Phase 007E thêm metadata phiên bản nhỏ cho app desktop:
 
-- App title và nhãn trong UI hiển thị `TuPhuongVoLo Maya Artist App v0.7.5 (007E)`.
+- App title và nhãn trong UI hiển thị `TuPhuongVoLo Maya Artist App v0.7.6 (007G)`.
 - CLI hỗ trợ kiểm tra phiên bản:
 
 ```powershell
@@ -63,6 +63,42 @@ Checkpoint kiểm chứng 007E-R nằm ở:
 docs/verification/007E_packaging_metadata_verified.md
 ```
 
+## Cập nhật 007G: AI polish preview tùy chọn trong desktop app
+
+Phase 007G thêm một khu vực riêng trong app để tạo AI polish preview từ một ảnh PNG
+preview đã có, thường là ảnh trong `outputs/preview/`. AI không tự chạy sau khi bấm
+`Chạy pipeline`; người dùng phải tự chọn PNG và bấm `Tạo AI polish preview`.
+
+Các trường chính trong khu vực AI:
+
+- `PNG preview`: ảnh `.png` đầu vào.
+- `Provider`: `mock` hoặc `fal`.
+- `Model`: mặc định `fal-ai/flux-pro/kontext`.
+- `Prompt preset`: mặc định `tropical-island-room`.
+- `Prompt thêm`: nội dung tùy chọn, chỉ gửi khi có nhập.
+- `Bỏ qua nếu thiếu cấu hình AI`: mặc định bật, giúp provider `fal` skip an toàn khi thiếu `FAL_KEY`.
+- `AI dry-run`: mặc định bật để chỉ in kế hoạch, không tạo output và không gọi API.
+
+Provider `mock` dùng được local, không cần API key, không cần internet, không cần
+`fal-client`. Provider `fal` chỉ là tùy chọn; nếu muốn chạy thật thì máy cần cài
+`fal-client` và đặt biến môi trường `FAL_KEY`. Desktop app không import `fal-client`
+và không đọc/cất API key; app chỉ gọi CLI:
+
+```powershell
+python scripts/python/ai_polish_preview.py
+```
+
+Output AI nằm trong:
+
+```text
+outputs/ai_preview/
+```
+
+Ảnh AI chỉ là reference để họa sĩ xem mood, ánh sáng, vật liệu. File Maya `.ma` vẫn
+là nguồn chính để polish cuối cùng. Phase này không sửa SVG, geometry JSON, Maya
+scene generation, render logic, manifest, source assets, hay Feature 006
+natural-language control.
+
 ## Cách chạy từ source
 
 ```powershell
@@ -83,12 +119,14 @@ launchers/09_artist_desktop_app.bat
 4. Bật `Render PNG preview` nếu cần ảnh kiểm tra nhanh.
 5. Bấm `Chạy pipeline` và đọc log trong app.
 6. Nếu dry-run đúng, bỏ chọn `Dry-run`, kiểm tra đường dẫn `mayapy.exe`, rồi chạy thật.
+7. Nếu cần AI reference, chọn PNG preview đã có trong khu vực AI, giữ `AI dry-run` cho lần đầu, rồi bấm `Tạo AI polish preview`.
 
 ## Thư mục có thể mở từ app
 
 - `outputs/maya/`
 - `outputs/preview/`
 - `outputs/reports/`
+- `outputs/ai_preview/`
 - Thư mục repo
 
 ## Đóng gói .exe cho máy dev

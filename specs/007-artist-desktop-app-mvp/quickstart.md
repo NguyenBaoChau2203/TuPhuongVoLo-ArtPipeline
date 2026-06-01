@@ -35,7 +35,7 @@ PyInstaller is optional and dev-only. Generated `build/`, `dist/`, `.spec`, and
 ## Phase 007E Packaging Metadata Polish
 
 The desktop app has a small version constant and shows
-`TuPhuongVoLo Maya Artist App v0.7.5 (007E)` in the app title/UI. The app CLI
+`TuPhuongVoLo Maya Artist App v0.7.6 (007G)` in the app title/UI. The app CLI
 supports `--version`, and the packaging helper prints the same app version
 during dry-run and supports its own `--version`.
 
@@ -44,6 +44,31 @@ Vietnamese release packaging checklist:
 ```text
 docs/release_packaging_checklist_vi.md
 ```
+
+## Phase 007G Optional AI Polish Preview
+
+The desktop app now includes a separate AI polish preview section. The artist or
+dev operator must explicitly select an existing PNG preview and click
+`Tạo AI polish preview`; AI is not called automatically after a Maya run.
+
+The AI button wraps the existing CLI:
+
+```powershell
+python scripts/python/ai_polish_preview.py
+```
+
+Default desktop behavior is safe: provider `mock`, `AI dry-run` enabled, and
+`Bỏ qua nếu thiếu cấu hình AI` enabled. Provider `fal` remains optional and
+requires optional `fal-client` plus `FAL_KEY` only when the operator chooses a
+real non-dry-run fal call. AI output is reference-only and goes to:
+
+```text
+outputs/ai_preview/
+```
+
+The Maya `.ma` scene remains the source of truth. The AI workflow does not
+modify SVG, geometry JSON, Maya scene generation, render logic, manifests,
+source assets, or Feature 006 natural-language control.
 
 ## Package App Verification Checkpoint
 
@@ -98,9 +123,14 @@ local packaging notes, and generated artifacts that must not be committed.
 ```powershell
 python scripts/python/artist_desktop_app.py --help
 python scripts/python/artist_desktop_app.py --version
+python scripts/python/ai_polish_preview.py --help
+python scripts/python/ai_polish_preview.py --version
+python scripts/python/ai_polish_preview.py --dry-run --provider mock --input tests/in/sample_preview.png
+python scripts/python/ai_polish_preview.py --dry-run --provider fal --input tests/in/sample_preview.png --model fal-ai/flux-pro/kontext
+python scripts/python/ai_polish_preview.py --provider fal --input tests/in/sample_preview.png --skip-on-missing-config
 python scripts/python/package_artist_app.py --dry-run
 python scripts/python/package_artist_app.py --version
-pytest tests/test_artist_desktop_app.py tests/test_package_artist_app.py -v
+pytest tests/test_artist_desktop_app.py tests/test_ai_polish_preview.py tests/test_package_artist_app.py -v
 pytest tests/ -v --ignore=tests/tmp
 ```
 

@@ -7,7 +7,7 @@ prop placement, hoặc manifest.
 
 ## Phiên bản hiện tại
 
-- App: `TuPhuongVoLo Maya Artist App v0.7.5 (007E)`
+- App: `TuPhuongVoLo Maya Artist App v0.7.6 (007G)`
 - File source chính: `scripts/python/artist_desktop_app.py`
 - Helper packaging: `scripts/python/package_artist_app.py`
 - File `.exe` dự kiến nếu build local: `dist/TuPhuongVoLo_MayaArtistApp.exe`
@@ -47,7 +47,7 @@ python scripts/python/package_artist_app.py --clean-output --build
 Sau khi build, kiểm tra nhanh:
 
 - [ ] `.exe` mở được trên máy artist/DCC.
-- [ ] App title hoặc nhãn trên UI hiển thị `v0.7.5 (007E)`.
+- [ ] App title hoặc nhãn trên UI hiển thị `v0.7.6 (007G)`.
 - [ ] Dry-run trả exit code 0.
 - [ ] Actual Maya run chỉ chạy khi có `mayapy.exe` hợp lệ.
 - [ ] File `.ma` và PNG preview nếu có chỉ nằm trong `outputs/`.

@@ -37,7 +37,7 @@ clean SVG -> Blender MVP isometric draft / batch dry-run
 | 5.5B | AI Polish Preview Local Mock | `docs/ai_polish_preview_mock_vi.md` | Mock-only local workflow; no external API |
 | 5.5C | AI Polish Preview fal Provider | `docs/ai_polish_preview_fal_vi.md` | Optional fal.ai reference workflow; no required dependency |
 | 6 | Natural Language Agent Control | `specs/006-natural-language-agent-control/` | Spec only; not implemented |
-| 7 | Artist Desktop App MVP | `specs/007-artist-desktop-app-mvp/` | Local Tkinter wrapper; packaged `.exe` verified on artist/DCC machine |
+| 7 | Artist Desktop App MVP | `specs/007-artist-desktop-app-mvp/` | Local Tkinter wrapper with independent optional AI preview controls |
 
 ## Developer Quickstart
 
@@ -112,13 +112,16 @@ Dry-run does not call API. Missing `FAL_KEY` can be skipped with
 without AI, API keys, `fal-client`, or internet. AI output is reference-only and
 is written under `outputs/ai_preview/` with a versioned `_fal_ai_preview.png`
 name plus a JSON report. See `docs/ai_polish_preview_fal_vi.md`.
+Phase 007G adds the same AI preview workflow to the desktop app as a separate
+button and section. AI is not called automatically after Maya generation; the
+operator must select a PNG preview and click the AI button.
 Phase 005.5B-R verification is recorded in
 `docs/verification/005_5B_ai_polish_mock_verified.md`. Phase 005.5C-R
 verification is recorded in
 `docs/verification/005_5C_ai_polish_fal_verified.md`.
 
-Phase 007E adds small release metadata polish. The desktop app shows
-`TuPhuongVoLo Maya Artist App v0.7.5 (007E)` in the app title/UI and the
+Phase 007G adds desktop app AI polish preview controls and bumps the app to
+`TuPhuongVoLo Maya Artist App v0.7.6 (007G)` in the app title/UI. The
 packaging helper prints the same app version during dry-run. See
 `docs/release_packaging_checklist_vi.md` for the Vietnamese release packaging
 checklist. Phase 007E-R verification is recorded in
@@ -164,13 +167,15 @@ Core artist flow:
 5. Alternative CLI launcher: run `launchers/07_build_maya_room.bat` for one room dry-run before creating `.ma`.
 6. Run `launchers/08_batch_maya_room.bat` for multi-SVG or multi-room dry-run/report.
 7. After dry-run looks correct, run actual Maya execution and open generated `.ma` scenes from `outputs/maya/` in Maya.
+8. Optional: choose a generated PNG preview in the desktop app AI section and run a reference-only AI polish preview into `outputs/ai_preview/`.
 
 Generated `.ma`, `.png`, `outputs/tmp/`, and normal batch reports are local outputs and should not be committed unless intentionally added as test fixtures.
 
 Phase 005.5A documents the optional AI polish preview stage. Phase 005.5B adds
 a local mock preview workflow. Phase 005.5C adds optional fal.ai integration
-behind `--provider fal`; it remains reference-only and does not change the Maya
-source-of-truth workflow. Feature 006 natural-language control remains deferred.
+behind `--provider fal`. Phase 007G exposes that workflow in the desktop app as
+a separate reference-only button; it does not change the Maya source-of-truth
+workflow. Feature 006 natural-language control remains deferred.
 
 ## Repository Structure
 
@@ -194,10 +199,11 @@ TuPhuongVoLo-ArtPipeline/
 ## Not Implemented
 
 Feature 006 natural-language control/MCP is not implemented. AI polish preview
-has a local mock provider and an optional fal.ai provider, but it is still only
-a reference-image workflow and does not drive pipeline automation. Actual Maya
-scene generation requires local Autodesk Maya with `mayapy.exe`; the 005.4
-launcher workflow has been verified on the artist/DCC machine with Maya 2024.
+has a local mock provider, an optional fal.ai provider, and desktop app controls,
+but it is still only a reference-image workflow and does not drive pipeline
+automation. Actual Maya scene generation requires local Autodesk Maya with
+`mayapy.exe`; the 005.4 launcher workflow has been verified on the artist/DCC
+machine with Maya 2024.
 
 ## License
 

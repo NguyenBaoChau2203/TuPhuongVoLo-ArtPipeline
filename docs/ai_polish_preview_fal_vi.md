@@ -16,6 +16,33 @@ file Maya `.ma`, PNG preview gốc, manifest, hay polish thủ công trong Maya.
 Pipeline Maya-first vẫn chạy bình thường khi không có AI, không có `FAL_KEY`,
 không cài `fal-client`, hoặc không có internet.
 
+## Dùng từ desktop app 007G
+
+Từ phase 007G, desktop app Maya có khu vực `AI polish preview tùy chọn`. Khu vực
+này chỉ chạy khi người dùng tự chọn một file PNG preview và bấm `Tạo AI polish
+preview`. App không tự gọi AI sau khi chạy Maya.
+
+Luồng trong app vẫn gọi subprocess đến:
+
+```powershell
+python scripts/python/ai_polish_preview.py
+```
+
+App không import `fal-client`, không đọc/cất API key, không tạo `.env`, và không
+thay đổi SVG, geometry JSON, file Maya `.ma`, render logic, manifest, hoặc source
+assets. Nút `Chạy pipeline` của Maya và nút `Tạo AI polish preview` là hai workflow
+riêng. AI output vẫn nằm trong `outputs/ai_preview/`.
+
+Mặc định trong desktop app:
+
+- Provider là `mock`.
+- `AI dry-run` bật.
+- `Bỏ qua nếu thiếu cấu hình AI` bật.
+
+Với provider `fal`, nếu thiếu `FAL_KEY` và tùy chọn skip đang bật, CLI sẽ bỏ qua an
+toàn và exit `0`. Muốn gọi fal.ai thật thì tắt `AI dry-run`, chọn provider `fal`, cài
+optional `fal-client`, và đặt `FAL_KEY` trên máy chạy.
+
 ## Cài đặt tùy chọn
 
 Chỉ cài khi thật sự muốn gọi fal.ai:

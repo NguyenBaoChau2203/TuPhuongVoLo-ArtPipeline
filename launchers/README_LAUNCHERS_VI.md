@@ -67,12 +67,18 @@ thị repo root, lệnh chuẩn bị chạy, trạng thái chạy, exit code cu�
 nút `Xóa log` / `Copy lệnh`. Hãy dry-run trước. Chạy thật cần `mayapy.exe` hợp
 lệ, ví dụ `C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe`.
 
-Từ phase 007E, app hiển thị phiên bản `v0.7.5 (007E)` trong title/UI. Developer
+Từ phase 007G, app hiển thị phiên bản `v0.7.6 (007G)` trong title/UI. Developer
 có thể kiểm tra nhanh bằng:
 
 ```powershell
 python scripts/python/artist_desktop_app.py --version
 ```
+
+Desktop app cũng có khu vực `AI polish preview tùy chọn`. AI không tự chạy sau khi
+chạy Maya; người dùng phải chọn một PNG preview có sẵn và bấm `Tạo AI polish
+preview`. Mặc định provider là `mock`, `AI dry-run` bật, và output nằm trong
+`outputs/ai_preview/`. Provider `fal` là tùy chọn, chỉ dùng khi máy đã có
+`fal-client` và `FAL_KEY`.
 
 ### Bước 8: Package desktop app thành .exe (developer-only)
 1. Chạy `10_package_artist_app.bat` để in lệnh package dry-run.

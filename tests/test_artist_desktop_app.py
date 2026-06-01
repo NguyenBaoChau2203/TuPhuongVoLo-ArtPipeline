@@ -1,4 +1,4 @@
-"""Tests for the Phase 007A artist desktop app helpers.
+"""Tests for the Phase 007G artist desktop app helpers.
 
 These tests intentionally avoid creating a Tkinter window.
 """
@@ -17,12 +17,14 @@ def _fake_repo(root: Path) -> Path:
     script_path = root / "scripts" / "python" / "build_maya_room.py"
     script_path.parent.mkdir(parents=True)
     script_path.write_text("print('fake pipeline')\n", encoding="utf-8")
+    ai_script_path = root / "scripts" / "python" / "ai_polish_preview.py"
+    ai_script_path.write_text("print('fake ai preview')\n", encoding="utf-8")
     return root
 
 
 def test_app_version_metadata_is_display_ready() -> None:
-    assert app.APP_VERSION
-    assert app.APP_PHASE == "007E"
+    assert app.APP_VERSION == "0.7.6"
+    assert app.APP_PHASE == "007G"
     assert f"v{app.APP_VERSION}" in app.APP_TITLE
     assert app.APP_PHASE in app.APP_TITLE
     assert app.APP_VERSION in app.app_version_display()
@@ -326,3 +328,103 @@ def test_output_root_resolves_relative_path_from_repo_root(tmp_path: Path) -> No
     assert app.resolve_output_root(tmp_path / "custom_outputs", fake_root) == (
         tmp_path / "custom_outputs"
     )
+
+
+def test_ai_mock_dry_run_command_wraps_ai_polish_preview(tmp_path: Path) -> None:
+    options = app.ArtistAiPreviewOptions(
+        input_png_path=tmp_path / "sample_preview.png",
+        provider=app.AI_PROVIDER_MOCK,
+        dry_run=True,
+    )
+
+    command = app.build_ai_preview_command(
+        options,
+        python_executable="python",
+        root=Path("D:/repo"),
+    )
+
+    assert command[0] == "python"
+    assert any("ai_polish_preview.py" in part for part in command)
+    assert command[command.index("--provider") + 1] == "mock"
+    assert command[command.index("--input") + 1] == str(tmp_path / "sample_preview.png")
+    assert command[command.index("--output-dir") + 1] == str(app.DEFAULT_AI_OUTPUT_DIR)
+    assert command[command.index("--prompt-preset") + 1] == app.DEFAULT_AI_PROMPT_PRESET
+    assert "--dry-run" in command
+    assert "--model" not in command
+    assert "--skip-on-missing-config" not in command
+
+
+def test_ai_fal_command_includes_model_and_skip_on_missing_config(tmp_path: Path) -> None:
+    options = app.ArtistAiPreviewOptions(
+        input_png_path=tmp_path / "sample_preview.png",
+        provider=app.AI_PROVIDER_FAL,
+        model="fal-ai/flux-pro/kontext",
+        skip_on_missing_config=True,
+        dry_run=False,
+    )
+
+    command = app.build_ai_preview_command(
+        options,
+        python_executable="python",
+        root=Path("D:/repo"),
+    )
+
+    assert command[command.index("--provider") + 1] == "fal"
+    assert command[command.index("--model") + 1] == "fal-ai/flux-pro/kontext"
+    assert "--skip-on-missing-config" in command
+    assert "--dry-run" not in command
+
+
+def test_ai_prompt_text_is_included_only_when_non_empty(tmp_path: Path) -> None:
+    without_prompt = app.build_ai_preview_command(
+        app.ArtistAiPreviewOptions(input_png_path=tmp_path / "sample_preview.png"),
+        python_executable="python",
+        root=Path("D:/repo"),
+    )
+    with_prompt = app.build_ai_preview_command(
+        app.ArtistAiPreviewOptions(
+            input_png_path=tmp_path / "sample_preview.png",
+            prompt="soft tropical lighting",
+        ),
+        python_executable="python",
+        root=Path("D:/repo"),
+    )
+
+    assert "--prompt" not in without_prompt
+    assert with_prompt[with_prompt.index("--prompt") + 1] == "soft tropical lighting"
+
+
+def test_ai_validation_rejects_missing_input_path() -> None:
+    errors = app.validate_ai_preview_options(
+        app.ArtistAiPreviewOptions(input_png_path=Path(""))
+    )
+
+    assert app.AI_INPUT_EMPTY_ERROR in errors
+
+
+def test_ai_validation_rejects_non_png_input() -> None:
+    errors = app.validate_ai_preview_options(
+        app.ArtistAiPreviewOptions(input_png_path=Path("preview.jpg"))
+    )
+
+    assert app.AI_INPUT_NOT_PNG_ERROR in errors
+
+
+def test_ai_validation_rejects_missing_png_file(tmp_path: Path) -> None:
+    fake_root = _fake_repo(tmp_path / "repo")
+
+    errors = app.validate_ai_preview_paths(
+        app.ArtistAiPreviewOptions(input_png_path=Path("tests/in/missing_preview.png")),
+        root=fake_root,
+    )
+
+    assert app.AI_INPUT_NOT_FOUND_ERROR in errors
+
+
+def test_ai_output_folder_helper_points_to_outputs_ai_preview(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+
+    assert app.output_subdir_path(Path("outputs"), "ai_preview") == (
+        Path("outputs") / "ai_preview"
+    )
+    assert app.ai_output_dir_path(root) == root / "outputs" / "ai_preview"
