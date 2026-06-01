@@ -59,11 +59,17 @@ Desktop app chỉ bọc pipeline CLI đã kiểm chứng. App không sửa SVG g
 thay thế Maya, và output sinh ra vẫn nằm trong `outputs/maya/`,
 `outputs/preview/`, `outputs/reports/`.
 
-Ghi chú 005.5A: repo đã có tài liệu đánh giá `docs/ai_polish_preview_evaluation_vi.md`
-cho ý tưởng AI polish preview trong tương lai. Đây chỉ là đánh giá tài liệu:
-chưa có external API, chưa có nút AI trong app, chưa có ảnh AI output, và ảnh AI
-nếu có sau này chỉ được xem là reference/concept. File `.ma` và clean SVG vẫn là
-source of truth.
+Ghi chú 005.5: repo đã có tài liệu đánh giá, mock local, và provider `fal` tùy
+chọn cho AI polish preview:
+
+- `docs/ai_polish_preview_evaluation_vi.md`
+- `docs/ai_polish_preview_mock_vi.md`
+- `docs/ai_polish_preview_fal_vi.md`
+
+AI polish preview hiện là CLI tùy chọn, chưa có nút AI trong desktop app. API
+thật chỉ chạy khi user tự gọi `scripts/python/ai_polish_preview.py --provider
+fal`, không dùng `--dry-run`, có `FAL_KEY`, và đã cài `fal-client`. Ảnh AI chỉ
+là reference/concept. File `.ma` và clean SVG vẫn là source of truth.
 
 ### Đóng gói desktop app thành .exe
 
@@ -218,5 +224,7 @@ Các file sinh ra sau đây không nên commit trừ khi developer cố ý cần
 
 Feature 002 đã có xuất/làm sạch/kiểm tra SVG. Feature 003 đã có naming và manifest. Feature 001/004 là Blender MVP và batch dry-run/report cũ. Feature 005 bổ sung Maya Bridge làm backend DCC production chính; quy trình launcher 005.4 đã được kiểm chứng trên máy DCC có Autodesk Maya 2024 và `mayapy.exe`.
 
-005.5A chỉ đánh giá AI polish preview tùy chọn cho tương lai và không tích hợp API nào.
+005.5C có provider `fal` tùy chọn cho AI polish preview reference-only qua CLI;
+pipeline Maya vẫn hoạt động bình thường nếu không có AI, `FAL_KEY`,
+`fal-client`, hoặc internet.
 Feature 006 natural-language control vẫn deferred.
