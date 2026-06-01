@@ -107,6 +107,7 @@ Feature 005 MVP actual execution supports `mayapy.exe` only. `maya.exe` and
 
 Vietnamese guides:
 
+- [Bàn giao desktop app Maya](docs/artist_handoff_desktop_app_vi.md)
 - [Hướng dẫn cài đặt](docs/INSTALL_VI.md)
 - [Hướng dẫn sử dụng](docs/HOW_TO_USE_FOR_ARTIST_VI.md)
 - [Xử lý sự cố](docs/TROUBLESHOOTING_VI.md)

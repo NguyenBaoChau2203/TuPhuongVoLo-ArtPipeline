@@ -118,6 +118,12 @@ Chi tiết checkpoint nằm ở:
 docs/verification/007C_desktop_app_polish_verified.md
 ```
 
+Checklist bàn giao/retest cho họa sĩ và dev operator nằm ở:
+
+```text
+docs/artist_handoff_desktop_app_vi.md
+```
+
 Khi chạy file `.exe`, app vẫn cần tìm thấy repo local để gọi script pipeline:
 
 ```powershell

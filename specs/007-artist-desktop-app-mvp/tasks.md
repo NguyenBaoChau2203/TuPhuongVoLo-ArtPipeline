@@ -54,3 +54,9 @@
 - [X] T029 Record actual Maya run exit code 0 verification
 - [X] T030 Record verified Maya Outliner structure
 - [X] T031 Confirm generated package and output artifacts remain uncommitted
+
+## Phase 8: 007D Artist Handoff / Release Packaging Notes
+
+- [X] T032 Add Vietnamese artist/developer handoff checklist document
+- [X] T033 Document DCC repo update, retest, packaging, and safety checklist
+- [X] T034 Link the handoff checklist from existing desktop app documentation
