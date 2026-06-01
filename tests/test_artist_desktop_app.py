@@ -23,6 +23,7 @@ def test_dry_run_command_wraps_build_maya_room(tmp_path: Path) -> None:
         svg_path=tmp_path / "room.svg",
         room_name="phong_kho",
         output_dir=tmp_path / "outputs",
+        maya_path=Path(r"C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe"),
         dry_run=True,
     )
 
@@ -41,6 +42,19 @@ def test_dry_run_command_wraps_build_maya_room(tmp_path: Path) -> None:
     assert "--output-dir" in command
     assert str(tmp_path / "outputs") in command
     assert "--dry-run" in command
+    assert "--maya-path" not in command
+
+
+def test_default_mayapy_path_detection_when_path_exists(tmp_path: Path) -> None:
+    mayapy = tmp_path / "Maya2024" / "bin" / "mayapy.exe"
+    mayapy.parent.mkdir(parents=True)
+    mayapy.write_text("fake mayapy", encoding="utf-8")
+
+    assert app.default_mayapy_path(mayapy) == str(mayapy)
+
+
+def test_default_mayapy_path_empty_when_path_missing(tmp_path: Path) -> None:
+    assert app.default_mayapy_path(tmp_path / "missing" / "mayapy.exe") == ""
 
 
 def test_find_repo_root_finds_fake_checkout(monkeypatch, tmp_path: Path) -> None:
@@ -89,6 +103,21 @@ def test_packaged_python_command_uses_py_launcher_fallback(monkeypatch) -> None:
     assert app.pipeline_python_command_prefix() == ["C:/Windows/py.exe", "-3"]
 
 
+def test_frozen_mode_without_external_python_returns_validation_error(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    fake_root = _fake_repo(tmp_path / "repo")
+
+    monkeypatch.delenv(app.PIPELINE_PYTHON_ENV_VAR, raising=False)
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(app.shutil, "which", lambda name: None)
+
+    errors = app.validate_runtime_environment(root=fake_root)
+
+    assert app.PIPELINE_PYTHON_ERROR in errors
+
+
 def test_missing_repo_root_returns_vietnamese_validation_error(
     monkeypatch,
     tmp_path: Path,
@@ -102,6 +131,56 @@ def test_missing_repo_root_returns_vietnamese_validation_error(
     errors = app.validate_runtime_environment()
 
     assert app.REPO_ROOT_ERROR in errors
+
+
+def test_missing_svg_returns_vietnamese_validation_error(tmp_path: Path) -> None:
+    fake_root = _fake_repo(tmp_path / "repo")
+    options = app.ArtistAppOptions(
+        svg_path=Path("tests/in/missing.svg"),
+        room_name="phong_kho",
+        output_dir=Path("outputs"),
+        dry_run=True,
+    )
+
+    errors = app.validate_run_paths(options, root=fake_root)
+
+    assert app.SVG_NOT_FOUND_ERROR in errors
+
+
+def test_relative_svg_path_resolves_from_repo_root(tmp_path: Path) -> None:
+    fake_root = _fake_repo(tmp_path / "repo")
+    svg = fake_root / "tests" / "in" / "illustrator_prop_markers.svg"
+    svg.parent.mkdir(parents=True)
+    svg.write_text("<svg />\n", encoding="utf-8")
+
+    resolved = app.resolve_repo_relative_path(
+        Path(r"tests\in\illustrator_prop_markers.svg"),
+        fake_root,
+    )
+
+    assert resolved == fake_root / r"tests\in\illustrator_prop_markers.svg"
+    assert app.validate_run_paths(
+        app.ArtistAppOptions(
+            svg_path=Path("tests/in/illustrator_prop_markers.svg"),
+            room_name="phong_kho",
+            output_dir=Path("outputs"),
+            dry_run=True,
+        ),
+        root=fake_root,
+    ) == []
+
+
+def test_empty_room_name_returns_vietnamese_validation_error(tmp_path: Path) -> None:
+    options = app.ArtistAppOptions(
+        svg_path=tmp_path / "room.svg",
+        room_name="",
+        output_dir=tmp_path / "outputs",
+        dry_run=True,
+    )
+
+    errors = app.validate_run_options(options)
+
+    assert app.ROOM_EMPTY_ERROR in errors
 
 
 def test_build_script_path_uses_detected_repo_root(tmp_path: Path) -> None:
@@ -176,8 +255,25 @@ def test_actual_run_without_mayapy_returns_clear_validation_message(tmp_path: Pa
 
     errors = app.validate_run_options(options)
 
-    assert any("mayapy.exe" in error for error in errors)
-    assert any("Dry-run" in error for error in errors)
+    assert app.MAYAPY_REQUIRED_ERROR in errors
+
+
+def test_actual_run_with_missing_mayapy_returns_validation_error(tmp_path: Path) -> None:
+    fake_root = _fake_repo(tmp_path / "repo")
+    svg = fake_root / "tests" / "in" / "room.svg"
+    svg.parent.mkdir(parents=True)
+    svg.write_text("<svg />\n", encoding="utf-8")
+    options = app.ArtistAppOptions(
+        svg_path=Path("tests/in/room.svg"),
+        room_name="phong_kho",
+        output_dir=Path("outputs"),
+        maya_path=tmp_path / "missing" / "mayapy.exe",
+        dry_run=False,
+    )
+
+    errors = app.validate_run_paths(options, root=fake_root)
+
+    assert app.MAYAPY_NOT_FOUND_ERROR in errors
 
 
 def test_dry_run_does_not_require_mayapy(tmp_path: Path) -> None:
@@ -201,3 +297,12 @@ def test_output_folder_helper_only_builds_expected_paths(tmp_path: Path) -> None
     assert app.output_subdir_path(output_dir, "preview") == output_dir / "preview"
     assert app.output_subdir_path(output_dir, "reports") == output_dir / "reports"
     assert not output_dir.exists()
+
+
+def test_output_root_resolves_relative_path_from_repo_root(tmp_path: Path) -> None:
+    fake_root = tmp_path / "repo"
+
+    assert app.resolve_output_root(Path("outputs"), fake_root) == fake_root / "outputs"
+    assert app.resolve_output_root(tmp_path / "custom_outputs", fake_root) == (
+        tmp_path / "custom_outputs"
+    )

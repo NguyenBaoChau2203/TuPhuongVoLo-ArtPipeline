@@ -38,6 +38,22 @@ Maya execution returned exit code 0, and the run generated an editable `.ma`
 scene plus PNG preview. Details are documented in
 `docs/verification/007B_desktop_app_exe_verified.md`.
 
+## Phase 007C UX/Reliability Polish
+
+The app now validates common artist mistakes before launching subprocesses:
+missing SVG, missing SVG file, empty room name, empty output folder, missing repo
+root, missing `build_maya_room.py`, actual run without valid `mayapy.exe`, and
+frozen `.exe` mode without an external Python command.
+
+It also shows the detected repo root, keeps relative paths predictable from the
+repo root, previews/copies the exact command, logs the command and exit code,
+shows run status, and disables the run button while the command is active.
+
+The packaged `.exe` remains a local wrapper. It still needs repo files, external
+Python, Maya, and a valid `mayapy.exe` path for actual runs. Generated `build/`,
+`dist/`, `.exe`, `.spec`, `.ma`, `.png`, and normal `outputs/` artifacts must not
+be committed.
+
 ## Recommended Artist Flow
 
 1. Select a clean SVG file.
@@ -52,7 +68,8 @@ scene plus PNG preview. Details are documented in
 ```powershell
 python scripts/python/artist_desktop_app.py --help
 python scripts/python/package_artist_app.py --dry-run
-pytest tests/test_artist_desktop_app.py -v
+pytest tests/test_artist_desktop_app.py tests/test_package_artist_app.py -v
+pytest tests/ -v --ignore=tests/tmp
 ```
 
 ## Notes
