@@ -54,6 +54,14 @@ Python, Maya, and a valid `mayapy.exe` path for actual runs. Generated `build/`,
 `dist/`, `.exe`, `.spec`, `.ma`, `.png`, and normal `outputs/` artifacts must not
 be committed.
 
+## Phase 007C-R Verification Checkpoint
+
+Phase 007C-R verified the polished packaged `.exe` on the artist/DCC machine.
+The rebuilt app launched successfully, showed repo root and command preview,
+dry-run returned exit code 0, actual Maya execution returned exit code 0, and
+the generated `.ma` opened in Maya with the expected Outliner structure. Details
+are documented in `docs/verification/007C_desktop_app_polish_verified.md`.
+
 ## Recommended Artist Flow
 
 1. Select a clean SVG file.
