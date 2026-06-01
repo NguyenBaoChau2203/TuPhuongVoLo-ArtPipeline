@@ -21,6 +21,7 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 | `00_maya_env_check.bat` | Kiểm tra Python/PyYAML/mayapy | Khi chuẩn bị chạy Maya thật |
 | `07_build_maya_room.bat` | Dựng một phòng Maya từ SVG sạch | Chạy dry-run trước, sau đó tạo `.ma` nếu cần |
 | `08_batch_maya_room.bat` | Batch Maya nhiều SVG/phòng | Tạo report dry-run hoặc chạy nhiều job Maya |
+| `09_artist_desktop_app.bat` | Mở desktop app Maya MVP | Cách thân thiện nhất để chạy một SVG/một phòng |
 
 ---
 
@@ -54,10 +55,11 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 
 ### Bước 7: Dựng Maya blockout
 1. Chạy `00_maya_env_check.bat` nếu chưa chắc máy đã có Python/PyYAML/mayapy.
-2. Chạy `07_build_maya_room.bat` cho một file SVG/phòng. Nên giữ lựa chọn dry-run mặc định trước.
-3. Kiểm tra tên phòng, prop marker, đường dẫn `.ma` và PNG preview dự kiến.
-4. Khi dry-run đúng, chạy lại và chọn không dry-run để tạo `.ma` thật bằng `mayapy.exe`.
-5. Chạy `08_batch_maya_room.bat` nếu cần xử lý nhiều SVG hoặc nhiều phòng. Report JSON mặc định nằm trong `outputs/reports/batch_maya_report.json`.
+2. Ưu tiên chạy `09_artist_desktop_app.bat` để mở app thân thiện cho một file SVG/một phòng.
+3. Trong app, chọn SVG, nhập phòng, giữ dry-run trước, và đọc log.
+4. Khi dry-run đúng, bỏ dry-run và cung cấp `mayapy.exe` để tạo `.ma` thật.
+5. Nếu muốn dùng CLI launcher cũ, chạy `07_build_maya_room.bat` cho một file SVG/phòng.
+6. Chạy `08_batch_maya_room.bat` nếu cần xử lý nhiều SVG hoặc nhiều phòng. Report JSON mặc định nằm trong `outputs/reports/batch_maya_report.json`.
 
 ---
 
