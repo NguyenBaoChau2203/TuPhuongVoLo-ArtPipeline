@@ -31,14 +31,14 @@ Desktop.ini
 # === Project Outputs (generated, not source) ===
 outputs/svg/*.svg
 outputs/png/*.png
-outputs/preview/*.png
+outputs/preview/*
 outputs/blender/*.blend
 outputs/blender/*.blend1
 outputs/maya/*
 outputs/tmp/*
 outputs/manifest/*.json
 outputs/manifest/*.csv
-outputs/reports/*.json
+outputs/reports/*
 
 # === Blender backups ===
 *.blend1

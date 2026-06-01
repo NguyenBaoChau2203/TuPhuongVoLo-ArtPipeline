@@ -34,7 +34,7 @@ clean SVG -> Blender MVP isometric draft / batch dry-run
 | 4 | Batch Isometric Render | `specs/004-batch-isometric-render/` | MVP dry-run/report for previous backend |
 | 5 | Maya Bridge | `specs/005-maya-bridge/` | Primary DCC backend; launcher workflow verified |
 | 6 | Natural Language Agent Control | `specs/006-natural-language-agent-control/` | Spec only; not implemented |
-| 7 | Artist Desktop App MVP | `specs/007-artist-desktop-app-mvp/` | Local Tkinter wrapper for verified Maya pipeline |
+| 7 | Artist Desktop App MVP | `specs/007-artist-desktop-app-mvp/` | Local Tkinter wrapper; packaged `.exe` verified on artist/DCC machine |
 
 ## Developer Quickstart
 
@@ -82,6 +82,11 @@ python scripts/python/package_artist_app.py --build
 Generated `build/`, `dist/`, `.spec`, and `.exe` artifacts are local packaging
 outputs and must not be committed. The MVP executable still requires the local
 repo/pipeline files; it does not bundle Maya or `mayapy.exe`.
+
+Phase 007B-R verification confirms `dist/TuPhuongVoLo_MayaArtistApp.exe`
+launches on the artist/DCC machine, dry-run returns exit code 0, actual Maya
+execution returns exit code 0, and generated `.ma` plus PNG preview outputs open
+successfully. See `docs/verification/007B_desktop_app_exe_verified.md`.
 
 Actual Maya run, when `mayapy.exe` is available:
 
