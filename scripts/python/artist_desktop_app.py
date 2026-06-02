@@ -1330,14 +1330,16 @@ class ArtistDesktopApp:
             step5_section,
             height=12,
             wrap=tk.WORD,
-            bg="#1E1E1E",
-            fg="#D4D4D4",
-            insertbackground="#FFFFFF",
-            selectbackground="#3A3A3A",
-            selectforeground="#FFFFFF",
+            bg="#F2E6D6",
+            fg=THEME_TEXT,
+            insertbackground=THEME_TEXT,
+            selectbackground=THEME_BORDER,
+            selectforeground=THEME_TEXT,
             font=("Consolas", 9),
-            relief="solid",
-            borderwidth=1,
+            relief="flat",
+            highlightbackground=THEME_BORDER,
+            highlightcolor=THEME_ACCENT,
+            highlightthickness=1,
         )
         self.log_text.grid(row=5, column=0, columnspan=2, sticky=tk.NSEW, pady=(6, 0))
 
