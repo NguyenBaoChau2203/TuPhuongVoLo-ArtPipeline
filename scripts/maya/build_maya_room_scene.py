@@ -18,12 +18,67 @@ ISO_CAMERA_DISTANCE_FACTOR = 3.5
 ORTHOGRAPHIC_PADDING_FACTOR = 2.8
 MIN_ORTHOGRAPHIC_WIDTH = 6.0
 GENERIC_PROP_SIZE = (0.5, 0.6, 0.5)
-PROP_PLACEHOLDER_SIZES = {
+MARKER_BBOX_DEFAULT_SCALE = 0.01
+PROP_MARKER_PREFIXES = ("prop_", "item_", "object_")
+PROCEDURAL_PROP_SIZES = {
+    "bed": (0.9, 0.55, 1.6),
+    "table": (1.0, 0.75, 0.65),
+    "chair": (0.45, 0.85, 0.45),
+    "sofa": (1.25, 0.85, 0.65),
+    "fridge": (0.55, 1.7, 0.55),
+    "sink": (0.8, 0.9, 0.55),
+    "kitchen_counter": (1.4, 0.9, 0.55),
+    "cabinet": (0.8, 1.3, 0.45),
+    "locker": (0.55, 1.8, 0.5),
+    "plant": (0.45, 0.9, 0.45),
     "shelf_unit": (0.8, 1.8, 0.35),
     "wooden_crate": (0.45, 0.45, 0.45),
+}
+PROP_TYPE_ALIASES = {
+    "bed": "bed",
+    "single_bed": "bed",
+    "metal_bed_frame": "bed",
+    "table": "table",
+    "desk": "table",
+    "console_desk": "table",
+    "dining_table": "table",
+    "folding_table": "table",
+    "lab_table": "table",
+    "reception_desk": "table",
+    "small_desk": "table",
+    "chair": "chair",
+    "folding_chair": "chair",
+    "office_chair": "chair",
+    "sofa": "sofa",
+    "couch": "sofa",
+    "bench": "sofa",
+    "fridge": "fridge",
+    "refrigerator": "fridge",
+    "sink": "sink",
+    "kitchen_counter": "kitchen_counter",
+    "counter": "kitchen_counter",
+    "cabinet": "cabinet",
+    "cupboard": "cabinet",
+    "glass_cabinet": "cabinet",
+    "sample_cabinet": "cabinet",
+    "locker": "locker",
+    "plant": "plant",
+    "potted_plant": "plant",
+    "potted_plant_large": "plant",
+    "shelf_unit": "shelf_unit",
+    "shelf": "shelf_unit",
+    "shelving": "shelf_unit",
+    "metal_shelf": "shelf_unit",
+    "wooden_crate": "wooden_crate",
+    "crate": "wooden_crate",
+    "box": "wooden_crate",
+    "cardboard_box": "wooden_crate",
+}
+PROP_PLACEHOLDER_SIZES = {
+    **PROCEDURAL_PROP_SIZES,
     "cardboard_box": (0.35, 0.35, 0.35),
-    "console_desk": (1.2, 0.75, 0.55),
-    "office_chair": (0.45, 0.8, 0.45),
+    "console_desk": PROCEDURAL_PROP_SIZES["table"],
+    "office_chair": PROCEDURAL_PROP_SIZES["chair"],
 }
 
 
@@ -232,10 +287,102 @@ def safe_maya_name(value: Any, fallback: str = "prop") -> str:
     return text
 
 
-def prop_placeholder_size(prop_type: str) -> tuple[float, float, float]:
-    """Return the deterministic placeholder size for one prop type."""
+def normalize_prop_type(value: Any) -> str:
+    """Normalize prop aliases to the canonical procedural blockout type."""
 
-    return PROP_PLACEHOLDER_SIZES.get(prop_type, GENERIC_PROP_SIZE)
+    token = safe_maya_name(value, fallback="generic")
+    for prefix in PROP_MARKER_PREFIXES:
+        if token.startswith(prefix) and len(token) > len(prefix):
+            token = token[len(prefix) :]
+            break
+    return PROP_TYPE_ALIASES.get(token, token)
+
+
+def has_procedural_prop(prop_type: Any) -> bool:
+    """Return whether a prop type has a multi-piece procedural blockout builder."""
+
+    return normalize_prop_type(prop_type) in PROP_BLOCKOUT_BUILDERS
+
+
+def prop_placeholder_size(prop_type: str) -> tuple[float, float, float]:
+    """Return the deterministic placeholder size for one prop type or alias."""
+
+    safe_type = safe_maya_name(prop_type, fallback="generic")
+    if safe_type in PROP_PLACEHOLDER_SIZES:
+        return PROP_PLACEHOLDER_SIZES[safe_type]
+    return PROP_PLACEHOLDER_SIZES.get(normalize_prop_type(safe_type), GENERIC_PROP_SIZE)
+
+
+def _safe_float(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _bbox_dimensions(value: Any) -> tuple[float, float] | None:
+    if not isinstance(value, list | tuple) or len(value) != 4:
+        return None
+    min_x = _safe_float(value[0])
+    min_y = _safe_float(value[1])
+    max_x = _safe_float(value[2])
+    max_y = _safe_float(value[3])
+    if None in (min_x, min_y, max_x, max_y):
+        return None
+    width = abs(float(max_x) - float(min_x))
+    depth = abs(float(max_y) - float(min_y))
+    if width <= 0.0 or depth <= 0.0:
+        return None
+    return width, depth
+
+
+def marker_footprint_maya(
+    marker: dict[str, Any],
+    units_scale: float = MARKER_BBOX_DEFAULT_SCALE,
+) -> tuple[float, float] | None:
+    """Return marker width/depth in Maya units if geometry JSON provides a safe bbox."""
+
+    maya_bbox = _bbox_dimensions(marker.get("bbox_maya"))
+    if maya_bbox is not None:
+        return maya_bbox
+    svg_bbox = _bbox_dimensions(marker.get("bbox_svg"))
+    if svg_bbox is None:
+        return None
+    scale = abs(_safe_float(units_scale) or MARKER_BBOX_DEFAULT_SCALE)
+    return svg_bbox[0] * scale, svg_bbox[1] * scale
+
+
+def _clamp(value: float, minimum: float, maximum: float) -> float:
+    return max(minimum, min(value, maximum))
+
+
+def prop_blockout_size(
+    prop_type: str,
+    marker: dict[str, Any] | None = None,
+    units_scale: float = MARKER_BBOX_DEFAULT_SCALE,
+) -> tuple[float, float, float]:
+    """Return a conservative size for a procedural prop, optionally using marker bbox."""
+
+    default_width, default_height, default_depth = prop_placeholder_size(prop_type)
+    if marker is None:
+        return default_width, default_height, default_depth
+
+    footprint = marker_footprint_maya(marker, units_scale)
+    if footprint is None:
+        return default_width, default_height, default_depth
+
+    marker_width, marker_depth = footprint
+    width = _clamp(
+        marker_width,
+        max(0.25, default_width * 0.55),
+        max(default_width * 1.8, default_width + 0.2),
+    )
+    depth = _clamp(
+        marker_depth,
+        max(0.25, default_depth * 0.55),
+        max(default_depth * 1.8, default_depth + 0.2),
+    )
+    return width, default_height, depth
 
 
 def marker_center_maya(marker: dict[str, Any]) -> tuple[float, float] | None:
@@ -247,13 +394,480 @@ def marker_center_maya(marker: dict[str, Any]) -> tuple[float, float] | None:
         return None
 
 
+def create_box(
+    cmds: Any,
+    name: str,
+    center: tuple[float, float, float],
+    size: tuple[float, float, float],
+    material: str,
+    parent: str,
+) -> str:
+    """Create one editable cube block with a world-space center."""
+
+    width, height, depth = size
+    node = cmds.polyCube(name=name, width=width, height=height, depth=depth)[0]
+    cmds.xform(node, translation=center)
+    assign_material(cmds, node, material)
+    cmds.parent(node, parent)
+    return node
+
+
+def build_bed_prop(
+    cmds: Any,
+    name: str,
+    center: tuple[float, float],
+    size: tuple[float, float, float],
+    material: str,
+    detail_material: str,
+    parent: str,
+) -> None:
+    """Create a simple bed from base, mattress, and pillow blocks."""
+
+    width, height, depth = size
+    base_h = min(max(height * 0.38, 0.18), 0.28)
+    mattress_h = min(max(height * 0.18, 0.08), 0.14)
+    pillow_h = min(max(height * 0.16, 0.08), 0.14)
+    create_box(
+        cmds,
+        f"{name}_base",
+        (center[0], base_h / 2.0, center[1]),
+        (width, base_h, depth),
+        material,
+        parent,
+    )
+    create_box(
+        cmds,
+        f"{name}_mattress",
+        (center[0], base_h + mattress_h / 2.0, center[1]),
+        (width * 0.92, mattress_h, depth * 0.92),
+        detail_material,
+        parent,
+    )
+    create_box(
+        cmds,
+        f"{name}_pillow",
+        (center[0], base_h + mattress_h + pillow_h / 2.0, center[1] - depth * 0.34),
+        (width * 0.68, pillow_h, depth * 0.18),
+        detail_material,
+        parent,
+    )
+
+
+def build_table_prop(
+    cmds: Any,
+    name: str,
+    center: tuple[float, float],
+    size: tuple[float, float, float],
+    material: str,
+    detail_material: str,
+    parent: str,
+) -> None:
+    """Create a table or desk from a tabletop and four legs."""
+
+    width, height, depth = size
+    top_h = min(max(height * 0.12, 0.06), 0.1)
+    leg_h = max(height - top_h, 0.25)
+    leg_w = min(max(width * 0.08, 0.045), 0.08)
+    create_box(
+        cmds,
+        f"{name}_top",
+        (center[0], leg_h + top_h / 2.0, center[1]),
+        (width, top_h, depth),
+        material,
+        parent,
+    )
+    for x_sign, z_sign in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
+        create_box(
+            cmds,
+            f"{name}_leg_{x_sign}_{z_sign}",
+            (
+                center[0] + x_sign * (width / 2.0 - leg_w),
+                leg_h / 2.0,
+                center[1] + z_sign * (depth / 2.0 - leg_w),
+            ),
+            (leg_w, leg_h, leg_w),
+            detail_material,
+            parent,
+        )
+
+
+def build_chair_prop(
+    cmds: Any,
+    name: str,
+    center: tuple[float, float],
+    size: tuple[float, float, float],
+    material: str,
+    detail_material: str,
+    parent: str,
+) -> None:
+    """Create a chair with seat, backrest, and simple legs."""
+
+    width, height, depth = size
+    seat_h = min(max(height * 0.12, 0.08), 0.12)
+    seat_y = min(max(height * 0.45, 0.36), 0.48)
+    back_h = max(height - seat_y, 0.28)
+    leg_w = min(max(width * 0.1, 0.035), 0.06)
+    create_box(
+        cmds,
+        f"{name}_seat",
+        (center[0], seat_y, center[1]),
+        (width, seat_h, depth),
+        material,
+        parent,
+    )
+    create_box(
+        cmds,
+        f"{name}_back",
+        (center[0], seat_y + back_h / 2.0, center[1] + depth / 2.0 - leg_w),
+        (width, back_h, leg_w),
+        material,
+        parent,
+    )
+    for x_sign, z_sign in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
+        create_box(
+            cmds,
+            f"{name}_leg_{x_sign}_{z_sign}",
+            (
+                center[0] + x_sign * (width / 2.0 - leg_w),
+                (seat_y - seat_h / 2.0) / 2.0,
+                center[1] + z_sign * (depth / 2.0 - leg_w),
+            ),
+            (leg_w, max(seat_y - seat_h / 2.0, 0.18), leg_w),
+            detail_material,
+            parent,
+        )
+
+
+def build_sofa_prop(
+    cmds: Any,
+    name: str,
+    center: tuple[float, float],
+    size: tuple[float, float, float],
+    material: str,
+    detail_material: str,
+    parent: str,
+) -> None:
+    """Create a sofa from a seat, back, and two armrests."""
+
+    width, height, depth = size
+    seat_h = min(max(height * 0.35, 0.22), 0.32)
+    back_h = max(height - seat_h * 0.5, 0.45)
+    arm_w = min(max(width * 0.12, 0.09), 0.16)
+    create_box(
+        cmds,
+        f"{name}_seat",
+        (center[0], seat_h / 2.0, center[1]),
+        (width, seat_h, depth),
+        material,
+        parent,
+    )
+    create_box(
+        cmds,
+        f"{name}_back",
+        (center[0], seat_h + back_h / 2.0, center[1] + depth / 2.0 - arm_w / 2.0),
+        (width, back_h, arm_w),
+        material,
+        parent,
+    )
+    for x_sign in (-1, 1):
+        create_box(
+            cmds,
+            f"{name}_arm_{x_sign}",
+            (center[0] + x_sign * (width / 2.0 - arm_w / 2.0), seat_h, center[1]),
+            (arm_w, seat_h * 2.0, depth),
+            detail_material,
+            parent,
+        )
+
+
+def build_tall_storage_prop(
+    cmds: Any,
+    name: str,
+    center: tuple[float, float],
+    size: tuple[float, float, float],
+    material: str,
+    detail_material: str,
+    parent: str,
+) -> None:
+    """Create a tall cabinet/fridge/locker with a simple front seam."""
+
+    width, height, depth = size
+    seam_w = min(max(width * 0.035, 0.015), 0.035)
+    seam_d = min(max(depth * 0.035, 0.012), 0.025)
+    front_z = center[1] - depth / 2.0 - seam_d / 2.0
+    create_box(cmds, f"{name}_body", (center[0], height / 2.0, center[1]), size, material, parent)
+    create_box(
+        cmds,
+        f"{name}_door_seam",
+        (center[0], height / 2.0, front_z),
+        (seam_w, height * 0.82, seam_d),
+        detail_material,
+        parent,
+    )
+    create_box(
+        cmds,
+        f"{name}_handle",
+        (center[0] + width * 0.28, height * 0.55, front_z - seam_d),
+        (seam_w, height * 0.18, seam_d),
+        detail_material,
+        parent,
+    )
+
+
+def build_sink_prop(
+    cmds: Any,
+    name: str,
+    center: tuple[float, float],
+    size: tuple[float, float, float],
+    material: str,
+    detail_material: str,
+    parent: str,
+) -> None:
+    """Create a sink as a base cabinet, top slab, basin marker, and faucet."""
+
+    width, height, depth = size
+    top_h = min(max(height * 0.08, 0.05), 0.08)
+    base_h = max(height - top_h, 0.4)
+    create_box(
+        cmds,
+        f"{name}_base",
+        (center[0], base_h / 2.0, center[1]),
+        (width, base_h, depth),
+        material,
+        parent,
+    )
+    create_box(
+        cmds,
+        f"{name}_top",
+        (center[0], base_h + top_h / 2.0, center[1]),
+        (width * 1.04, top_h, depth * 1.04),
+        material,
+        parent,
+    )
+    create_box(
+        cmds,
+        f"{name}_basin_marker",
+        (center[0], base_h + top_h + 0.006, center[1]),
+        (width * 0.46, 0.012, depth * 0.45),
+        detail_material,
+        parent,
+    )
+    create_box(
+        cmds,
+        f"{name}_faucet",
+        (center[0], base_h + top_h + 0.08, center[1] - depth * 0.18),
+        (0.04, 0.16, 0.04),
+        detail_material,
+        parent,
+    )
+
+
+def build_kitchen_counter_prop(
+    cmds: Any,
+    name: str,
+    center: tuple[float, float],
+    size: tuple[float, float, float],
+    material: str,
+    detail_material: str,
+    parent: str,
+) -> None:
+    """Create a long counter block with a slightly wider top slab and panel seams."""
+
+    width, height, depth = size
+    top_h = min(max(height * 0.08, 0.05), 0.08)
+    base_h = max(height - top_h, 0.45)
+    create_box(
+        cmds,
+        f"{name}_base",
+        (center[0], base_h / 2.0, center[1]),
+        (width, base_h, depth),
+        material,
+        parent,
+    )
+    create_box(
+        cmds,
+        f"{name}_top",
+        (center[0], base_h + top_h / 2.0, center[1]),
+        (width * 1.04, top_h, depth * 1.04),
+        material,
+        parent,
+    )
+    for x_offset in (-width * 0.18, width * 0.18):
+        create_box(
+            cmds,
+            f"{name}_panel_{x_offset:.2f}".replace("-", "m").replace(".", "_"),
+            (center[0] + x_offset, base_h * 0.5, center[1] - depth / 2.0 - 0.01),
+            (0.025, base_h * 0.72, 0.02),
+            detail_material,
+            parent,
+        )
+
+
+def build_plant_prop(
+    cmds: Any,
+    name: str,
+    center: tuple[float, float],
+    size: tuple[float, float, float],
+    material: str,
+    detail_material: str,
+    parent: str,
+) -> None:
+    """Create a plant placeholder with pot, trunk, and simple crossed leaves."""
+
+    width, height, depth = size
+    pot_h = min(max(height * 0.28, 0.18), 0.28)
+    trunk_h = max(height * 0.35, 0.25)
+    leaf_h = max(height - pot_h - trunk_h * 0.45, 0.22)
+    create_box(
+        cmds,
+        f"{name}_pot",
+        (center[0], pot_h / 2.0, center[1]),
+        (width * 0.62, pot_h, depth * 0.62),
+        material,
+        parent,
+    )
+    create_box(
+        cmds,
+        f"{name}_stem",
+        (center[0], pot_h + trunk_h / 2.0, center[1]),
+        (width * 0.12, trunk_h, depth * 0.12),
+        detail_material,
+        parent,
+    )
+    create_box(
+        cmds,
+        f"{name}_leaf_x",
+        (center[0], pot_h + trunk_h + leaf_h * 0.25, center[1]),
+        (width, leaf_h, depth * 0.16),
+        detail_material,
+        parent,
+    )
+    create_box(
+        cmds,
+        f"{name}_leaf_z",
+        (center[0], pot_h + trunk_h + leaf_h * 0.25, center[1]),
+        (width * 0.16, leaf_h, depth),
+        detail_material,
+        parent,
+    )
+
+
+def build_crate_prop(
+    cmds: Any,
+    name: str,
+    center: tuple[float, float],
+    size: tuple[float, float, float],
+    material: str,
+    detail_material: str,
+    parent: str,
+) -> None:
+    """Create a crate/box with subtle top and side seam blocks."""
+
+    width, height, depth = size
+    seam_h = min(max(height * 0.04, 0.015), 0.03)
+    create_box(cmds, f"{name}_body", (center[0], height / 2.0, center[1]), size, material, parent)
+    create_box(
+        cmds,
+        f"{name}_top_seam",
+        (center[0], height + seam_h / 2.0, center[1]),
+        (width * 0.85, seam_h, depth * 0.12),
+        detail_material,
+        parent,
+    )
+    create_box(
+        cmds,
+        f"{name}_side_seam",
+        (center[0], height * 0.55, center[1] - depth / 2.0 - 0.01),
+        (width * 0.12, height * 0.7, 0.02),
+        detail_material,
+        parent,
+    )
+
+
+def build_shelf_prop(
+    cmds: Any,
+    name: str,
+    center: tuple[float, float],
+    size: tuple[float, float, float],
+    material: str,
+    detail_material: str,
+    parent: str,
+) -> None:
+    """Create a shelf unit from side posts and three shelf slabs."""
+
+    width, height, depth = size
+    post_w = min(max(width * 0.08, 0.04), 0.08)
+    slab_h = min(max(height * 0.035, 0.035), 0.07)
+    for x_sign in (-1, 1):
+        create_box(
+            cmds,
+            f"{name}_side_{x_sign}",
+            (center[0] + x_sign * (width / 2.0 - post_w / 2.0), height / 2.0, center[1]),
+            (post_w, height, depth),
+            material,
+            parent,
+        )
+    for shelf_index, y in enumerate((height * 0.18, height * 0.5, height * 0.82), start=1):
+        create_box(
+            cmds,
+            f"{name}_shelf_{shelf_index}",
+            (center[0], y, center[1]),
+            (width, slab_h, depth),
+            detail_material,
+            parent,
+        )
+
+
+PROP_BLOCKOUT_BUILDERS = {
+    "bed": build_bed_prop,
+    "table": build_table_prop,
+    "chair": build_chair_prop,
+    "sofa": build_sofa_prop,
+    "fridge": build_tall_storage_prop,
+    "cabinet": build_tall_storage_prop,
+    "locker": build_tall_storage_prop,
+    "sink": build_sink_prop,
+    "kitchen_counter": build_kitchen_counter_prop,
+    "plant": build_plant_prop,
+    "wooden_crate": build_crate_prop,
+    "shelf_unit": build_shelf_prop,
+}
+
+
+def create_procedural_prop(
+    cmds: Any,
+    name: str,
+    prop_type: str,
+    center: tuple[float, float],
+    marker: dict[str, Any] | None,
+    material: str,
+    detail_material: str,
+    parent: str,
+    units_scale: float = MARKER_BBOX_DEFAULT_SCALE,
+) -> str:
+    """Create a procedural prop when known, or the generic cube fallback."""
+
+    canonical_type = normalize_prop_type(prop_type)
+    builder = PROP_BLOCKOUT_BUILDERS.get(canonical_type)
+    if builder is None:
+        return create_prop_cube(cmds, name, center, GENERIC_PROP_SIZE, material, parent)
+
+    group = cmds.group(empty=True, name=name)
+    cmds.parent(group, parent)
+    size = prop_blockout_size(canonical_type, marker=marker, units_scale=units_scale)
+    builder(cmds, name, center, size, material, detail_material, group)
+    return group
+
+
 def create_svg_prop_markers(
     cmds: Any,
     prop_markers: list[Any],
     material: str,
+    detail_material: str,
     parent: str,
+    units_scale: float = MARKER_BBOX_DEFAULT_SCALE,
 ) -> int:
-    """Create placeholder props from explicit artist-authored SVG markers."""
+    """Create blockout props from explicit artist-authored SVG markers."""
 
     created = 0
     type_counts: dict[str, int] = {}
@@ -263,15 +877,20 @@ def create_svg_prop_markers(
         center = marker_center_maya(raw_marker)
         if center is None:
             continue
-        prop_type = safe_maya_name(raw_marker.get("prop_type"), fallback="generic")
-        type_counts[prop_type] = type_counts.get(prop_type, 0) + 1
-        create_prop_cube(
+        raw_prop_type = safe_maya_name(raw_marker.get("prop_type"), fallback="generic")
+        canonical_type = normalize_prop_type(raw_prop_type)
+        name_type = canonical_type if has_procedural_prop(canonical_type) else raw_prop_type
+        type_counts[name_type] = type_counts.get(name_type, 0) + 1
+        create_procedural_prop(
             cmds,
-            f"prop_{prop_type}_{type_counts[prop_type]:02d}",
+            f"prop_{name_type}_{type_counts[name_type]:02d}",
+            raw_prop_type,
             center,
-            prop_placeholder_size(prop_type),
+            raw_marker,
             material,
+            detail_material,
             parent,
+            units_scale=units_scale,
         )
         created += 1
     return created
@@ -282,9 +901,10 @@ def create_placeholder_props(
     room_preset: dict[str, Any],
     bounds: tuple[float, float, float, float],
     material: str,
+    detail_material: str,
     parent: str,
 ) -> None:
-    """Create a few simple prop placeholders from room presets."""
+    """Create a few simple prop blockouts from room presets."""
 
     min_x, min_z, max_x, max_z = bounds
     width = max(max_x - min_x, 0.5)
@@ -299,21 +919,22 @@ def create_placeholder_props(
     for raw_prop in props:
         if not isinstance(raw_prop, dict):
             continue
-        prop_name = str(raw_prop.get("name", "prop"))
+        prop_name = safe_maya_name(raw_prop.get("name", "prop"), fallback="prop")
         count = max(1, min(int(raw_prop.get("count", 1)), 3))
-        size = prop_placeholder_size(prop_name)
         for copy_index in range(count):
             created += 1
             offset_x = (copy_index % 3) * 0.65
             offset_z = (created // 3) * 0.65
             x = min(cursor_x + offset_x, max_x - 0.25)
             z = min(cursor_z + offset_z, max_z - 0.25)
-            create_prop_cube(
+            create_procedural_prop(
                 cmds,
                 f"{prop_name}_{copy_index + 1:02d}",
+                prop_name,
                 (x, z),
-                size,
+                None,
                 material,
+                detail_material,
                 parent,
             )
 
@@ -374,6 +995,8 @@ def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
     room_name = str(data.get("room_name") or "room")
     style = data.get("style_preset", {}) if isinstance(data.get("style_preset"), dict) else {}
     room_preset = data.get("room_preset", {}) if isinstance(data.get("room_preset"), dict) else {}
+    units = data.get("units", {}) if isinstance(data.get("units"), dict) else {}
+    units_scale = _safe_float(units.get("scale")) or MARKER_BBOX_DEFAULT_SCALE
     prop_markers = data.get("prop_markers", [])
     if not isinstance(prop_markers, list):
         prop_markers = []
@@ -407,6 +1030,11 @@ def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
         hex_to_rgb(str(style.get("wall_color", "")), (0.95, 0.95, 0.9)),
     )
     prop_mat = create_material(cmds, "MAT_props", hex_to_rgb(DEFAULT_PROP_COLOR, (0.54, 0.5, 0.45)))
+    prop_detail_mat = create_material(
+        cmds,
+        "MAT_prop_details",
+        hex_to_rgb("#5D554D", (0.36, 0.33, 0.30)),
+    )
 
     bounds = room_bounds(points)
     create_floor(cmds, points, floor_mat, root)
@@ -425,9 +1053,16 @@ def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
     if prop_markers:
         # Explicit SVG markers are artist-authored placement, so they replace
         # room-preset auto props to avoid duplicate blockout placeholders.
-        create_svg_prop_markers(cmds, prop_markers, prop_mat, props_group)
+        create_svg_prop_markers(
+            cmds,
+            prop_markers,
+            prop_mat,
+            prop_detail_mat,
+            props_group,
+            units_scale=units_scale,
+        )
     else:
-        create_placeholder_props(cmds, room_preset, bounds, prop_mat, props_group)
+        create_placeholder_props(cmds, room_preset, bounds, prop_mat, prop_detail_mat, props_group)
     create_camera_and_lights(cmds, room_name, bounds, wall_height, lights_group)
 
     maya_output.parent.mkdir(parents=True, exist_ok=True)

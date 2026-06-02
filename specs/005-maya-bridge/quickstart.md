@@ -101,6 +101,14 @@ Expected:
 - Detected room is `phong_kho`
 - `prop_shelf_unit` becomes `shelf_unit`
 - `prop_wooden_crate` becomes `wooden_crate`
+- Supported marker names such as `prop_bed`, `prop_table`, `prop_chair`,
+  `prop_sofa`, `prop_fridge`, `prop_sink`, `prop_kitchen_counter`,
+  `prop_cabinet`, `prop_locker`, `prop_plant`, `prop_shelf_unit`, and
+  `prop_wooden_crate` create simple procedural blockout props in Maya
+- Aliases such as `desk`, `couch`, `refrigerator`, `counter`, `cupboard`,
+  `potted_plant`, `shelf`, `shelving`, `crate`, and `box` normalize to their
+  supported prop builders
+- Unknown prop names still create the simple cube fallback instead of failing
 - Dry-run prints planned `.ma`, geometry JSON, and preview PNG paths
 - Manifest is not updated
 

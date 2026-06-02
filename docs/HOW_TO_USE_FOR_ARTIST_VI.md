@@ -190,14 +190,24 @@ Launcher `07_build_maya_room.bat` dùng cho một SVG/một phòng. Launcher `08
 
 ## Prop marker trong Illustrator
 
-Nếu muốn Maya đặt khối placeholder theo bố cục đã vẽ, tạo group/layer con bên trong group phòng và đặt tên theo mẫu:
+Nếu muốn Maya đặt blockout đồ vật theo bố cục đã vẽ, tạo group/layer con bên trong group phòng và đặt tên theo mẫu:
 
+- `prop_bed`
+- `prop_table`
+- `prop_chair`
+- `prop_sofa`
+- `prop_fridge`
+- `prop_sink`
+- `prop_kitchen_counter`
+- `prop_cabinet`
+- `prop_locker`
+- `prop_plant`
 - `prop_shelf_unit`
 - `prop_wooden_crate`
-- `item_cardboard_box`
-- `object_console_desk`
 
-Pipeline bỏ prefix `prop_`, `item_`, hoặc `object_` và dùng phần còn lại làm loại prop. Đây chỉ là blockout để kiểm tra bố cục, không phải model cuối.
+Pipeline bỏ prefix `prop_`, `item_`, hoặc `object_` và dùng phần còn lại làm loại prop. Một số alias an toàn cũng được hỗ trợ: `desk` -> `table`, `couch` -> `sofa`, `refrigerator` -> `fridge`, `counter` -> `kitchen_counter`, `cupboard` -> `cabinet`, `potted_plant` -> `plant`, `shelf`/`shelving` -> `shelf_unit`, `crate`/`box` -> `wooden_crate`.
+
+Trong group prop, giữ marker thật đơn giản: `rect`, `polygon`, `polyline`, hoặc path thẳng. Các prop được hỗ trợ sẽ tạo blockout nhiều khối dễ nhận ra hơn, nhưng vẫn là draft editable để kiểm tra bố cục. Nếu tên prop chưa được hỗ trợ, Maya vẫn tạo cube placeholder đơn giản thay vì dừng pipeline. Họa sĩ vẫn polish/thay model thật trong Maya sau.
 
 ## Không nên commit
 
