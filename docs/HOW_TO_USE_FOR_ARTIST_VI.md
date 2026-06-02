@@ -235,3 +235,9 @@ Feature 002 đã có xuất/làm sạch/kiểm tra SVG. Feature 003 đã có nam
 pipeline Maya vẫn hoạt động bình thường nếu không có AI, `FAL_KEY`,
 `fal-client`, hoặc internet.
 Feature 006 natural-language control vẫn deferred.
+
+Phase 007J thêm giao diện mèo thân thiện cho desktop app (bảng màu pastel ấm,
+header mèo, tiêu đề step thân thiện, nhãn gợi ý). Chỉ dùng `ttk.Style` nội
+bộ; không thêm thư viện, font, web UI, hay ảnh nhị phân. Phiên bản app:
+`v0.7.8 (007J)`. HTML guide vẫn là nguồn hướng dẫn chính cho họa sĩ; app
+vẫn giao toàn bộ pipeline cho script CLI hiện có.

@@ -130,6 +130,33 @@ Khu vực `Step 3` có các nút mở nhanh:
 
 Guide HTML là nguồn hướng dẫn chính cho prop marker; Markdown chỉ nên link tới guide và template, không lặp lại toàn bộ taxonomy.
 
+## Cập nhật 007J: giao diện mèo thân thiện
+
+Phase 007J đánh bóng giao diện desktop app bằng bảng màu pastel ấm và phong
+cách mèo con, chỉ dùng `ttk.Style` có sẵn trong Tkinter — **không thêm thư
+viện, font, CDN, ảnh nhị phân, hay web UI**.
+
+Thay đổi giao diện:
+
+- Bảng màu ấm: nền kem/đào nhạt, text nâu đậm, accent cam/terracotta, nút phụ
+  hồng phấn, nhãn gợi ý màu xanh sage muted.
+- Header mèo ở đầu app: `🐱 Tứ Phương Vô Lộ — Maya Artist App` cùng subtitle
+  và gợi ý quy trình.
+- Tiêu đề section thân thiện hơn:
+  - `🐾 Step 1: Chọn bản vẽ SVG`
+  - `🏠 Step 2: Dựng Maya blockout`
+  - `📖 Step 3: Hướng dẫn & SVG mẫu`
+  - `✨ Step 4: AI polish preview tùy chọn`
+  - `📋 Log / trạng thái`
+- Nhãn gợi ý nhỏ dưới mỗi step nhắc nhở họa sĩ.
+- Nút `Chạy pipeline` và `Tạo AI polish preview` nổi bật hơn (`Primary.TButton`).
+- Nút `Mở hướng dẫn` và `Mở SVG mẫu marker` dùng `Accent.TButton`.
+- Nút tiện ích còn lại dùng `Secondary.TButton`.
+- Phiên bản: `TuPhuongVoLo Maya Artist App v0.7.8 (007J)`.
+
+HTML guide vẫn là nguồn hướng dẫn chính cho họa sĩ. App không thay đổi pipeline
+Maya, SVG parser, AI provider, Feature 006, local web UI, hay manifest.
+
 ## Cách chạy từ source
 
 ```powershell
