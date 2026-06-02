@@ -18,8 +18,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-APP_VERSION = "0.7.8"
-APP_PHASE = "007J"
+APP_VERSION = "0.7.9"
+APP_PHASE = "007J-F1"
 APP_TITLE_BASE = "TuPhuongVoLo - Maya Artist App"
 APP_TITLE = f"{APP_TITLE_BASE} v{APP_VERSION} ({APP_PHASE})"
 
@@ -43,6 +43,8 @@ THEME_FONT_TIP = ("Segoe UI", 8, "italic")
 STYLE_PRIMARY_BUTTON = "Primary.TButton"
 STYLE_ACCENT_BUTTON = "Accent.TButton"
 STYLE_SECONDARY_BUTTON = "Secondary.TButton"
+STYLE_UTILITY_BUTTON = "Utility.TButton"
+STYLE_GUIDE_BUTTON = "Guide.TButton"
 DEFAULT_ROOM_NAME = "phong_kho"
 DEFAULT_OUTPUT_DIR = "outputs"
 DEFAULT_AI_OUTPUT_DIR = Path("outputs") / "ai_preview"
@@ -405,47 +407,124 @@ def configure_artist_theme(style) -> None:
     # Entry
     style.configure("TEntry", fieldbackground=THEME_CARD, foreground=THEME_TEXT)
 
-    # Primary button — Chạy pipeline
+    # Primary button — Chạy pipeline / Tạo AI polish preview
+    # Most visible: terracotta/orange, bold, white text.
     style.configure(
         STYLE_PRIMARY_BUTTON,
         background=THEME_ACCENT,
         foreground="#FFFFFF",
         font=("Segoe UI", 9, "bold"),
-        padding=(10, 4),
-        relief="flat",
+        padding=(10, 5),
+        relief="raised",
+        borderwidth=2,
     )
     style.map(
         STYLE_PRIMARY_BUTTON,
-        background=[("active", THEME_ACCENT_DARK), ("disabled", THEME_BORDER)],
-        foreground=[("disabled", "#AAAAAA")],
+        background=[
+            ("active", THEME_ACCENT_DARK),
+            ("pressed", THEME_ACCENT_DARK),
+            ("disabled", THEME_BORDER),
+        ],
+        foreground=[
+            ("disabled", "#AAAAAA"),
+        ],
+        relief=[
+            ("pressed", "sunken"),
+        ],
     )
 
-    # Accent button — Mở hướng dẫn / Mở SVG mẫu marker
+    # Guide button — Mở hướng dẫn / Mở SVG mẫu marker
+    # Friendly dusty rose; used for guide/template shortcuts.
+    THEME_GUIDE = "#D4879A"       # deeper rose for guide buttons
+    THEME_GUIDE_DARK = "#B86878"  # pressed guide
     style.configure(
-        STYLE_ACCENT_BUTTON,
-        background=THEME_SECONDARY,
+        STYLE_GUIDE_BUTTON,
+        background="#E8A0B0",
         foreground=THEME_TEXT,
         font=("Segoe UI", 9, "bold"),
         padding=(8, 4),
-        relief="flat",
+        relief="raised",
+        borderwidth=2,
+    )
+    style.map(
+        STYLE_GUIDE_BUTTON,
+        background=[
+            ("active", THEME_GUIDE),
+            ("pressed", THEME_GUIDE_DARK),
+        ],
+        relief=[
+            ("pressed", "sunken"),
+        ],
+    )
+
+    # Accent button — alias for Guide.TButton for backwards compat
+    style.configure(
+        STYLE_ACCENT_BUTTON,
+        background="#E8A0B0",
+        foreground=THEME_TEXT,
+        font=("Segoe UI", 9, "bold"),
+        padding=(8, 4),
+        relief="raised",
+        borderwidth=2,
     )
     style.map(
         STYLE_ACCENT_BUTTON,
-        background=[("active", THEME_SECONDARY_DARK)],
+        background=[
+            ("active", THEME_GUIDE),
+            ("pressed", THEME_GUIDE_DARK),
+        ],
+        relief=[
+            ("pressed", "sunken"),
+        ],
     )
 
-    # Secondary button — utility buttons (less dominant)
+    # Utility button — small helper actions (Xóa log, Copy lệnh, Mở outputs/…)
+    # Warm peach/beige so it is clearly NOT plain white.
     style.configure(
-        STYLE_SECONDARY_BUTTON,
-        background=THEME_CARD,
+        STYLE_UTILITY_BUTTON,
+        background="#F5C8A0",
         foreground=THEME_TEXT,
         font=THEME_FONT_BODY,
         padding=(6, 3),
-        relief="flat",
+        relief="raised",
+        borderwidth=1,
+    )
+    style.map(
+        STYLE_UTILITY_BUTTON,
+        background=[
+            ("active", "#E0A870"),
+            ("pressed", "#C88050"),
+        ],
+        foreground=[
+            ("pressed", "#FFFFFF"),
+        ],
+        relief=[
+            ("pressed", "sunken"),
+        ],
+    )
+
+    # Secondary button — kept for backwards compat; same appearance as Utility
+    style.configure(
+        STYLE_SECONDARY_BUTTON,
+        background="#F5C8A0",
+        foreground=THEME_TEXT,
+        font=THEME_FONT_BODY,
+        padding=(6, 3),
+        relief="raised",
+        borderwidth=1,
     )
     style.map(
         STYLE_SECONDARY_BUTTON,
-        background=[("active", THEME_BORDER)],
+        background=[
+            ("active", "#E0A870"),
+            ("pressed", "#C88050"),
+        ],
+        foreground=[
+            ("pressed", "#FFFFFF"),
+        ],
+        relief=[
+            ("pressed", "sunken"),
+        ],
     )
 
 
@@ -822,7 +901,7 @@ class ArtistDesktopApp:
             row=0, column=1, sticky=tk.EW, pady=3
         )
         ttk.Button(
-            svg_section, text="Chọn SVG", command=self._choose_svg, style=STYLE_SECONDARY_BUTTON
+            svg_section, text="Chọn SVG", command=self._choose_svg, style=STYLE_UTILITY_BUTTON
         ).grid(row=0, column=2, padx=(8, 0), pady=3)
 
         ttk.Label(svg_section, text="Tên phòng/layer").grid(row=1, column=0, sticky=tk.W, pady=3)
@@ -856,7 +935,7 @@ class ArtistDesktopApp:
             maya_section,
             text="Chọn thư mục",
             command=self._choose_output_dir,
-            style=STYLE_SECONDARY_BUTTON,
+            style=STYLE_UTILITY_BUTTON,
         ).grid(row=0, column=2, padx=(8, 0), pady=3)
 
         ttk.Label(maya_section, text="mayapy.exe").grid(row=1, column=0, sticky=tk.W, pady=3)
@@ -867,7 +946,7 @@ class ArtistDesktopApp:
             maya_section,
             text="Chọn mayapy",
             command=self._choose_mayapy,
-            style=STYLE_SECONDARY_BUTTON,
+            style=STYLE_UTILITY_BUTTON,
         ).grid(row=1, column=2, padx=(8, 0), pady=3)
 
         checks = ttk.Frame(maya_section)
@@ -906,31 +985,31 @@ class ArtistDesktopApp:
         )
         self.run_button.pack(side=tk.LEFT)
         ttk.Button(
-            buttons, text="Xóa log", command=self._clear_log, style=STYLE_SECONDARY_BUTTON
+            buttons, text="Xóa log", command=self._clear_log, style=STYLE_UTILITY_BUTTON
         ).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(
-            buttons, text="Copy lệnh", command=self._copy_command, style=STYLE_SECONDARY_BUTTON
+            buttons, text="Copy lệnh", command=self._copy_command, style=STYLE_UTILITY_BUTTON
         ).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(
             buttons,
             text="Mở outputs/maya",
             command=lambda: self._open_output("maya"),
-            style=STYLE_SECONDARY_BUTTON,
+            style=STYLE_UTILITY_BUTTON,
         ).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(
             buttons,
             text="Mở outputs/preview",
             command=lambda: self._open_output("preview"),
-            style=STYLE_SECONDARY_BUTTON,
+            style=STYLE_UTILITY_BUTTON,
         ).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(
             buttons,
             text="Mở outputs/reports",
             command=lambda: self._open_output("reports"),
-            style=STYLE_SECONDARY_BUTTON,
+            style=STYLE_UTILITY_BUTTON,
         ).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(
-            buttons, text="Mở repo", command=self._open_repo, style=STYLE_SECONDARY_BUTTON
+            buttons, text="Mở repo", command=self._open_repo, style=STYLE_UTILITY_BUTTON
         ).pack(side=tk.LEFT, padx=(8, 0))
 
         # ── Step 3: Hướng dẫn & SVG mẫu ────────────────────────────────────
@@ -945,25 +1024,25 @@ class ArtistDesktopApp:
             guide_buttons,
             text="Mở hướng dẫn",
             command=self._open_artist_guide,
-            style=STYLE_ACCENT_BUTTON,
+            style=STYLE_GUIDE_BUTTON,
         ).pack(side=tk.LEFT)
         ttk.Button(
             guide_buttons,
             text="Mở SVG mẫu marker",
             command=self._open_prop_marker_template,
-            style=STYLE_ACCENT_BUTTON,
+            style=STYLE_GUIDE_BUTTON,
         ).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(
             guide_buttons,
             text="Mở thư mục template",
             command=self._open_prop_marker_template_dir,
-            style=STYLE_SECONDARY_BUTTON,
+            style=STYLE_UTILITY_BUTTON,
         ).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(
             guide_buttons,
             text="Copy đường dẫn SVG mẫu",
             command=self._copy_template_path,
-            style=STYLE_SECONDARY_BUTTON,
+            style=STYLE_UTILITY_BUTTON,
         ).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Label(
             guide_section,
@@ -1047,7 +1126,7 @@ class ArtistDesktopApp:
             section,
             text="Chọn PNG preview",
             command=self._choose_ai_png,
-            style=STYLE_SECONDARY_BUTTON,
+            style=STYLE_UTILITY_BUTTON,
         ).grid(row=1, column=2, padx=(8, 0), pady=3)
 
         provider_row = ttk.Frame(section)
@@ -1115,7 +1194,7 @@ class ArtistDesktopApp:
             actions,
             text="Mở outputs/ai_preview",
             command=self._open_ai_output,
-            style=STYLE_SECONDARY_BUTTON,
+            style=STYLE_UTILITY_BUTTON,
         ).pack(side=tk.LEFT, padx=(8, 0))
 
     def run(self) -> None:

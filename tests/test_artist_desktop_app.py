@@ -23,8 +23,8 @@ def _fake_repo(root: Path) -> Path:
 
 
 def test_app_version_metadata_is_display_ready() -> None:
-    assert app.APP_VERSION == "0.7.8"
-    assert app.APP_PHASE == "007J"
+    assert app.APP_VERSION == "0.7.9"
+    assert app.APP_PHASE == "007J-F1"
     assert f"v{app.APP_VERSION}" in app.APP_TITLE
     assert app.APP_PHASE in app.APP_TITLE
     assert app.APP_VERSION in app.app_version_display()
@@ -42,14 +42,18 @@ def test_theme_palette_constants_are_importable() -> None:
 
 
 def test_style_name_constants_are_importable() -> None:
-    """Verify style name constants are non-empty strings."""
+    """Verify style name constants are non-empty strings with valid ttk format."""
     assert isinstance(app.STYLE_PRIMARY_BUTTON, str) and app.STYLE_PRIMARY_BUTTON
     assert isinstance(app.STYLE_ACCENT_BUTTON, str) and app.STYLE_ACCENT_BUTTON
     assert isinstance(app.STYLE_SECONDARY_BUTTON, str) and app.STYLE_SECONDARY_BUTTON
+    assert isinstance(app.STYLE_UTILITY_BUTTON, str) and app.STYLE_UTILITY_BUTTON
+    assert isinstance(app.STYLE_GUIDE_BUTTON, str) and app.STYLE_GUIDE_BUTTON
     # Names must be valid ttk style name format (contains ".")
     assert "." in app.STYLE_PRIMARY_BUTTON
     assert "." in app.STYLE_ACCENT_BUTTON
     assert "." in app.STYLE_SECONDARY_BUTTON
+    assert "." in app.STYLE_UTILITY_BUTTON
+    assert "." in app.STYLE_GUIDE_BUTTON
 
 
 def test_configure_artist_theme_is_callable() -> None:

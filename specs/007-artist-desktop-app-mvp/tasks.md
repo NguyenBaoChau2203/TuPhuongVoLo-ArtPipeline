@@ -120,3 +120,24 @@
 - [X] Update tests and docs (version `0.7.8 (007J)`, theme/style constant tests)
 - [X] Confirm no pipeline logic, AI provider behavior, local web UI, Feature 006, external APIs,
       secrets, new dependencies, binary assets, or generated outputs were added
+
+## Phase 007J-F1: Cat UI Contrast Fix and Detailed App Guide
+
+- [X] Improve button contrast for primary/accent/secondary/utility buttons
+  - Added `STYLE_UTILITY_BUTTON` (Utility.TButton) and `STYLE_GUIDE_BUTTON` (Guide.TButton) style constants
+  - Primary (terracotta/orange, raised, bold): "Chạy pipeline", "Tạo AI polish preview"
+  - Guide (dusty rose, raised, bold): "Mở hướng dẫn", "Mở SVG mẫu marker"
+  - Utility (warm peach, raised): all file-picker and folder-open buttons
+  - All style names include `style.map(...)` for active/pressed/disabled states
+- [X] Add detailed HTML guide section in `docs/artist_workflow_cat_guide_vi.html`
+  explaining each app step, field, button, checkbox, and output folder
+- [X] New HTML section covers: Step 1–4, Log/status panel, recommended workflow checklist,
+  and common mistakes — all in Vietnamese, inline CSS, no CDN
+- [X] Keep AI preview optional/reference-only across UI and HTML guide
+- [X] Update `tests/test_artist_desktop_app.py`: version 0.7.9 (007J-F1),
+  STYLE_UTILITY_BUTTON and STYLE_GUIDE_BUTTON constant tests
+- [X] Bump version to `APP_VERSION = "0.7.9"`, `APP_PHASE = "007J-F1"`
+- [X] Update `specs/007-artist-desktop-app-mvp/tasks.md` with new phase
+- [X] Confirm no Maya generation logic, SVG parser logic, AI provider behavior,
+  local web UI, Feature 006, external APIs, secrets, new dependencies,
+  binary assets, or generated outputs were added
