@@ -526,6 +526,7 @@
   <a href="#naming">Đặt tên</a>
   <a href="#what-tool-knows">Khả năng</a>
   <a href="#desktop-app">Desktop App</a>
+  <a href="#app-steps">Giải thích App</a>
   <a href="#ai-preview">AI Preview</a>
   <a href="#safety">An toàn</a>
   <a href="#glossary">Từ điển</a>
@@ -999,13 +1000,300 @@
     </div>
   </section>
 
+  <!-- ─── Giải thích từng bước trong Maya Artist App ──────────── -->
+  <section class="section" id="app-steps" aria-labelledby="h-app-steps">
+    <div class="section-header">
+      <span class="section-icon">🐱</span>
+      <h2 id="h-app-steps">Giải thích từng bước trong Maya Artist App</h2>
+    </div>
+
+    <div class="banner info">
+      <span class="banner-icon">💡</span>
+      <span>Phần này giải thích <strong>từng trường, từng nút bấm, từng ô checkbox</strong> trong app.
+      Hữu ích nhất khi bạn mở app lần đầu và không chắc mỗi ô có nghĩa gì.</span>
+    </div>
+
+    <!-- Step 1 -->
+    <div class="card" style="margin-top:1rem;">
+      <h3>🐾 Step 1: Chọn bản vẽ SVG</h3>
+      <p>Đây là bước bạn nói với app: "Tôi muốn xử lý file SVG nào và tên phòng là gì."</p>
+      <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+        <thead>
+          <tr style="background:#f0ddd0;">
+            <th style="text-align:left;padding:0.4rem 0.6rem;border-bottom:1.5px solid #d4a88a;">Tên trường</th>
+            <th style="text-align:left;padding:0.4rem 0.6rem;border-bottom:1.5px solid #d4a88a;">Ý nghĩa &amp; cách dùng</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">File SVG sạch</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Đường dẫn đến file SVG đã xuất từ Illustrator. Ví dụ: <code>assets/2d/svg_clean/phong_kho.svg</code>. Không chọn file <code>.ai</code> gốc — phải là <code>.svg</code> đã xuất riêng.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">Nút Chọn SVG</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Mở hộp thoại chọn file. Duyệt đến file <code>.svg</code> sạch và bấm OK.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">Tên phòng/layer</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Tên group hoặc layer trong Illustrator tương ứng với phòng cần dựng. Ví dụ: <code>phong_kho</code>, <code>phong_bep</code>, <code>phong_ngu</code>, <code>phong_marker_template</code>. <strong>Phải trùng với tên group/layer thật trong file SVG.</strong></td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;font-weight:700;">Repo root</td>
+            <td style="padding:0.45rem 0.6rem;">Thư mục gốc của dự án — app tự tìm, bạn thường không cần sửa. Chỉ đọc.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="card">
+      <h3>🏠 Step 2: Dựng Maya blockout</h3>
+      <p>Đây là bước cốt lõi — cấu hình và chạy pipeline để tạo file <code>.ma</code> blockout trong Maya.</p>
+      <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+        <thead>
+          <tr style="background:#f0ddd0;">
+            <th style="text-align:left;padding:0.4rem 0.6rem;border-bottom:1.5px solid #d4a88a;">Tên trường / nút</th>
+            <th style="text-align:left;padding:0.4rem 0.6rem;border-bottom:1.5px solid #d4a88a;">Ý nghĩa &amp; cách dùng</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">Thư mục output</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Nơi lưu kết quả. Mặc định là <code>outputs</code>. Bên trong sẽ có:<br>• <code>outputs/maya/</code> → file <code>.ma</code><br>• <code>outputs/preview/</code> → ảnh PNG preview<br>• <code>outputs/reports/</code> → báo cáo</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">mayapy.exe</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Đường dẫn đến chương trình Python của Maya. Ví dụ: <code>C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe</code>. <strong>Chỉ cần điền khi chạy thật (Dry-run tắt).</strong> Không cần cho dry-run.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">☑ Dry-run</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;"><strong>Giữ BẬT khi mới bắt đầu.</strong> Dry-run kiểm tra lệnh và xem danh sách prop marker, nhưng KHÔNG tạo file <code>.ma</code> thật, KHÔNG ghi manifest. An toàn để thử bao nhiêu lần cũng được.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">☐ Render PNG preview</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Nếu bật, sau khi chạy Maya thật, pipeline cũng tạo ảnh PNG preview trong <code>outputs/preview/</code>. Tùy chọn, không bắt buộc.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">Render width / height</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Kích thước ảnh PNG preview tính bằng pixel. Mặc định <code>1280 × 720</code> là đủ dùng. Chỉ dùng khi Render PNG preview được bật.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">🟠 Chạy pipeline</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;"><strong>Nút chính — quan trọng nhất.</strong> Chạy pipeline theo cấu hình hiện tại. Nếu Dry-run bật: chỉ kiểm tra. Nếu Dry-run tắt: tạo file <code>.ma</code> thật. Đọc log ngay sau khi bấm.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">Xóa log</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Xóa nội dung vùng log để dễ đọc kết quả mới. Không ảnh hưởng đến file thật nào.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">Copy lệnh</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Copy lệnh pipeline vào clipboard để dán vào terminal nếu cần debug thủ công.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">Mở outputs/maya</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Mở thư mục chứa file <code>.ma</code> vừa tạo trong File Explorer. Mở file <code>.ma</code> này trong Maya để polish.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">Mở outputs/preview</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Mở thư mục chứa ảnh PNG preview. Xem ảnh để kiểm tra bố cục blockout trước khi polish.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">Mở outputs/reports</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Mở thư mục báo cáo pipeline. Đọc nếu muốn xem chi tiết kết quả dạng văn bản.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;font-weight:700;">Mở repo</td>
+            <td style="padding:0.45rem 0.6rem;">Mở thư mục gốc dự án trong File Explorer.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="card">
+      <h3>📖 Step 3: Hướng dẫn &amp; SVG mẫu</h3>
+      <p>Nhanh chóng truy cập tài liệu và file mẫu marker prop.</p>
+      <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+        <thead>
+          <tr style="background:#f0ddd0;">
+            <th style="text-align:left;padding:0.4rem 0.6rem;border-bottom:1.5px solid #d4a88a;">Nút bấm</th>
+            <th style="text-align:left;padding:0.4rem 0.6rem;border-bottom:1.5px solid #d4a88a;">Chức năng</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">🌸 Mở hướng dẫn</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Mở trang Sổ tay mèo (tài liệu này) trong trình duyệt web. <strong>Đây là hướng dẫn chính của họa sĩ.</strong></td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">🌸 Mở SVG mẫu marker</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Mở file <code>assets/2d/templates/illustrator_prop_marker_template.svg</code> bằng ứng dụng mặc định (thường là Illustrator). Dùng file này để copy/paste marker prop vào bản vẽ của bạn.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">Mở thư mục template</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Mở thư mục <code>assets/2d/templates/</code> trong File Explorer — nơi chứa tất cả file mẫu SVG.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;font-weight:700;">Copy đường dẫn SVG mẫu</td>
+            <td style="padding:0.45rem 0.6rem;">Copy đường dẫn đầy đủ đến file SVG mẫu vào clipboard. Dán vào trường SVG nếu cần.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="banner good" style="margin-top:1rem;">
+        <span class="banner-icon">🐱</span>
+        <span><strong>Quy trình dùng SVG mẫu marker:</strong><br>
+          1. Bấm <strong>Mở SVG mẫu marker</strong> → mở trong Illustrator.<br>
+          2. Chọn và copy một group marker, ví dụ <code>prop_bed</code>.<br>
+          3. Paste vào group phòng thật trong Illustrator (ví dụ: <code>phong_kho</code>).<br>
+          4. Di chuyển/scale marker sao cho tâm nằm đúng vị trí đặt prop.<br>
+          5. Xuất lại SVG sạch từ Illustrator.<br>
+          6. Chọn file SVG mới trong app → chạy <strong>dry-run trước</strong>.<br>
+          7. Đọc log để xác nhận danh sách prop marker đúng.<br>
+          8. Khi OK, tắt Dry-run và chạy thật.
+        </span>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="card" style="border-color:#d0eaff; background:#f5fbff;">
+      <h3>✨ Step 4: AI polish preview <span class="tag optional">tùy chọn</span></h3>
+      <div class="banner warn" style="margin-bottom:1rem;">
+        <span class="banner-icon">⚠️</span>
+        <span><strong>AI preview là tham khảo / cảm hứng — không bắt buộc và không thay thế Maya.</strong>
+        File <code>.ma</code> trong <code>outputs/maya/</code> mới là nguồn sự thật để polish cuối cùng.
+        AI preview chỉ tạo ảnh PNG tham khảo mood, ánh sáng, vật liệu.</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+        <thead>
+          <tr style="background:#e8f3fd;">
+            <th style="text-align:left;padding:0.4rem 0.6rem;border-bottom:1.5px solid #a8d0f0;">Trường / nút</th>
+            <th style="text-align:left;padding:0.4rem 0.6rem;border-bottom:1.5px solid #a8d0f0;">Ý nghĩa</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">PNG preview</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Chọn một file PNG đã có trong <code>outputs/preview/</code> — ảnh PNG do Maya tạo ra sau khi chạy pipeline. <strong>Không phải ảnh AI.</strong></td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">Provider</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;"><code>mock</code> là an toàn nhất — không cần internet, không cần API key, tạo ảnh placeholder để test.<br><code>fal</code> là provider thật — cần cài <code>fal-client</code> và biến môi trường <code>FAL_KEY</code>. Không cần dùng ngay.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">Model</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Để mặc định trừ khi được hướng dẫn cụ thể. Chỉ dùng với provider <code>fal</code>.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">Prompt preset</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Chọn style tham khảo cho AI. Để mặc định cho đến khi được hướng dẫn.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">Prompt thêm</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Tùy chọn — thêm mô tả ngắn bằng tiếng Anh để AI hiểu mood bạn muốn. Ví dụ: <code>cozy tropical lighting</code>. Có thể để trống.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">☑ Bỏ qua nếu thiếu cấu hình AI</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Giữ BẬT nếu dùng provider <code>fal</code> mà chưa cài đầy đủ. Pipeline Maya vẫn chạy bình thường; AI chỉ bị skip an toàn.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">☑ AI dry-run</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Giống dry-run của Maya nhưng cho AI — in lệnh và kiểm tra, không tạo ảnh thật. Bật lúc đầu để kiểm tra cấu hình.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">🟠 Tạo AI polish preview</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Chạy bước AI preview. Kết quả (nếu không dry-run) lưu vào <code>outputs/ai_preview/</code>.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;font-weight:700;">Mở outputs/ai_preview</td>
+            <td style="padding:0.45rem 0.6rem;">Mở thư mục chứa ảnh AI preview trong File Explorer.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Log / trạng thái -->
+    <div class="card">
+      <h3>📋 Log / trạng thái</h3>
+      <p>Phần này ở cuối app — luôn đọc sau khi bấm Chạy pipeline.</p>
+      <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+        <thead>
+          <tr style="background:#f0ddd0;">
+            <th style="text-align:left;padding:0.4rem 0.6rem;border-bottom:1.5px solid #d4a88a;">Nhãn</th>
+            <th style="text-align:left;padding:0.4rem 0.6rem;border-bottom:1.5px solid #d4a88a;">Ý nghĩa</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">Trạng thái Maya</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Hiển thị: <em>Sẵn sàng</em> / <em>Đang chạy…</em> / <em>Hoàn tất: mã 0</em> / <em>Lỗi: mã N</em>. Mã 0 = thành công.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">Lệnh Maya</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Lệnh chính xác app sẽ chạy. Dùng nút <em>Copy lệnh</em> để copy nếu cần debug.</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">Trạng thái AI</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Tương tự Trạng thái Maya nhưng cho bước AI preview (tùy chọn).</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">Lệnh AI</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Lệnh AI preview chính xác (chỉ xuất hiện khi bạn bấm Tạo AI polish preview).</td>
+          </tr>
+          <tr>
+            <td style="padding:0.45rem 0.6rem;font-weight:700;">Log (vùng cuộn)</td>
+            <td style="padding:0.45rem 0.6rem;">Toàn bộ output của quá trình chạy — bao gồm danh sách prop marker, thông báo lỗi (tiếng Việt), và exit code cuối cùng. <strong>Đọc kỹ log sau mỗi lần bấm Chạy pipeline.</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Quy trình khuyên dùng -->
+    <div class="checklist-card" style="margin-top:1rem;">
+      <div class="checklist-title"><span>🐾</span> Quy trình khuyên dùng (từng bước)</div>
+
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Mở hướng dẫn (nút <strong>Mở hướng dẫn</strong>) để tham khảo khi cần.</span></div>
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Chuẩn bị SVG trong Illustrator: group phòng rõ ràng, thêm prop marker nếu cần.</span></div>
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Xuất SVG sạch sang thư mục ngoài <code>assets/</code> (ví dụ: <code>drops/</code>).</span></div>
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Bấm <strong>Chọn SVG</strong> → chọn file SVG vừa xuất.</span></div>
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Nhập <strong>Tên phòng/layer</strong> đúng với tên group trong SVG.</span></div>
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Giữ <strong>Dry-run BẬT</strong>. Bấm <strong>Chạy pipeline</strong>.</span></div>
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Đọc log — xem danh sách prop marker và xác nhận không có lỗi.</span></div>
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Khi dry-run OK → tắt <strong>Dry-run</strong>. Điền <strong>mayapy.exe</strong> nếu chưa có.</span></div>
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Bật <strong>Render PNG preview</strong> nếu muốn xem ảnh preview ngay sau khi chạy.</span></div>
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Bấm <strong>Chạy pipeline</strong> lần nữa để tạo file <code>.ma</code> thật.</span></div>
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Bấm <strong>Mở outputs/maya</strong> → mở file <code>.ma</code> trong Maya để polish.</span></div>
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Bấm <strong>Mở outputs/preview</strong> để xem ảnh PNG preview blockout.</span></div>
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Polish thủ công trong Maya. <em>(Tùy chọn)</em> Chạy AI preview để lấy cảm hứng.</span></div>
+
+      <div class="banner good" style="margin-top:1rem;">
+        <span class="banner-icon">🐾</span>
+        <span>Dry-run → đọc log → chạy thật → mở <code>.ma</code> trong Maya. Đây là quy trình vàng! 🎉</span>
+      </div>
+    </div>
+
+    <!-- Lỗi hay gặp -->
+    <div class="safety-card" style="margin-top:1rem;">
+      <div class="safety-title">⚠️ Lỗi hay gặp và cách tránh</div>
+      <ul class="safety-list">
+        <li><span class="icon">🚫</span> <span><strong>Quên dry-run trước khi chạy thật.</strong> → Luôn chạy dry-run ít nhất một lần để xác nhận prop marker đúng.</span></li>
+        <li><span class="icon">🚫</span> <span><strong>Tên phòng/layer sai.</strong> → Phải trùng chính xác với tên group/layer trong Illustrator SVG — không dấu, không khoảng trắng.</span></li>
+        <li><span class="icon">🚫</span> <span><strong>SVG marker prop không nằm trong group phòng.</strong> → Prop marker phải được paste/đặt bên trong group phòng thật trong Illustrator, không phải để ngoài.</span></li>
+        <li><span class="icon">🚫</span> <span><strong>Thiếu đường dẫn mayapy khi chạy thật.</strong> → Tắt Dry-run nhưng chưa điền mayapy.exe sẽ báo lỗi. Điền đúng đường dẫn hoặc dùng nút Chọn mayapy.</span></li>
+        <li><span class="icon">🚫</span> <span><strong>Nhầm AI preview là ảnh final.</strong> → AI preview chỉ là ảnh tham khảo. File <code>.ma</code> mới là nguồn để polish.</span></li>
+        <li><span class="icon">🚫</span> <span><strong>Nhầm SVG mẫu marker với bản vẽ thật.</strong> → SVG mẫu chỉ dùng để copy/paste marker. Không nạp thẳng SVG mẫu vào pipeline — phải là SVG phòng thật của bạn.</span></li>
+        <li><span class="icon">🚫</span> <span><strong>Chọn file <code>.ai</code> thay vì file <code>.svg</code>.</strong> → App chỉ nhận file <code>.svg</code> đã xuất riêng từ Illustrator.</span></li>
+      </ul>
+    </div>
+  </section>
+
 </main>
 
 <!-- Footer -->
 <footer class="footer">
   <span class="footer-cats" aria-hidden="true">🐾 🐱 🐾</span>
   <p>Sổ tay này dành cho họa sĩ của dự án <strong>Tứ Phương Vô Lộ</strong>.</p>
-  <p>Pipeline phiên bản <strong>v0.7.7 (007I)</strong> · Branch <code>workflow/maya-first-artist-pipeline</code></p>
+  <p>Pipeline phiên bản <strong>v0.7.9 (007J-F1)</strong> · Branch <code>workflow/maya-first-artist-pipeline</code></p>
   <p style="margin-top:0.5rem;">📄 Tài liệu chi tiết: <code>docs/desktop_app_mvp_vi.md</code> · <code>docs/artist_handoff_desktop_app_vi.md</code></p>
   <p>🛡️ File <code>.ma</code> là nguồn editable cuối cùng. AI chỉ tham khảo. Dry-run trước, chạy thật sau.</p>
   <p style="margin-top:0.8rem; opacity:0.6; font-size:0.75rem;">Phase 007I · Tài liệu tĩnh, chỉ đọc trong trình duyệt. Không phụ thuộc CDN hay mạng.</p>
