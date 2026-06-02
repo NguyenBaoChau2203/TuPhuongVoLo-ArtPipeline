@@ -209,6 +209,8 @@ Pipeline bỏ prefix `prop_`, `item_`, hoặc `object_` và dùng phần còn l�
 
 Trong group prop, giữ marker thật đơn giản: `rect`, `polygon`, `polyline`, hoặc path thẳng. Các prop được hỗ trợ sẽ tạo blockout nhiều khối dễ nhận ra hơn, nhưng vẫn là draft editable để kiểm tra bố cục. Nếu tên prop chưa được hỗ trợ, Maya vẫn tạo cube placeholder đơn giản thay vì dừng pipeline. Họa sĩ vẫn polish/thay model thật trong Maya sau.
 
+Checkpoint DCC cho procedural prop blockout đã được ghi lại tại `docs/verification/005_3P_procedural_prop_blockout_verified.md`: file `.ma` mở được trong Maya, `prop_shelf_unit_01` và `prop_wooden_crate_01` là multi-piece, tên child node an toàn cho Maya, và PNG preview đã generate.
+
 ## Không nên commit
 
 Các file sinh ra sau đây không nên commit trừ khi developer cố ý cần một fixture hoặc report mẫu:
