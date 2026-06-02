@@ -310,15 +310,32 @@ def create_prop_cube(
     size: tuple[float, float, float],
     material: str,
     parent: str,
+    rotation_y_degrees: float = 0.0,
 ) -> str:
     """Create a simple placeholder prop cube."""
 
     width, height, depth = size
     node = cmds.polyCube(name=name, width=width, height=height, depth=depth)[0]
-    cmds.xform(node, translation=(center[0], height / 2.0, center[1]))
+    cmds.xform(
+        node,
+        translation=(center[0], height / 2.0, center[1]),
+        rotation=(0.0, rotation_y_degrees, 0.0),
+    )
     assign_material(cmds, node, material)
     cmds.parent(node, parent)
     return node
+
+
+def marker_rotation_y_degrees(marker: dict[str, Any]) -> float:
+    """Return supported Y-axis prop marker rotation, defaulting to zero."""
+
+    try:
+        rotation = int(marker.get("rotation_y_degrees", 0))
+    except (TypeError, ValueError):
+        return 0.0
+    if rotation in {0, 90, 180, 270}:
+        return float(rotation)
+    return 0.0
 
 
 def safe_maya_name(value: Any, fallback: str = "prop") -> str:
@@ -905,18 +922,33 @@ def create_procedural_prop(
     detail_material: str,
     parent: str,
     units_scale: float = MARKER_BBOX_DEFAULT_SCALE,
+    rotation_y_degrees: float = 0.0,
 ) -> str:
     """Create a procedural prop when known, or the generic cube fallback."""
 
     canonical_type = normalize_prop_type(prop_type)
     builder = PROP_BLOCKOUT_BUILDERS.get(canonical_type)
     if builder is None:
-        return create_prop_cube(cmds, name, center, GENERIC_PROP_SIZE, material, parent)
+        return create_prop_cube(
+            cmds,
+            name,
+            center,
+            GENERIC_PROP_SIZE,
+            material,
+            parent,
+            rotation_y_degrees=rotation_y_degrees,
+        )
 
     group = cmds.group(empty=True, name=name)
     cmds.parent(group, parent)
     size = prop_blockout_size(canonical_type, marker=marker, units_scale=units_scale)
     builder(cmds, name, center, size, material, detail_material, group)
+    cmds.xform(
+        group,
+        pivots=(center[0], 0.0, center[1]),
+        worldSpace=True,
+        rotation=(0.0, rotation_y_degrees, 0.0),
+    )
     return group
 
 
@@ -952,6 +984,7 @@ def create_svg_prop_markers(
             detail_material,
             parent,
             units_scale=units_scale,
+            rotation_y_degrees=marker_rotation_y_degrees(raw_marker),
         )
         created += 1
     return created

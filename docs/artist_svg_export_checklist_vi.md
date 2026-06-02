@@ -76,6 +76,10 @@ python scripts/python/build_maya_room.py --input drops/phong_cua_ban.svg --room 
 - [ ] Đọc hướng dẫn đặt tên/alias đầy đủ trong guide chính:
       `docs/artist_workflow_cat_guide_vi.html`.
 - [ ] Trong group prop, dùng hình marker đơn giản như `rect`, `polygon`, `polyline`, hoặc path thẳng đơn giản. Maya lấy tâm marker để đặt blockout.
+- [ ] Nếu muốn xoay prop quanh trục đứng trong Maya, thêm hậu tố vào cuối tên marker:
+      `_rot90`, `_rot180`, `_rot270`, `_rotation_90`, `_rotation_180`, hoặc `_rotation_270`.
+      Ví dụ: `prop_shelf_unit_rot90`, `prop_wooden_crate_rot180`, `item_box_rotation_90`.
+      Hãy chạy dry-run trước để kiểm tra tên prop và kế hoạch dựng Maya trước khi chạy thật.
 - [ ] Đây chỉ là blockout để kiểm tra bố cục, **không phải model 3D cuối cùng**. Họa sĩ vẫn polish và thay asset thật trong Maya sau.
 
 > Checkpoint kỹ thuật: procedural prop blockout đã được kiểm chứng trong Maya ở `docs/verification/005_3P_procedural_prop_blockout_verified.md`. File test chỉ kiểm tra đúng kỹ thuật; preview có thể còn đơn giản và sẽ cần một phase polish visual riêng.
