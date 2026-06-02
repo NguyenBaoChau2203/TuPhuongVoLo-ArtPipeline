@@ -122,3 +122,12 @@ Verified manually on artist/DCC machine with Autodesk Maya 2024 mayapy.exe. .ma 
 - [X] T074 Record real Maya/DCC verification for `.ma` open, Outliner hierarchy, multi-piece shelf/crate props, Maya-safe child names, camera, and generated PNG preview
 - [X] T075 Document that `tests/in/illustrator_prop_markers.svg` validates technical correctness, not final visual quality, and recommend `005.3P-V1` for preview visual sanity polish
 - [X] T076 Confirm checkpoint is documentation-only with no Python/Maya logic, SVG parser, AI provider, desktop app, Feature 006, external API, secret, dependency, binary asset, generated output, build/dist, or generated report changes
+
+## Phase 14: Procedural Prop Preview Visual Sanity Polish (005.3P-V1)
+
+- [X] T077 Expand Maya isometric camera framing to include explicit SVG prop marker centers, safe marker footprints, and relevant procedural prop height
+- [X] T078 Add preview-friendly floor color fallback when a style preset would make the floor too pale on a white render background
+- [X] T079 Add `tests/in/illustrator_prop_showcase.svg` visual sanity fixture with supported procedural prop marker variety
+- [X] T080 Add non-Maya tests for prop-aware scene bounds, malformed marker safety, showcase dry-run marker detection, dry-run manifest safety, and render preview planning
+- [X] T081 Update Vietnamese artist docs, quickstart, README, and verification notes with marker/showcase guidance
+- [X] T082 Confirm no Feature 006, AI provider changes, desktop app AI behavior changes, external APIs, secrets, dependencies, binary assets, SVG parser refactor, manifest safety changes, or generated output commits are added

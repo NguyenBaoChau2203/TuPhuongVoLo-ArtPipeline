@@ -62,6 +62,7 @@ Feature 005 dry-run without Maya:
 ```powershell
 python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --room kho --dry-run
 python scripts/python/build_maya_room.py --input tests/in/illustrator_prop_markers.svg --room phong_kho --dry-run
+python scripts/python/build_maya_room.py --input tests/in/illustrator_prop_showcase.svg --room phong_showcase --render-preview --dry-run
 python scripts/python/batch_maya_room.py --input-dir tests/in --dry-run --json-report outputs/reports/batch_maya_report.json
 ```
 
@@ -183,6 +184,11 @@ only generic cubes. They remain editable draft geometry for artist polish, and
 unknown prop names still fall back to a simple placeholder cube.
 Phase 005.3P-R DCC verification is recorded in
 `docs/verification/005_3P_procedural_prop_blockout_verified.md`.
+`tests/in/illustrator_prop_markers.svg` is a small technical fixture and may
+look sparse in PNG preview renders. Use
+`tests/in/illustrator_prop_showcase.svg` for a clearer procedural prop variety
+smoke test; generated preview framing now includes explicit marker extents and
+uses a visible floor fallback when a preset floor color is too pale.
 
 Phase 005.5A documents the optional AI polish preview stage. Phase 005.5B adds
 a local mock preview workflow. Phase 005.5C adds optional fal.ai integration

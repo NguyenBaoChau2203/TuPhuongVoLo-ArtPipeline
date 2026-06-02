@@ -13,6 +13,7 @@ from typing import Any
 DEFAULT_WALL_HEIGHT = 3.0
 DEFAULT_WALL_THICKNESS = 0.12
 DEFAULT_PROP_COLOR = "#8A7F72"
+PREVIEW_FLOOR_COLOR_FALLBACK = (0.64, 0.70, 0.58)
 DEFAULT_PREVIEW_ASPECT_RATIO = 16.0 / 9.0
 ISO_CAMERA_DISTANCE_FACTOR = 3.5
 ORTHOGRAPHIC_PADDING_FACTOR = 2.8
@@ -158,6 +159,17 @@ def create_material(cmds: Any, name: str, color: tuple[float, float, float]) -> 
     return shading_group
 
 
+def preview_floor_color(value: Any) -> tuple[float, float, float]:
+    """Return a visible floor color for white-background blockout previews."""
+
+    color = hex_to_rgb(str(value or ""), PREVIEW_FLOOR_COLOR_FALLBACK)
+    luminance = color[0] * 0.2126 + color[1] * 0.7152 + color[2] * 0.0722
+    channel_range = max(color) - min(color)
+    if luminance >= 0.86 and channel_range <= 0.14:
+        return PREVIEW_FLOOR_COLOR_FALLBACK
+    return color
+
+
 def assign_material(cmds: Any, node: str, shading_group: str) -> None:
     """Assign material to a Maya node."""
 
@@ -217,6 +229,37 @@ def camera_framing_from_bounds(
             MIN_ORTHOGRAPHIC_WIDTH,
         ),
     }
+
+
+def scene_bounds_with_props(
+    bounds: tuple[float, float, float, float],
+    prop_markers: list[Any],
+    units_scale: float = MARKER_BBOX_DEFAULT_SCALE,
+) -> tuple[tuple[float, float, float, float], float]:
+    """Expand room bounds with explicit prop marker centers and footprints."""
+
+    min_x, min_z, max_x, max_z = bounds
+    max_prop_height = 0.0
+    for raw_marker in prop_markers:
+        if not isinstance(raw_marker, dict):
+            continue
+        center = marker_center_maya(raw_marker)
+        if center is None:
+            continue
+        raw_prop_type = safe_maya_name(raw_marker.get("prop_type"), fallback="generic")
+        width, height, depth = prop_blockout_size(
+            normalize_prop_type(raw_prop_type),
+            marker=raw_marker,
+            units_scale=units_scale,
+        )
+        half_width = max(width / 2.0, 0.0)
+        half_depth = max(depth / 2.0, 0.0)
+        min_x = min(min_x, center[0] - half_width)
+        max_x = max(max_x, center[0] + half_width)
+        min_z = min(min_z, center[1] - half_depth)
+        max_z = max(max_z, center[1] + half_depth)
+        max_prop_height = max(max_prop_height, height)
+    return (min_x, min_z, max_x, max_z), max_prop_height
 
 
 def create_floor(
@@ -961,12 +1004,12 @@ def create_camera_and_lights(
     cmds: Any,
     room_name: str,
     bounds: tuple[float, float, float, float],
-    wall_height: float,
+    framing_height: float,
     parent: str,
 ) -> None:
     """Create an orthographic isometric camera and simple lights."""
 
-    framing = camera_framing_from_bounds(bounds, wall_height)
+    framing = camera_framing_from_bounds(bounds, framing_height)
     camera_transform, camera_shape = cmds.camera(name=f"cam_{room_name}_iso")
     distance = framing["camera_distance"]
     target_locator = cmds.spaceLocator(name=f"LOC_{room_name}_camera_target")[0]
@@ -1040,7 +1083,7 @@ def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
     floor_mat = create_material(
         cmds,
         "MAT_floor",
-        hex_to_rgb(str(style.get("floor_color", "")), (0.29, 0.49, 0.35)),
+        preview_floor_color(style.get("floor_color")),
     )
     wall_mat = create_material(
         cmds,
@@ -1055,8 +1098,14 @@ def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
     )
 
     bounds = room_bounds(points)
-    create_floor(cmds, points, floor_mat, root)
     wall_height = float(room_preset.get("wall_height", DEFAULT_WALL_HEIGHT))
+    camera_bounds, max_prop_height = scene_bounds_with_props(
+        bounds,
+        prop_markers,
+        units_scale=units_scale,
+    )
+    framing_height = max(wall_height, max_prop_height)
+    create_floor(cmds, points, floor_mat, root)
     for index, (start, end) in enumerate(wall_segments, start=1):
         create_wall_block(
             cmds,
@@ -1081,7 +1130,7 @@ def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
         )
     else:
         create_placeholder_props(cmds, room_preset, bounds, prop_mat, prop_detail_mat, props_group)
-    create_camera_and_lights(cmds, room_name, bounds, wall_height, lights_group)
+    create_camera_and_lights(cmds, room_name, camera_bounds, framing_height, lights_group)
 
     maya_output.parent.mkdir(parents=True, exist_ok=True)
     cmds.file(rename=str(maya_output))

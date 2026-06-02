@@ -453,7 +453,7 @@ def print_plan(plan: MayaBuildPlan) -> None:
         print(f"Loại hình trong phòng: {kinds}")
     if plan.room.prop_markers:
         props = ", ".join(marker.prop_type for marker in plan.room.prop_markers)
-        print(f"Prop marker SVG: {props}")
+        print(f"Prop marker SVG ({len(plan.room.prop_markers)}): {props}")
     print(
         "Transform: "
         + ("đã áp dụng vào tọa độ phòng." if plan.transform_applied else "không có/không cần.")

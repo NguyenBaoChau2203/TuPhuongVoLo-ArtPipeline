@@ -112,12 +112,32 @@ Expected:
 - Dry-run prints planned `.ma`, geometry JSON, and preview PNG paths
 - Manifest is not updated
 
+`tests/in/illustrator_prop_markers.svg` is a technical fixture with only a few
+markers, so a real PNG render can look sparse. For a clearer visual sanity
+smoke test with more procedural prop variety, use the showcase fixture:
+
+```powershell
+python scripts/python/build_maya_room.py `
+  --input tests/in/illustrator_prop_showcase.svg `
+  --room phong_showcase `
+  --output-dir outputs `
+  --render-preview `
+  --dry-run
+```
+
+Expected:
+
+- Dry-run reports 12 prop markers
+- Planned PNG path is `outputs/preview/tu_phuong_vo_lo_phong_showcase_main_preview_v001.png`
+- Manifest is not updated
+- The fixture remains blockout-only; it is for visual/DCC smoke testing, not final art
+
 Actual Maya render on a DCC machine:
 
 ```powershell
 python scripts/python/build_maya_room.py `
-  --input tests/in/illustrator_prop_markers.svg `
-  --room phong_kho `
+  --input tests/in/illustrator_prop_showcase.svg `
+  --room phong_showcase `
   --output-dir outputs `
   --maya-path "C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe" `
   --render-preview `

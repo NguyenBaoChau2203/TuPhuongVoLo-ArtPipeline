@@ -148,6 +148,59 @@ def test_maya_camera_framing_accounts_for_wall_height() -> None:
     assert tall_walls["target_y"] > low_walls["target_y"]
 
 
+def test_maya_scene_bounds_include_svg_prop_marker_extents() -> None:
+    """Camera bounds should include explicit prop centers and footprints."""
+
+    scene_builder = load_maya_scene_builder()
+
+    bounds, max_prop_height = scene_builder.scene_bounds_with_props(
+        (0.0, 0.0, 1.0, 1.0),
+        [
+            {
+                "prop_type": "prop_shelf_unit",
+                "center_maya": [1.8, -0.6],
+                "bbox_maya": [0.0, 0.0, 1.2, 0.6],
+            }
+        ],
+        units_scale=0.01,
+    )
+
+    assert bounds[0] == 0.0
+    assert bounds[1] < 0.0
+    assert bounds[2] > 1.0
+    assert bounds[3] == 1.0
+    assert max_prop_height == scene_builder.PROCEDURAL_PROP_SIZES["shelf_unit"][1]
+
+
+def test_maya_scene_bounds_ignore_invalid_prop_marker_data() -> None:
+    """Malformed marker data must not crash camera planning."""
+
+    scene_builder = load_maya_scene_builder()
+
+    room_bounds = (0.0, 0.0, 1.0, 1.0)
+    bounds, max_prop_height = scene_builder.scene_bounds_with_props(
+        room_bounds,
+        [
+            {"prop_type": "prop_bed", "center_maya": ["bad", None]},
+            {"prop_type": "prop_table", "bbox_maya": [0.0, 0.0, 10.0, 10.0]},
+            "not-a-marker",
+        ],
+    )
+
+    assert bounds == room_bounds
+    assert max_prop_height == 0.0
+
+
+def test_maya_preview_floor_color_falls_back_when_too_pale() -> None:
+    """A near-white floor should get a visible preview fallback."""
+
+    scene_builder = load_maya_scene_builder()
+
+    assert scene_builder.preview_floor_color("#FFFFFF") == scene_builder.PREVIEW_FLOOR_COLOR_FALLBACK
+    assert scene_builder.preview_floor_color("#E8E4DF") == scene_builder.PREVIEW_FLOOR_COLOR_FALLBACK
+    assert scene_builder.preview_floor_color("#4A7C59") != scene_builder.PREVIEW_FLOOR_COLOR_FALLBACK
+
+
 def test_maya_camera_framing_is_more_conservative_than_previous_polish() -> None:
     """005.2P2 prefers extra whitespace over any remaining top-edge crop."""
 
@@ -494,6 +547,96 @@ def test_dry_run_reports_svg_prop_markers(tmp_path: Path, monkeypatch) -> None:
         "shelf_unit",
         "wooden_crate",
     ]
+
+
+def test_prop_showcase_fixture_dry_run_detects_supported_markers(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(FIXTURE_DIR / "illustrator_prop_showcase.svg"),
+            "--room",
+            "phong_showcase",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+
+    plan = builder.build_plan(args)
+
+    assert plan.room.room_name == "phong_showcase"
+    assert [marker.prop_type for marker in plan.room.prop_markers] == [
+        "bed",
+        "table",
+        "chair",
+        "sofa",
+        "fridge",
+        "sink",
+        "kitchen_counter",
+        "cabinet",
+        "locker",
+        "plant",
+        "shelf_unit",
+        "wooden_crate",
+    ]
+
+
+def test_prop_showcase_dry_run_does_not_update_manifest(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    manifest_path = isolated_manifest(monkeypatch, tmp_path)
+
+    exit_code = builder.main(
+        [
+            "--input",
+            str(FIXTURE_DIR / "illustrator_prop_showcase.svg"),
+            "--room",
+            "phong_showcase",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--render-preview",
+            "--dry-run",
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert not manifest_path.exists()
+    assert "Prop marker SVG (12):" in captured.out
+    assert "tu_phuong_vo_lo_phong_showcase_main_preview_v001.png" in captured.out
+    assert "ghi manifest" in captured.out
+
+
+def test_prop_showcase_render_preview_planning_still_works(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(FIXTURE_DIR / "illustrator_prop_showcase.svg"),
+            "--room",
+            "phong_showcase",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--render-preview",
+            "--dry-run",
+        ]
+    )
+
+    plan = builder.build_plan(args)
+
+    assert plan.render_preview is True
+    assert plan.render_output is not None
+    assert plan.render_output.name == "tu_phuong_vo_lo_phong_showcase_main_preview_v001.png"
+    assert any("render_maya_room_preview.py" in part for part in plan.render_command)
 
 
 def test_maya_scene_builder_has_marker_placeholder_helpers() -> None:
