@@ -189,6 +189,10 @@ look sparse in PNG preview renders. Use
 `tests/in/illustrator_prop_showcase.svg` for a clearer procedural prop variety
 smoke test; generated preview framing now includes explicit marker extents and
 uses a visible floor fallback when a preset floor color is too pale.
+Phase 005.3P-V1-R checkpoint and next-improvement audit are recorded in
+`docs/verification/005_3P_V1_procedural_prop_preview_verified.md`; real Maya/DCC
+verification for the showcase fixture remains pending until run on a Maya
+machine.
 
 Phase 005.5A documents the optional AI polish preview stage. Phase 005.5B adds
 a local mock preview workflow. Phase 005.5C adds optional fal.ai integration

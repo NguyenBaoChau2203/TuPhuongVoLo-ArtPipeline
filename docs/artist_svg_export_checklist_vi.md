@@ -84,6 +84,8 @@ python scripts/python/build_maya_room.py --input drops/phong_cua_ban.svg --room 
 
 > Ghi chú visual sanity 005.3P-V1: `tests/in/illustrator_prop_markers.svg` là fixture kỹ thuật nhỏ nên ảnh preview có thể nhìn thưa hoặc chỉ nổi bật một vài prop cao. Khi muốn kiểm tra nhiều loại prop blockout rõ hơn, dùng `tests/in/illustrator_prop_showcase.svg` với phòng `phong_showcase`. Prop procedural vẫn là blockout để kiểm tra bố cục, không phải model cuối cùng.
 
+> Checkpoint 005.3P-V1-R: `docs/verification/005_3P_V1_procedural_prop_preview_verified.md` ghi checklist Maya/DCC thật cho showcase fixture. Hiện checkpoint này vẫn pending cho đến khi operator chạy trên máy có `mayapy.exe`.
+
 ---
 
 ## Quy tắc an toàn (rất quan trọng)

@@ -213,6 +213,8 @@ Checkpoint DCC cho procedural prop blockout đã được ghi lại tại `docs/
 
 Nếu chỉ dùng `tests/in/illustrator_prop_markers.svg`, preview có thể nhìn thưa vì đây là fixture kỹ thuật với rất ít marker. Để kiểm tra nhanh nhiều loại prop blockout trong một cảnh rộng hơn, dùng `tests/in/illustrator_prop_showcase.svg` với room `phong_showcase` và bật `--render-preview`. Camera preview đã tính thêm vùng đặt prop marker, và màu sàn có fallback dễ nhìn hơn nếu preset quá nhạt trên nền trắng.
 
+Checkpoint 005.3P-V1-R nằm tại `docs/verification/005_3P_V1_procedural_prop_preview_verified.md`. Trạng thái hiện tại là chờ kiểm chứng Maya/DCC thật cho fixture showcase; tài liệu đó có sẵn lệnh và checklist để operator chạy trên máy có `mayapy.exe`.
+
 ## Không nên commit
 
 Các file sinh ra sau đây không nên commit trừ khi developer cố ý cần một fixture hoặc report mẫu:
