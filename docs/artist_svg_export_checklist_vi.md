@@ -68,12 +68,16 @@ python scripts/python/build_maya_room.py --input drops/phong_cua_ban.svg --room 
 
 ---
 
-## Đánh dấu prop placeholder trong SVG
+## Đánh dấu prop blockout trong SVG
 
-- [ ] Nếu muốn Maya tạo khối placeholder theo vị trí bạn đặt trong Illustrator, hãy tạo group/layer con bên trong group phòng và đặt tên theo mẫu đơn giản:
-      `prop_shelf_unit`, `prop_wooden_crate`, `item_cardboard_box`, `object_console_desk`.
-- [ ] Pipeline sẽ bỏ phần prefix `prop_`, `item_`, hoặc `object_` và hiểu loại prop là `shelf_unit`, `wooden_crate`, `cardboard_box`, `console_desk`.
-- [ ] Trong group prop, dùng một hình marker đơn giản như `rect`, `polygon`, `polyline`, hoặc path thẳng đơn giản. Maya sẽ lấy tâm của marker để đặt cube placeholder.
+- [ ] Nếu muốn Maya tạo blockout đồ vật theo vị trí bạn đặt trong Illustrator, hãy tạo group/layer con bên trong group phòng và đặt tên theo mẫu đơn giản:
+      `prop_bed`, `prop_table`, `prop_chair`, `prop_sofa`, `prop_fridge`, `prop_sink`,
+      `prop_kitchen_counter`, `prop_cabinet`, `prop_locker`, `prop_plant`,
+      `prop_shelf_unit`, `prop_wooden_crate`.
+- [ ] Pipeline sẽ bỏ phần prefix `prop_`, `item_`, hoặc `object_` và hiểu loại prop. Một số tên tương đương cũng dùng được, ví dụ `desk` -> `table`, `couch` -> `sofa`, `refrigerator` -> `fridge`, `counter` -> `kitchen_counter`, `cupboard` -> `cabinet`, `potted_plant` -> `plant`, `shelf`/`shelving` -> `shelf_unit`, `crate`/`box` -> `wooden_crate`.
+- [ ] Trong group prop, dùng một hình marker đơn giản như `rect`, `polygon`, `polyline`, hoặc path thẳng đơn giản. Maya sẽ lấy tâm của marker để đặt blockout, và dùng kích thước marker một cách an toàn nếu đọc được.
+- [ ] Các prop được hỗ trợ sẽ hiện thành hình khối dễ nhận ra hơn cube trống, ví dụ giường có gối, bàn có chân, ghế có lưng, sofa có tay, tủ lạnh/tủ/locker có vệt cửa, sink có basin, shelf/crate có các khối phụ.
+- [ ] Nếu tên prop chưa được hỗ trợ, Maya vẫn tạo cube placeholder đơn giản thay vì báo lỗi.
 - [ ] Đây chỉ là blockout để kiểm tra bố cục, **không phải model 3D cuối cùng**. Họa sĩ vẫn polish và thay asset thật trong Maya sau.
 
 ---

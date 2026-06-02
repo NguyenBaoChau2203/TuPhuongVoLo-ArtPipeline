@@ -106,3 +106,12 @@ Verified manually on artist/DCC machine with Autodesk Maya 2024 mayapy.exe. .ma 
 - [X] T064 Confirm `fal-client` remains optional-only and no external API calls are made during validation
 - [X] T065 Confirm generated AI preview artifacts remain ignored/uncommitted
 - [X] T066 Confirm no secrets, `.env`, Feature 006, UI/app integration, SVG/Maya/render/manifest changes, or generated outputs are added
+
+## Phase 12: Procedural Prop Blockout Library (005.3P)
+
+- [X] T067 Add procedural Maya prop blockout builders for bed, table, chair, sofa, fridge, sink, kitchen counter, cabinet, locker, plant, shelf, and crate
+- [X] T068 Support safe prop aliases such as `desk`, `couch`, `refrigerator`, `counter`, `cupboard`, `potted_plant`, `shelf`, `shelving`, `crate`, and `box`
+- [X] T069 Keep explicit SVG marker placement centered on marker centers, use marker bbox only as a conservative footprint hint, and keep generic cube fallback for unknown prop names
+- [X] T070 Add non-Maya tests for procedural builder mapping, alias normalization, marker creation, and unknown fallback behavior
+- [X] T071 Update Vietnamese artist docs with supported prop marker examples and blockout/fallback guidance
+- [X] T072 Confirm no Feature 006, AI provider changes, external API calls, SVG parser refactor, manifest safety changes, generated outputs, binary assets, or external 3D assets are added

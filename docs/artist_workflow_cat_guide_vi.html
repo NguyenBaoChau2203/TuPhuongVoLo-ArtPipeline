@@ -698,7 +698,7 @@
 
     <div class="card">
       <h3>Marker cho đồ vật / prop</h3>
-      <p>Trong Illustrator, đặt tên group/layer cho các đồ vật theo tiền tố <strong><code>prop_</code></strong> (hoặc <code>item_</code> / <code>object_</code>). Pipeline đọc tên này để tạo placeholder/blockout trong cảnh Maya.</p>
+      <p>Trong Illustrator, đặt tên group/layer cho các đồ vật theo tiền tố <strong><code>prop_</code></strong> (hoặc <code>item_</code> / <code>object_</code>). Pipeline đọc tên này để tạo blockout đồ vật dễ nhận ra hơn trong cảnh Maya.</p>
 
       <div class="banner good" style="margin-bottom:0.8rem;">
         <span class="banner-icon">🐱</span>
@@ -716,9 +716,12 @@
         <span class="pill">prop_cabinet</span>
         <span class="pill">prop_locker</span>
         <span class="pill">prop_plant</span>
+        <span class="pill">prop_shelf_unit</span>
+        <span class="pill">prop_wooden_crate</span>
       </div>
 
-      <p class="note" style="margin-top:0.8rem;">Tiền tố thay thế được chấp nhận: <code>item_</code> và <code>object_</code>. Ví dụ: <code>item_lamp</code>, <code>object_door</code>.</p>
+      <p class="note" style="margin-top:0.8rem;">Alias an toàn cũng dùng được: <code>desk</code> → <code>table</code>, <code>couch</code> → <code>sofa</code>, <code>refrigerator</code> → <code>fridge</code>, <code>counter</code> → <code>kitchen_counter</code>, <code>cupboard</code> → <code>cabinet</code>, <code>potted_plant</code> → <code>plant</code>, <code>shelf</code>/<code>shelving</code> → <code>shelf_unit</code>, <code>crate</code>/<code>box</code> → <code>wooden_crate</code>.</p>
+      <p class="note">Nếu tên prop chưa được hỗ trợ, Maya vẫn tạo cube placeholder đơn giản. Marker bên trong group nên là <code>rect</code>, <code>polygon</code>, <code>polyline</code>, hoặc path thẳng; blockout vẫn là draft để polish/thay model thật trong Maya.</p>
     </div>
 
     <div class="card">
@@ -899,12 +902,12 @@
 
       <div class="gloss-card">
         <div class="gloss-term">Prop marker</div>
-        <p class="gloss-def">Group/layer trong Illustrator có tên bắt đầu bằng <code>prop_</code> (hoặc <code>item_</code>, <code>object_</code>). Pipeline đọc tên để tạo placeholder đồ vật trong Maya.</p>
+        <p class="gloss-def">Group/layer trong Illustrator có tên bắt đầu bằng <code>prop_</code> (hoặc <code>item_</code>, <code>object_</code>). Pipeline đọc tên để tạo blockout đồ vật trong Maya; tên lạ sẽ về cube placeholder đơn giản.</p>
       </div>
 
       <div class="gloss-card">
         <div class="gloss-term">Blockout</div>
-        <p class="gloss-def">Khung 3D cơ bản — tường, sàn, placeholder đồ vật đơn giản — được tạo tự động. Họa sĩ polish lại blockout này trong Maya.</p>
+        <p class="gloss-def">Khung 3D cơ bản — tường, sàn, prop blockout dễ nhận ra nhưng vẫn đơn giản — được tạo tự động. Họa sĩ polish lại blockout này trong Maya.</p>
       </div>
 
       <div class="gloss-card">

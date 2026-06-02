@@ -61,6 +61,7 @@ Feature 005 dry-run without Maya:
 
 ```powershell
 python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --room kho --dry-run
+python scripts/python/build_maya_room.py --input tests/in/illustrator_prop_markers.svg --room phong_kho --dry-run
 python scripts/python/batch_maya_room.py --input-dir tests/in --dry-run --json-report outputs/reports/batch_maya_report.json
 ```
 
@@ -173,6 +174,13 @@ Core artist flow:
 8. Optional: choose a generated PNG preview in the desktop app AI section and run a reference-only AI polish preview into `outputs/ai_preview/`.
 
 Generated `.ma`, `.png`, `outputs/tmp/`, and normal batch reports are local outputs and should not be committed unless intentionally added as test fixtures.
+
+Supported SVG prop markers such as `prop_bed`, `prop_table`, `prop_chair`,
+`prop_sofa`, `prop_fridge`, `prop_sink`, `prop_kitchen_counter`,
+`prop_cabinet`, `prop_locker`, `prop_plant`, `prop_shelf_unit`, and
+`prop_wooden_crate` now create simple procedural Maya blockouts instead of
+only generic cubes. They remain editable draft geometry for artist polish, and
+unknown prop names still fall back to a simple placeholder cube.
 
 Phase 005.5A documents the optional AI polish preview stage. Phase 005.5B adds
 a local mock preview workflow. Phase 005.5C adds optional fal.ai integration

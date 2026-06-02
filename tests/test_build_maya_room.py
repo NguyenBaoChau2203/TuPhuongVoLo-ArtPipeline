@@ -18,6 +18,39 @@ class _FakeProcess:
         self.stderr = stderr
 
 
+class _FakeMayaCmds:
+    """Small maya.cmds stand-in for prop builder tests."""
+
+    def __init__(self) -> None:
+        self.cubes: list[dict[str, object]] = []
+        self.groups: list[str] = []
+        self.parents: list[tuple[str, str]] = []
+        self.transforms: dict[str, object] = {}
+
+    def polyCube(self, name: str, width: float, height: float, depth: float):
+        self.cubes.append(
+            {
+                "name": name,
+                "size": (width, height, depth),
+            }
+        )
+        return [name]
+
+    def group(self, empty: bool, name: str):
+        assert empty is True
+        self.groups.append(name)
+        return name
+
+    def xform(self, node: str, **kwargs) -> None:
+        self.transforms[node] = kwargs
+
+    def sets(self, *args, **kwargs) -> None:
+        return None
+
+    def parent(self, node: str, parent: str) -> None:
+        self.parents.append((node, parent))
+
+
 def write_svg(path: Path) -> Path:
     """Write a clean SVG with two room groups."""
 
@@ -467,9 +500,92 @@ def test_maya_scene_builder_has_marker_placeholder_helpers() -> None:
     scene_builder = load_maya_scene_builder()
 
     assert scene_builder.prop_placeholder_size("shelf_unit") == (0.8, 1.8, 0.35)
+    assert scene_builder.prop_placeholder_size(
+        "single_bed"
+    ) == scene_builder.prop_placeholder_size("bed")
     assert scene_builder.prop_placeholder_size("unknown_type") == scene_builder.GENERIC_PROP_SIZE
     assert scene_builder.safe_maya_name("wooden crate") == "wooden_crate"
+    assert scene_builder.normalize_prop_type("prop_couch") == "sofa"
+    assert scene_builder.normalize_prop_type("refrigerator") == "fridge"
     assert scene_builder.marker_center_maya({"center_maya": [0.3, -0.14]}) == (0.3, -0.14)
+
+
+def test_maya_scene_builder_maps_supported_prop_types_to_procedural_builders() -> None:
+    scene_builder = load_maya_scene_builder()
+
+    expected = {
+        "bed",
+        "table",
+        "chair",
+        "sofa",
+        "fridge",
+        "sink",
+        "kitchen_counter",
+        "cabinet",
+        "locker",
+        "plant",
+        "shelf_unit",
+        "wooden_crate",
+    }
+
+    assert expected <= set(scene_builder.PROP_BLOCKOUT_BUILDERS)
+    for prop_type in expected:
+        assert scene_builder.has_procedural_prop(prop_type)
+        assert scene_builder.prop_placeholder_size(prop_type) != scene_builder.GENERIC_PROP_SIZE
+
+
+def test_maya_scene_builder_normalizes_required_prop_aliases() -> None:
+    scene_builder = load_maya_scene_builder()
+
+    aliases = {
+        "shelf": "shelf_unit",
+        "shelving": "shelf_unit",
+        "crate": "wooden_crate",
+        "box": "wooden_crate",
+        "single_bed": "bed",
+        "desk": "table",
+        "couch": "sofa",
+        "refrigerator": "fridge",
+        "counter": "kitchen_counter",
+        "cupboard": "cabinet",
+        "potted_plant": "plant",
+    }
+
+    for alias, canonical in aliases.items():
+        assert scene_builder.normalize_prop_type(alias) == canonical
+        assert scene_builder.has_procedural_prop(alias)
+
+
+def test_maya_scene_builder_uses_procedural_group_and_generic_fallback() -> None:
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+
+    created = scene_builder.create_svg_prop_markers(
+        cmds,
+        [
+            {
+                "prop_type": "couch",
+                "center_maya": [1.0, -2.0],
+                "bbox_svg": [0.0, 0.0, 80.0, 40.0],
+            },
+            {
+                "prop_type": "unknown_totem",
+                "center_maya": [2.0, -3.0],
+                "bbox_svg": [0.0, 0.0, 50.0, 50.0],
+            },
+        ],
+        "MAT_props",
+        "MAT_prop_details",
+        "props",
+        units_scale=0.01,
+    )
+
+    assert created == 2
+    assert "prop_sofa_01" in cmds.groups
+    assert any(cube["name"] == "prop_sofa_01_seat" for cube in cmds.cubes)
+    fallback = next(cube for cube in cmds.cubes if cube["name"] == "prop_unknown_totem_01")
+    assert fallback["size"] == scene_builder.GENERIC_PROP_SIZE
+    assert ("prop_unknown_totem_01", "props") in cmds.parents
 
 
 def test_maya_scene_builder_prefers_svg_markers_over_preset_props() -> None:
@@ -479,7 +595,7 @@ def test_maya_scene_builder_prefers_svg_markers_over_preset_props() -> None:
     assert "prop_markers" in script_text
     assert "create_svg_prop_markers" in script_text
     assert 'name="props"' in script_text
-    assert "prop_{prop_type}_" in script_text
+    assert "prop_{name_type}_" in script_text
     assert "replace" in script_text or "room-preset auto props" in script_text
 
 
