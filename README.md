@@ -44,6 +44,7 @@ clean SVG -> Blender MVP isometric draft / batch dry-run
 | 7.10 | Cat-Themed Artist App Visual Polish (007J) | `scripts/python/artist_desktop_app.py` | Pastel ttk palette, cat header, friendly section labels, helper text; v0.7.8 |
 | 7.11 | Cat UI Contrast Fix and Detailed App Guide (007J-F1) | `scripts/python/artist_desktop_app.py` | Contrast fix, detailed guide section in HTML; v0.7.9 |
 | 7.12 | De-emphasize Paid AI Preview in Docs (007J-F2) | `specs/007-artist-desktop-app-mvp/` | Docs aligned to v0.7.9 (007J-F1), AI optionality/deferred cost clarified |
+| 7.13 | SVG Preflight Checker (007M) | `scripts/python/svg_preflight_check.py` | Read-only Illustrator SVG safety check before Maya dry-run |
 
 ## Developer Quickstart
 
@@ -65,6 +66,8 @@ pytest tests/ -v
 Feature 005 dry-run without Maya:
 
 ```powershell
+python scripts/python/svg_preflight_check.py --input tests/in/feature001_kho.svg
+python scripts/python/svg_preflight_check.py --input tests/in/feature001_kho.svg --json-output outputs/reports/svg_preflight_report.json
 python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --room kho --dry-run
 python scripts/python/build_maya_room.py --input tests/in/illustrator_prop_markers.svg --room phong_kho --dry-run
 python scripts/python/build_maya_room.py --input tests/in/illustrator_prop_showcase.svg --room phong_showcase --render-preview --dry-run
@@ -167,6 +170,7 @@ Feature 005 MVP actual execution supports `mayapy.exe` only. `maya.exe` and
 Vietnamese guides:
 
 - [Sổ tay mèo con — hướng dẫn thân thiện cho họa sĩ (007H)](docs/artist_workflow_cat_guide_vi.html)
+- [Checklist kiểm tra SVG thật trước khi dựng Maya](docs/real_svg_test_checklist_vi.md)
 - [Bàn giao desktop app Maya](docs/artist_handoff_desktop_app_vi.md)
 - [Checklist release/packaging desktop app](docs/release_packaging_checklist_vi.md)
 - [Hướng dẫn cài đặt](docs/INSTALL_VI.md)
@@ -178,12 +182,13 @@ Core artist flow:
 
 1. Draw/export clean SVG from Illustrator.
 2. Optional: run `launchers/00_maya_env_check.bat` to check Python, PyYAML, and `mayapy.exe`.
-3. Recommended: run `launchers/09_artist_desktop_app.bat` for a friendly local app wrapper.
-4. Developer-only: run `launchers/10_package_artist_app.bat` to dry-run desktop app packaging.
-5. Alternative CLI launcher: run `launchers/07_build_maya_room.bat` for one room dry-run before creating `.ma`.
-6. Run `launchers/08_batch_maya_room.bat` for multi-SVG or multi-room dry-run/report.
-7. After dry-run looks correct, run actual Maya execution and open generated `.ma` scenes from `outputs/maya/` in Maya.
-8. Optional: choose a generated PNG preview in the desktop app AI section and run a reference-only AI polish preview into `outputs/ai_preview/`.
+3. Recommended for real Illustrator SVG copies: run `python scripts/python/svg_preflight_check.py --input drops/your_file.svg`.
+4. Recommended: run `launchers/09_artist_desktop_app.bat` for a friendly local app wrapper.
+5. Developer-only: run `launchers/10_package_artist_app.bat` to dry-run desktop app packaging.
+6. Alternative CLI launcher: run `launchers/07_build_maya_room.bat` for one room dry-run before creating `.ma`.
+7. Run `launchers/08_batch_maya_room.bat` for multi-SVG or multi-room dry-run/report.
+8. After dry-run looks correct, run actual Maya execution and open generated `.ma` scenes from `outputs/maya/` in Maya.
+9. Optional: choose a generated PNG preview in the desktop app AI section and run a reference-only AI polish preview into `outputs/ai_preview/`.
 
 Generated `.ma`, `.png`, `outputs/tmp/`, and normal batch reports are local outputs and should not be committed unless intentionally added as test fixtures.
 
