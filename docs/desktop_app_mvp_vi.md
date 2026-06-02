@@ -1,15 +1,15 @@
 # Desktop App MVP cho họa sĩ
 
-> **Phiên bản hiện tại**: `v0.7.9 (007J-F1)`
+> **Phiên bản hiện tại**: `v0.7.10 (007L)`
 > **Giao diện hiện tại**: Desktop App (Tkinter) chạy local. Dự án đã bỏ kế hoạch phát triển local web UI trong ngắn hạn để tập trung hoàn toàn vào ứng dụng desktop.
 > **Quy trình sản xuất chính (Maya-first)**: Illustrator SVG -> dry-run -> Dựng Maya .ma thật -> Họa sĩ polish thủ công trong Maya. Quy trình này hoạt động hoàn toàn local, ngoại tuyến và **không yêu cầu bất kỳ API AI trả phí nào (không cần API Key, không cần fal.ai, OpenAI, Gemini hay ComfyUI)**. Tính năng AI Preview chỉ là ảnh tham khảo tùy chọn, không thay thế file `.ma` và hiện đang tạm hoãn vì chi phí API.
 
 ## Mục đích
 
 Desktop app MVP là cửa sổ local nhỏ để chạy pipeline Maya-first đã được kiểm
-chứng. App giúp họa sĩ chọn SVG, nhập tên phòng, chọn dry-run hoặc chạy thật,
-bật/tắt PNG preview, nhập đường dẫn `mayapy.exe`, xem log, và mở nhanh các thư
-mục output.
+chứng. App giúp họa sĩ chọn SVG, kiểm tra SVG preflight, nhập tên phòng, chạy
+dry-run trước, chỉ chạy Maya thật sau khi dry-run đúng, bật/tắt PNG preview,
+nhập đường dẫn `mayapy.exe`, xem log, và mở nhanh các thư mục output.
 
 App chỉ bọc script CLI hiện có:
 
@@ -19,6 +19,20 @@ python scripts/python/build_maya_room.py
 
 App không thay thế Maya, không parse SVG trực tiếp, không tạo geometry riêng, và
 không sửa file SVG nguồn. Pipeline CLI vẫn là source of truth.
+
+## Cập nhật 007L: luồng hướng dẫn một nút theo từng bước
+
+Phase 007L làm rõ luồng an toàn cho họa sĩ không rành command line:
+
+1. `Kiểm tra SVG`: gọi `scripts/python/svg_preflight_check.py` để kiểm tra file SVG read-only.
+2. `Chạy dry-run`: ép app chạy `build_maya_room.py --dry-run` để xem kế hoạch trước.
+3. `Chạy Maya thật`: chỉ nên dùng sau khi dry-run thành công cho đúng SVG, phòng, output và render settings hiện tại.
+4. Mở `outputs/maya`, `outputs/preview`, và `outputs/reports` để kiểm tra `.ma`, PNG preview, và report.
+
+App ghi nhớ dry-run thành công theo SVG/phòng/output/render hiện tại. Nếu đổi
+settings, app sẽ yêu cầu chạy dry-run lại trước khi chạy Maya thật. Các checkbox
+và nút manual `Chạy pipeline` vẫn còn cho người dùng nâng cao, nhưng luồng
+khuyến nghị trong UI là `Kiểm tra SVG -> Chạy dry-run -> Chạy Maya thật`.
 
 ## Cập nhật 007C: kiểm tra và trạng thái rõ hơn
 
@@ -156,7 +170,7 @@ Thay đổi giao diện:
 - Nút `Chạy pipeline` và `Tạo AI polish preview` nổi bật hơn (`Primary.TButton`).
 - Nút `Mở hướng dẫn` và `Mở SVG mẫu marker` dùng `Accent.TButton`.
 - Nút tiện ích còn lại dùng `Secondary.TButton`.
-- Phiên bản: `TuPhuongVoLo Maya Artist App v0.7.9 (007J-F1)`.
+- Phiên bản sau 007L: `TuPhuongVoLo Maya Artist App v0.7.10 (007L)`.
 
 HTML guide vẫn là nguồn hướng dẫn chính cho họa sĩ. App không thay đổi pipeline
 Maya, SVG parser, AI provider, Feature 006, local web UI, hay manifest.
@@ -176,12 +190,13 @@ launchers/09_artist_desktop_app.bat
 ## Quy trình khuyến nghị
 
 1. Chọn file SVG sạch.
-2. Nhập tên phòng, ví dụ `phong_kho`.
-3. Giữ `Dry-run` cho lần đầu.
+2. Bấm `Kiểm tra SVG` và đọc kết quả preflight trong log.
+3. Nhập tên phòng, ví dụ `phong_kho`.
 4. Bật `Render PNG preview` nếu cần ảnh kiểm tra nhanh.
-5. Bấm `Chạy pipeline` và đọc log trong app.
-6. Nếu dry-run đúng, bỏ chọn `Dry-run`, kiểm tra đường dẫn `mayapy.exe`, rồi chạy thật.
-7. Nếu cần AI reference, chọn PNG preview đã có trong khu vực AI, giữ `AI dry-run` cho lần đầu, rồi bấm `Tạo AI polish preview`.
+5. Bấm `Chạy dry-run` và đọc log trong app.
+6. Nếu dry-run đúng, kiểm tra đường dẫn `mayapy.exe`, rồi bấm `Chạy Maya thật`.
+7. Mở `outputs/maya` và `outputs/preview` để kiểm tra `.ma` và PNG preview.
+8. Nếu cần AI reference, chọn PNG preview đã có trong khu vực AI, giữ `AI dry-run` cho lần đầu, rồi bấm `Tạo AI polish preview`.
 
 ## Thư mục có thể mở từ app
 

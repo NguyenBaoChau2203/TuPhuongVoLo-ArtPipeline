@@ -45,6 +45,7 @@ clean SVG -> Blender MVP isometric draft / batch dry-run
 | 7.11 | Cat UI Contrast Fix and Detailed App Guide (007J-F1) | `scripts/python/artist_desktop_app.py` | Contrast fix, detailed guide section in HTML; v0.7.9 |
 | 7.12 | De-emphasize Paid AI Preview in Docs (007J-F2) | `specs/007-artist-desktop-app-mvp/` | Docs aligned to v0.7.9 (007J-F1), AI optionality/deferred cost clarified |
 | 7.13 | SVG Preflight Checker (007M) | `scripts/python/svg_preflight_check.py` | Read-only Illustrator SVG safety check before Maya dry-run |
+| 7.14 | Guided Artist Workflow (007L) | `scripts/python/artist_desktop_app.py` | Desktop app guides Preflight -> Dry-run -> Actual Maya run |
 
 ## Developer Quickstart
 
@@ -78,6 +79,7 @@ Artist desktop app MVP:
 
 ```powershell
 python scripts/python/artist_desktop_app.py
+python scripts/python/artist_desktop_app.py --help
 python scripts/python/artist_desktop_app.py --version
 ```
 
@@ -182,8 +184,8 @@ Core artist flow:
 
 1. Draw/export clean SVG from Illustrator.
 2. Optional: run `launchers/00_maya_env_check.bat` to check Python, PyYAML, and `mayapy.exe`.
-3. Recommended for real Illustrator SVG copies: run `python scripts/python/svg_preflight_check.py --input drops/your_file.svg`.
-4. Recommended: run `launchers/09_artist_desktop_app.bat` for a friendly local app wrapper.
+3. Recommended: run `launchers/09_artist_desktop_app.bat` for the guided local app workflow.
+4. In the app, click `Kiểm tra SVG`, then `Chạy dry-run`, then `Chạy Maya thật` only after dry-run succeeds.
 5. Developer-only: run `launchers/10_package_artist_app.bat` to dry-run desktop app packaging.
 6. Alternative CLI launcher: run `launchers/07_build_maya_room.bat` for one room dry-run before creating `.ma`.
 7. Run `launchers/08_batch_maya_room.bat` for multi-SVG or multi-room dry-run/report.

@@ -1,8 +1,8 @@
 # Hướng dẫn sử dụng cho họa sĩ - TuPhuongVoLo-ArtPipeline
 
-> **Phiên bản hiện tại**: `v0.7.9 (007J-F1)`
+> **Phiên bản hiện tại**: `v0.7.10 (007L)`
 > **Giao diện hiện tại**: Desktop App (Tkinter) chạy local. Dự án đã bỏ kế hoạch phát triển local web UI trong ngắn hạn để tập trung hoàn toàn vào ứng dụng desktop.
-> **Quy trình chính (Maya-first)**: Illustrator SVG -> dry-run -> Dựng Maya .ma thật -> Họa sĩ polish thủ công trong Maya.
+> **Quy trình chính (Maya-first)**: Illustrator SVG -> kiểm tra SVG -> dry-run -> dựng Maya .ma thật -> họa sĩ polish thủ công trong Maya.
 > **⚠️ Lưu ý về AI và Phí**: Tính năng AI Preview là hoàn toàn tùy chọn, mang tính tham khảo và hiện tại đang tạm hoãn vì chi phí API. Họa sĩ **KHÔNG** cần cài đặt fal.ai, OpenAI, Gemini, ComfyUI, hay cấu hình bất kỳ API Key nào cho công việc hàng ngày. Vui lòng không dán API Key vào tài liệu, mã nguồn hoặc các commit. Không commit file `.env` hoặc các ảnh AI được sinh ra.
 
 ## Tổng quan
@@ -49,10 +49,16 @@ Nếu cleanup báo lỗi path chưa đóng kín hoặc còn transform, hãy quay
 
 1. Nhấp đúp `launchers/09_artist_desktop_app.bat`.
 2. Chọn file SVG sạch.
-3. Nhập tên phòng/layer, ví dụ `phong_kho`.
-4. Giữ `Dry-run` cho lần đầu để kiểm tra an toàn.
+3. Bấm `Kiểm tra SVG` để chạy preflight read-only. Nếu báo `FATAL`, sửa file/export trước khi đi tiếp.
+4. Nhập tên phòng/layer, ví dụ `phong_kho`.
 5. Bật `Render PNG preview` nếu cần ảnh xem nhanh.
-6. Khi dry-run đúng, bỏ chọn `Dry-run`, kiểm tra đường dẫn `mayapy.exe`, rồi chạy thật.
+6. Bấm `Chạy dry-run` để kiểm tra kế hoạch Maya an toàn.
+7. Khi dry-run đúng và exit code 0, kiểm tra đường dẫn `mayapy.exe`, rồi bấm `Chạy Maya thật`.
+8. Bấm mở `outputs/maya` và `outputs/preview` để kiểm tra file `.ma` và PNG preview.
+
+Phase 007L thêm luồng rõ ràng trong app: `Kiểm tra SVG` -> `Chạy dry-run` ->
+`Chạy Maya thật`. App ghi nhớ dry-run thành công cho đúng SVG/phòng/output/render
+hiện tại và sẽ nhắc chạy dry-run lại nếu settings thay đổi.
 
 Phase 007C giúp app kiểm tra lỗi trước khi chạy: thiếu SVG, SVG không tồn tại,
 tên phòng trống, output trống, thiếu repo root, thiếu `build_maya_room.py`,
@@ -184,10 +190,10 @@ tu_phuong_vo_lo_kho_main_preview_v001.png
 
 1. Vẽ và export SVG sạch từ Illustrator.
 2. Đặt SVG vào `assets/2d/svg_clean/` hoặc `drops/`.
-3. Ưu tiên chạy `launchers/09_artist_desktop_app.bat` và giữ dry-run trước.
-4. Nếu muốn dùng launcher CLI cũ, chạy `launchers/07_build_maya_room.bat` và chọn dry-run trước.
+3. Ưu tiên chạy `launchers/09_artist_desktop_app.bat`.
+4. Trong app, bấm `Kiểm tra SVG`, sau đó bấm `Chạy dry-run`.
 5. Đọc kết quả dry-run: kiểm tra tên phòng được chọn, prop marker phát hiện được, đường dẫn `.ma` và PNG preview dự kiến.
-6. Khi dry-run đúng, chạy lại và chọn không dry-run để tạo `.ma` thật bằng `mayapy.exe`.
+6. Khi dry-run đúng, bấm `Chạy Maya thật` để tạo `.ma` bằng `mayapy.exe`.
 7. Nếu cần ảnh kiểm tra nhanh, bật lựa chọn PNG preview.
 8. Mở file `.ma` trong Maya, kiểm tra Outliner và polish thủ công.
 
@@ -241,8 +247,10 @@ pipeline Maya vẫn hoạt động bình thường nếu không có AI, `FAL_KEY
 `fal-client`, hoặc internet.
 Feature 006 natural-language control vẫn deferred.
 
+Phase 007L thêm luồng hướng dẫn trong desktop app: kiểm tra SVG preflight,
+dry-run, rồi mới chạy Maya thật. Phiên bản app: `v0.7.10 (007L)`.
+
 Phase 007J thêm giao diện mèo thân thiện cho desktop app (bảng màu pastel ấm,
 header mèo, tiêu đề step thân thiện, nhãn gợi ý). Chỉ dùng `ttk.Style` nội
-bộ; không thêm thư viện, font, web UI, hay ảnh nhị phân. Phiên bản app:
-`v0.7.9 (007J-F1)`. HTML guide vẫn là nguồn hướng dẫn chính cho họa sĩ; app
+bộ; không thêm thư viện, font, web UI, hay ảnh nhị phân. HTML guide vẫn là nguồn hướng dẫn chính cho họa sĩ; app
 vẫn giao toàn bộ pipeline cho script CLI hiện có.

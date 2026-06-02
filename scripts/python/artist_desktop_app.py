@@ -18,8 +18,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-APP_VERSION = "0.7.9"
-APP_PHASE = "007J-F1"
+APP_VERSION = "0.7.10"
+APP_PHASE = "007L"
 APP_TITLE_BASE = "TuPhuongVoLo - Maya Artist App"
 APP_TITLE = f"{APP_TITLE_BASE} v{APP_VERSION} ({APP_PHASE})"
 
@@ -61,6 +61,7 @@ STATUS_READY = "Sẵn sàng"
 STATUS_RUNNING = "Đang chạy..."
 RUN_FINISHED_PREFIX = "__RUN_FINISHED__:"
 AI_RUN_FINISHED_PREFIX = "__AI_RUN_FINISHED__:"
+PREFLIGHT_RUN_FINISHED_PREFIX = "__PREFLIGHT_RUN_FINISHED__:"
 SVG_EMPTY_ERROR = "Chưa chọn file SVG."
 SVG_NOT_FOUND_ERROR = "Không tìm thấy file SVG. Hãy kiểm tra lại đường dẫn."
 ROOM_EMPTY_ERROR = "Chưa nhập tên phòng/layer."
@@ -70,9 +71,14 @@ AI_INPUT_EMPTY_ERROR = "Chưa chọn file PNG preview cho AI."
 AI_INPUT_NOT_FOUND_ERROR = "Không tìm thấy file PNG preview. Hãy kiểm tra lại đường dẫn."
 AI_INPUT_NOT_PNG_ERROR = "Input AI phải là file .png preview."
 AI_SCRIPT_MISSING_ERROR = "Không tìm thấy ai_polish_preview.py trong repo."
+PREFLIGHT_SCRIPT_MISSING_ERROR = "Không tìm thấy svg_preflight_check.py trong repo."
 AI_PROVIDER_ERROR = "Provider AI phải là mock hoặc fal."
 MAYAPY_REQUIRED_ERROR = "Chạy thật cần đường dẫn mayapy.exe hợp lệ."
 MAYAPY_NOT_FOUND_ERROR = "Không tìm thấy mayapy.exe. Hãy kiểm tra lại đường dẫn."
+DRY_RUN_REQUIRED_ERROR = (
+    "Chưa có dry-run thành công cho SVG/phòng/output/render hiện tại. "
+    "Hãy bấm 'Chạy dry-run' trước khi chạy Maya thật."
+)
 OUTPUT_SUBDIRS = {
     "maya": "maya",
     "preview": "preview",
@@ -81,12 +87,17 @@ OUTPUT_SUBDIRS = {
 }
 BUILD_SCRIPT_RELATIVE_PATH = Path("scripts") / "python" / "build_maya_room.py"
 AI_SCRIPT_RELATIVE_PATH = Path("scripts") / "python" / "ai_polish_preview.py"
+PREFLIGHT_SCRIPT_RELATIVE_PATH = Path("scripts") / "python" / "svg_preflight_check.py"
 ARTIST_GUIDE_RELATIVE_PATH = Path("docs") / "artist_workflow_cat_guide_vi.html"
 PROP_MARKER_TEMPLATE_RELATIVE_PATH = (
     Path("assets") / "2d" / "templates" / "illustrator_prop_marker_template.svg"
 )
 PROP_MARKER_TEMPLATE_DIR_RELATIVE_PATH = Path("assets") / "2d" / "templates"
-REPO_MARKER_RELATIVE_PATHS = (BUILD_SCRIPT_RELATIVE_PATH, AI_SCRIPT_RELATIVE_PATH)
+REPO_MARKER_RELATIVE_PATHS = (
+    BUILD_SCRIPT_RELATIVE_PATH,
+    AI_SCRIPT_RELATIVE_PATH,
+    PREFLIGHT_SCRIPT_RELATIVE_PATH,
+)
 REPO_ROOT_ENV_VAR = "TUPHUONGVOLO_REPO_ROOT"
 PIPELINE_PYTHON_ENV_VAR = "TUPHUONGVOLO_PYTHON_EXE"
 REPO_ROOT_ERROR = (
@@ -135,6 +146,14 @@ class ArtistAiPreviewOptions:
     prompt: str = ""
     skip_on_missing_config: bool = True
     dry_run: bool = True
+
+
+@dataclass(frozen=True)
+class ArtistPreflightOptions:
+    """User inputs needed to run the SVG preflight CLI."""
+
+    svg_path: Path
+    json_output: Path | None = None
 
 
 def _candidate_with_parents(path: Path) -> list[Path]:
@@ -202,6 +221,12 @@ def ai_script_path(root: Path | None = None) -> Path:
     """Return the optional AI polish preview CLI path."""
 
     return (root or repo_root()) / AI_SCRIPT_RELATIVE_PATH
+
+
+def preflight_script_path(root: Path | None = None) -> Path:
+    """Return the SVG preflight CLI path."""
+
+    return (root or repo_root()) / PREFLIGHT_SCRIPT_RELATIVE_PATH
 
 
 def artist_guide_path(root: Path | None = None) -> Path:
@@ -592,6 +617,26 @@ def ai_options_from_strings(
     )
 
 
+def default_preflight_report_path(output_dir: Path) -> Path:
+    """Return the default JSON report path for guided SVG preflight."""
+
+    return output_dir / OUTPUT_SUBDIRS["reports"] / "svg_preflight_report.json"
+
+
+def preflight_options_from_strings(
+    *,
+    svg_path: str,
+    output_dir: str,
+) -> ArtistPreflightOptions:
+    """Create SVG preflight option values from UI strings."""
+
+    selected_output_dir = Path(_clean_text(output_dir) or DEFAULT_OUTPUT_DIR)
+    return ArtistPreflightOptions(
+        svg_path=Path(_clean_text(svg_path)),
+        json_output=default_preflight_report_path(selected_output_dir),
+    )
+
+
 def validate_run_options(options: ArtistAppOptions) -> list[str]:
     """Return Vietnamese validation errors without touching the file system."""
 
@@ -671,6 +716,32 @@ def validate_ai_preview_paths(options: ArtistAiPreviewOptions, *, root: Path) ->
     return errors
 
 
+def validate_preflight_options(options: ArtistPreflightOptions) -> list[str]:
+    """Return Vietnamese validation errors for SVG preflight inputs."""
+
+    errors: list[str] = []
+    if _is_empty_path(options.svg_path):
+        errors.append(SVG_EMPTY_ERROR)
+    elif options.svg_path.suffix.lower() != ".svg":
+        errors.append("Input phải là file .svg sạch.")
+    return errors
+
+
+def validate_preflight_paths(options: ArtistPreflightOptions, *, root: Path) -> list[str]:
+    """Return Vietnamese validation errors for files needed by preflight."""
+
+    errors: list[str] = []
+    if not _is_empty_path(options.svg_path):
+        svg_path = resolve_repo_relative_path(options.svg_path, root)
+        if not svg_path.is_file():
+            errors.append(SVG_NOT_FOUND_ERROR)
+
+    if not preflight_script_path(root).is_file():
+        errors.append(PREFLIGHT_SCRIPT_MISSING_ERROR)
+
+    return errors
+
+
 def validate_runtime_environment(*, root: Path | None = None) -> list[str]:
     """Return Vietnamese validation errors for repo and Python runtime discovery."""
 
@@ -696,6 +767,22 @@ def validate_ai_runtime_environment(*, root: Path | None = None) -> list[str]:
         errors.append(REPO_ROOT_ERROR)
     elif not ai_script_path(detected_root).is_file():
         errors.append(AI_SCRIPT_MISSING_ERROR)
+
+    if getattr(sys, "frozen", False) and pipeline_python_command_prefix() is None:
+        errors.append(PIPELINE_PYTHON_ERROR)
+
+    return errors
+
+
+def validate_preflight_runtime_environment(*, root: Path | None = None) -> list[str]:
+    """Return Vietnamese validation errors for SVG preflight runtime discovery."""
+
+    errors: list[str] = []
+    detected_root = root or find_repo_root()
+    if detected_root is None:
+        errors.append(REPO_ROOT_ERROR)
+    elif not preflight_script_path(detected_root).is_file():
+        errors.append(PREFLIGHT_SCRIPT_MISSING_ERROR)
 
     if getattr(sys, "frozen", False) and pipeline_python_command_prefix() is None:
         errors.append(PIPELINE_PYTHON_ERROR)
@@ -785,6 +872,61 @@ def build_ai_preview_command(
     return command
 
 
+def build_svg_preflight_command(
+    options: ArtistPreflightOptions,
+    *,
+    python_executable: str | None = None,
+    python_command_prefix: list[str] | None = None,
+    root: Path | None = None,
+) -> list[str]:
+    """Build the exact CLI command for the SVG preflight checker."""
+
+    root = root or repo_root()
+    prefix = python_command_prefix or pipeline_python_command_prefix(
+        python_executable=python_executable
+    )
+    if prefix is None:
+        raise RuntimeError(PIPELINE_PYTHON_ERROR)
+
+    command = [
+        *prefix,
+        str(preflight_script_path(root)),
+        "--input",
+        str(options.svg_path),
+    ]
+    if options.json_output is not None:
+        command.extend(["--json-output", str(options.json_output)])
+    return command
+
+
+def dry_run_settings_key(options: ArtistAppOptions, *, root: Path) -> tuple[str, str, str, bool, int, int]:
+    """Return the settings fingerprint that must match before actual Maya run."""
+
+    svg_path = resolve_repo_relative_path(options.svg_path, root).resolve()
+    output_root = resolve_output_root(options.output_dir, root).resolve()
+    return (
+        str(svg_path).lower(),
+        options.room_name.strip().lower(),
+        str(output_root).lower(),
+        options.render_preview,
+        options.render_width,
+        options.render_height,
+    )
+
+
+def dry_run_matches_current_settings(
+    successful_dry_run_key: tuple[str, str, str, bool, int, int] | None,
+    options: ArtistAppOptions,
+    *,
+    root: Path,
+) -> bool:
+    """Return whether the current actual run is covered by a successful dry-run."""
+
+    if successful_dry_run_key is None:
+        return False
+    return successful_dry_run_key == dry_run_settings_key(options, root=root)
+
+
 def command_to_display(command: list[str]) -> str:
     """Return a Windows-friendly command string for the log area."""
 
@@ -828,6 +970,10 @@ class ArtistDesktopApp:
         self.log_queue: queue.Queue[str] = queue.Queue()
         self.worker: threading.Thread | None = None
         self.ai_worker: threading.Thread | None = None
+        self.preflight_worker: threading.Thread | None = None
+        self.active_maya_options: ArtistAppOptions | None = None
+        self.active_maya_root: Path | None = None
+        self.successful_dry_run_key: tuple[str, str, str, bool, int, int] | None = None
 
         self.svg_var = tk.StringVar()
         self.room_var = tk.StringVar(value=DEFAULT_ROOM_NAME)
@@ -839,6 +985,9 @@ class ArtistDesktopApp:
         self.height_var = tk.StringVar(value=str(DEFAULT_RENDER_HEIGHT))
         self.repo_root_var = tk.StringVar(value=repo_root_display_value())
         self.status_var = tk.StringVar(value=STATUS_READY)
+        self.workflow_status_var = tk.StringVar(
+            value="Luồng khuyến nghị: Kiểm tra SVG → Chạy dry-run → Chạy Maya thật → Mở output."
+        )
         self.command_var = tk.StringVar(value="")
         self.ai_png_var = tk.StringVar()
         self.ai_provider_var = tk.StringVar(value=DEFAULT_AI_PROVIDER)
@@ -919,6 +1068,21 @@ class ArtistDesktopApp:
             text="💡 Chọn file SVG sạch đã xuất từ Illustrator (không phải .ai gốc).",
             style="Hint.TLabel",
         ).grid(row=3, column=0, columnspan=3, sticky=tk.W, pady=(0, 2))
+        ttk.Label(
+            svg_section,
+            text=(
+                "Luồng an toàn: Kiểm tra SVG → Chạy dry-run → "
+                "Chạy Maya thật → Mở outputs/maya và outputs/preview."
+            ),
+            style="Hint.TLabel",
+        ).grid(row=4, column=0, columnspan=3, sticky=tk.W, pady=(0, 4))
+        self.preflight_button = ttk.Button(
+            svg_section,
+            text="Kiểm tra SVG",
+            command=self._run_preflight_clicked,
+            style=STYLE_GUIDE_BUTTON,
+        )
+        self.preflight_button.grid(row=5, column=0, sticky=tk.W, pady=(2, 0))
 
         # ── Step 2: Dựng Maya blockout ───────────────────────────────────────
         maya_section = ttk.LabelFrame(
@@ -975,13 +1139,35 @@ class ArtistDesktopApp:
             style="Hint.TLabel",
         ).grid(row=4, column=0, columnspan=3, sticky=tk.W, pady=(0, 2))
 
+        guided_buttons = ttk.Frame(maya_section)
+        guided_buttons.grid(row=5, column=0, columnspan=3, sticky=tk.W, pady=(6, 4))
+        self.dry_run_button = ttk.Button(
+            guided_buttons,
+            text="Chạy dry-run",
+            command=self._run_dry_run_clicked,
+            style=STYLE_GUIDE_BUTTON,
+        )
+        self.dry_run_button.pack(side=tk.LEFT)
+        self.actual_run_button = ttk.Button(
+            guided_buttons,
+            text="Chạy Maya thật",
+            command=self._run_actual_clicked,
+            style=STYLE_PRIMARY_BUTTON,
+        )
+        self.actual_run_button.pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Label(
+            guided_buttons,
+            text="Dry-run thành công sẽ mở khóa bước chạy thật cho đúng SVG/settings.",
+            style="Hint.TLabel",
+        ).pack(side=tk.LEFT, padx=(10, 0))
+
         buttons = ttk.Frame(maya_section)
-        buttons.grid(row=5, column=0, columnspan=3, sticky=tk.W, pady=(6, 4))
+        buttons.grid(row=6, column=0, columnspan=3, sticky=tk.W, pady=(2, 4))
         self.run_button = ttk.Button(
             buttons,
             text="Chạy pipeline",
             command=self._run_clicked,
-            style=STYLE_PRIMARY_BUTTON,
+            style=STYLE_UTILITY_BUTTON,
         )
         self.run_button.pack(side=tk.LEFT)
         ttk.Button(
@@ -1060,7 +1246,7 @@ class ArtistDesktopApp:
         status_section = ttk.LabelFrame(outer, text="📋 Log / trạng thái", padding=8)
         status_section.grid(row=6, column=0, sticky=tk.NSEW)
         status_section.columnconfigure(1, weight=1)
-        status_section.rowconfigure(4, weight=1)
+        status_section.rowconfigure(5, weight=1)
 
         ttk.Label(status_section, text="Trạng thái Maya").grid(
             row=0, column=0, sticky=tk.W, pady=(0, 2)
@@ -1084,6 +1270,13 @@ class ArtistDesktopApp:
             row=3, column=1, sticky=tk.EW, pady=3
         )
 
+        ttk.Label(status_section, text="Luồng khuyến nghị").grid(
+            row=4, column=0, sticky=tk.W, pady=3
+        )
+        ttk.Label(status_section, textvariable=self.workflow_status_var).grid(
+            row=4, column=1, sticky=tk.W, pady=3
+        )
+
         self.log_text = scrolledtext_module.ScrolledText(
             status_section,
             height=12,
@@ -1094,7 +1287,7 @@ class ArtistDesktopApp:
             relief="flat",
             borderwidth=1,
         )
-        self.log_text.grid(row=4, column=0, columnspan=2, sticky=tk.NSEW, pady=(6, 0))
+        self.log_text.grid(row=5, column=0, columnspan=2, sticky=tk.NSEW, pady=(6, 0))
 
     def _build_ai_preview_section(self, outer, *, row: int) -> None:
         tk = self.tk
@@ -1207,6 +1400,8 @@ class ArtistDesktopApp:
         )
         if path:
             self.svg_var.set(path)
+            self.successful_dry_run_key = None
+            self.workflow_status_var.set("Đã chọn SVG mới. Hãy kiểm tra SVG rồi chạy dry-run.")
 
     def _choose_output_dir(self) -> None:
         path = self.filedialog.askdirectory(title="Chọn thư mục output")
@@ -1252,6 +1447,74 @@ class ArtistDesktopApp:
             dry_run=self.ai_dry_run_var.get(),
         )
 
+    def _current_preflight_options(self) -> ArtistPreflightOptions:
+        return preflight_options_from_strings(
+            svg_path=self.svg_var.get(),
+            output_dir=self.output_var.get(),
+        )
+
+    def _run_preflight_clicked(self) -> None:
+        if self.preflight_worker and self.preflight_worker.is_alive():
+            self.messagebox.showinfo(
+                "Đang kiểm tra SVG",
+                "Preflight SVG đang chạy, hãy đợi log kết thúc.",
+            )
+            return
+
+        options = self._current_preflight_options()
+        root = find_repo_root()
+        self.repo_root_var.set(repo_root_display_value(root))
+        errors = validate_preflight_options(options) + validate_preflight_runtime_environment(
+            root=root
+        )
+        if root is not None:
+            errors.extend(validate_preflight_paths(options, root=root))
+        if errors:
+            self.messagebox.showerror("Cần kiểm tra lại", "\n".join(errors))
+            return
+
+        try:
+            if root is None:
+                raise RuntimeError(REPO_ROOT_ERROR)
+            assert options.json_output is not None
+            resolved_output = resolve_output_root(options.json_output.parent.parent, root)
+            preflight_options = ArtistPreflightOptions(
+                svg_path=options.svg_path,
+                json_output=default_preflight_report_path(resolved_output),
+            )
+            command = build_svg_preflight_command(preflight_options, root=root)
+        except RuntimeError as exc:
+            self.messagebox.showerror("Cần kiểm tra lại", str(exc))
+            return
+
+        display_command = command_to_display(command)
+        self.command_var.set(display_command)
+        self._append_log("\n=== Kiểm tra SVG preflight ===\n")
+        self._append_log(f"Repo root: {root}\n")
+        self._append_log(display_command + "\n\n")
+        self.status_var.set("Đang kiểm tra SVG...")
+        self.workflow_status_var.set("Bước 1/3: đang kiểm tra SVG trước khi dry-run.")
+        self.preflight_button.configure(state=self.tk.DISABLED)
+        self.preflight_worker = threading.Thread(
+            target=self._run_subprocess,
+            args=(
+                command,
+                root,
+                PREFLIGHT_RUN_FINISHED_PREFIX,
+                "Lỗi khi kiểm tra SVG",
+            ),
+            daemon=True,
+        )
+        self.preflight_worker.start()
+
+    def _run_dry_run_clicked(self) -> None:
+        self.dry_run_var.set(True)
+        self._run_clicked()
+
+    def _run_actual_clicked(self) -> None:
+        self.dry_run_var.set(False)
+        self._run_clicked()
+
     def _run_clicked(self) -> None:
         if self.worker and self.worker.is_alive():
             self.messagebox.showinfo(
@@ -1277,6 +1540,16 @@ class ArtistDesktopApp:
             self.messagebox.showerror("Cần kiểm tra lại", "\n".join(errors))
             return
 
+        if root is not None and not options.dry_run:
+            if not dry_run_matches_current_settings(
+                self.successful_dry_run_key,
+                options,
+                root=root,
+            ):
+                self.workflow_status_var.set("Chưa thể chạy thật: cần dry-run thành công trước.")
+                self.messagebox.showwarning("Cần chạy dry-run trước", DRY_RUN_REQUIRED_ERROR)
+                return
+
         try:
             if root is None:
                 raise RuntimeError(REPO_ROOT_ERROR)
@@ -1290,14 +1563,21 @@ class ArtistDesktopApp:
         self._append_log(f"Repo root: {root}\n")
         self._append_log(display_command + "\n\n")
         self.status_var.set(STATUS_RUNNING)
+        if options.dry_run:
+            self.workflow_status_var.set("Bước 2/3: đang chạy dry-run Maya.")
+        else:
+            self.workflow_status_var.set("Bước 3/3: đang chạy Maya thật.")
         self.run_button.configure(state=self.tk.DISABLED)
+        self.dry_run_button.configure(state=self.tk.DISABLED)
+        self.actual_run_button.configure(state=self.tk.DISABLED)
+        self.active_maya_options = options
+        self.active_maya_root = root
         self.worker = threading.Thread(
             target=self._run_subprocess,
             args=(command, root, RUN_FINISHED_PREFIX, "Lỗi khi chạy pipeline"),
             daemon=True,
         )
         self.worker.start()
-
     def _run_ai_clicked(self) -> None:
         if self.ai_worker and self.ai_worker.is_alive():
             self.messagebox.showinfo(
@@ -1382,10 +1662,50 @@ class ArtistDesktopApp:
             if message.startswith(RUN_FINISHED_PREFIX):
                 return_code = int(message.removeprefix(RUN_FINISHED_PREFIX))
                 self.run_button.configure(state=self.tk.NORMAL)
+                self.dry_run_button.configure(state=self.tk.NORMAL)
+                self.actual_run_button.configure(state=self.tk.NORMAL)
                 if return_code == 0:
                     self.status_var.set("Hoàn tất: mã 0")
+                    if (
+                        self.active_maya_options is not None
+                        and self.active_maya_root is not None
+                        and self.active_maya_options.dry_run
+                    ):
+                        self.successful_dry_run_key = dry_run_settings_key(
+                            self.active_maya_options,
+                            root=self.active_maya_root,
+                        )
+                        self.workflow_status_var.set(
+                            "Dry-run thành công. Bây giờ có thể chạy Maya thật cho cùng SVG/settings."
+                        )
+                    elif (
+                        self.active_maya_options is not None
+                        and not self.active_maya_options.dry_run
+                    ):
+                        self.workflow_status_var.set(
+                            "Maya build hoàn tất. Hãy mở outputs/maya và outputs/preview để kiểm tra."
+                        )
                 else:
                     self.status_var.set(f"Lỗi: mã {return_code}")
+                    if self.active_maya_options is not None and self.active_maya_options.dry_run:
+                        self.workflow_status_var.set("Dry-run chưa thành công. Chưa nên chạy Maya thật.")
+                    else:
+                        self.workflow_status_var.set("Pipeline lỗi. Hãy xem log trước khi chạy lại.")
+                self.active_maya_options = None
+                self.active_maya_root = None
+            elif message.startswith(PREFLIGHT_RUN_FINISHED_PREFIX):
+                return_code = int(message.removeprefix(PREFLIGHT_RUN_FINISHED_PREFIX))
+                self.preflight_button.configure(state=self.tk.NORMAL)
+                if return_code == 0:
+                    self.status_var.set("Preflight hoàn tất: mã 0")
+                    self.workflow_status_var.set(
+                        "Preflight OK/WARNING. Tiếp theo hãy chạy dry-run Maya."
+                    )
+                else:
+                    self.status_var.set(f"Preflight lỗi: mã {return_code}")
+                    self.workflow_status_var.set(
+                        "Preflight FATAL. Hãy sửa file/đường dẫn SVG trước khi dry-run."
+                    )
             elif message.startswith(AI_RUN_FINISHED_PREFIX):
                 return_code = int(message.removeprefix(AI_RUN_FINISHED_PREFIX))
                 self.ai_run_button.configure(state=self.tk.NORMAL)

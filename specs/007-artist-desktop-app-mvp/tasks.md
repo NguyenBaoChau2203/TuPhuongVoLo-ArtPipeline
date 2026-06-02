@@ -151,3 +151,13 @@
 - [X] T071 Keep local web UI out of near-term roadmap (confirm it's dropped)
 - [X] T072 Confirm docs-only scope (no Python code changes)
 
+## Phase 007L: One-click Guided Artist Workflow
+
+- [X] T073 Integrate `scripts/python/svg_preflight_check.py` into the desktop app as a subprocess step
+- [X] T074 Add `Kiểm tra SVG`, `Chạy dry-run`, and `Chạy Maya thật` guided buttons
+- [X] T075 Track dry-run success for the current SVG, room, output, and render settings
+- [X] T076 Block actual Maya run when the current settings do not have a matching successful dry-run
+- [X] T077 Keep manual/advanced controls and existing CLI behavior intact
+- [X] T078 Bump desktop app metadata to `v0.7.10 (007L)`
+- [X] T079 Update focused tests and Vietnamese workflow docs
+- [X] T080 Confirm no Maya scene generation logic, SVG parser logic, local web UI, Feature 006, external APIs, secrets, or new dependencies were added
