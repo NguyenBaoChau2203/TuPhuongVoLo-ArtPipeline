@@ -1,5 +1,9 @@
 # Desktop App MVP cho họa sĩ
 
+> **Phiên bản hiện tại**: `v0.7.9 (007J-F1)`
+> **Giao diện hiện tại**: Desktop App (Tkinter) chạy local. Dự án đã bỏ kế hoạch phát triển local web UI trong ngắn hạn để tập trung hoàn toàn vào ứng dụng desktop.
+> **Quy trình sản xuất chính (Maya-first)**: Illustrator SVG -> dry-run -> Dựng Maya .ma thật -> Họa sĩ polish thủ công trong Maya. Quy trình này hoạt động hoàn toàn local, ngoại tuyến và **không yêu cầu bất kỳ API AI trả phí nào (không cần API Key, không cần fal.ai, OpenAI, Gemini hay ComfyUI)**. Tính năng AI Preview chỉ là ảnh tham khảo tùy chọn, không thay thế file `.ma` và hiện đang tạm hoãn vì chi phí API.
+
 ## Mục đích
 
 Desktop app MVP là cửa sổ local nhỏ để chạy pipeline Maya-first đã được kiểm
@@ -152,7 +156,7 @@ Thay đổi giao diện:
 - Nút `Chạy pipeline` và `Tạo AI polish preview` nổi bật hơn (`Primary.TButton`).
 - Nút `Mở hướng dẫn` và `Mở SVG mẫu marker` dùng `Accent.TButton`.
 - Nút tiện ích còn lại dùng `Secondary.TButton`.
-- Phiên bản: `TuPhuongVoLo Maya Artist App v0.7.8 (007J)`.
+- Phiên bản: `TuPhuongVoLo Maya Artist App v0.7.9 (007J-F1)`.
 
 HTML guide vẫn là nguồn hướng dẫn chính cho họa sĩ. App không thay đổi pipeline
 Maya, SVG parser, AI provider, Feature 006, local web UI, hay manifest.

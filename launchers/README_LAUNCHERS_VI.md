@@ -68,18 +68,19 @@ nút `Xóa log` / `Copy lệnh`. Hãy dry-run trước. Chạy thật cần `may
 lệ, ví dụ `C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe`.
 
 Từ phase 007J, app có giao diện mèo thân thiện (bảng màu pastel ấm, header
-mèo 🐱, tiêu đề step thân thiện) và hiển thị phiên bản `v0.7.8 (007J)` trong
+mèo 🐱, tiêu đề step thân thiện) và hiển thị phiên bản `v0.7.9 (007J-F1)` trong
 title/UI. Developer có thể kiểm tra nhanh bằng:
 
 ```powershell
 python scripts/python/artist_desktop_app.py --version
 ```
 
-Desktop app cũng có khu vực `AI polish preview tùy chọn`. AI không tự chạy sau khi
-chạy Maya; người dùng phải chọn một PNG preview có sẵn và bấm `Tạo AI polish
-preview`. Mặc định provider là `mock`, `AI dry-run` bật, và output nằm trong
-`outputs/ai_preview/`. Provider `fal` là tùy chọn, chỉ dùng khi máy đã có
-`fal-client` và `FAL_KEY`.
+Desktop app cũng có khu vực `AI polish preview tùy chọn`. AI **không** tự chạy sau khi
+chạy Maya và không cần thiết cho công việc dựng phòng hàng ngày. Đây chỉ là tính năng
+tham khảo tùy chọn, hiện đang được tạm hoãn vì chi phí API. Người dùng không cần cấu hình
+bất kỳ API Key nào (như `FAL_KEY`) hay cài đặt `fal-client` cho quy trình làm việc thông thường.
+Mặc định provider là `mock`, `AI dry-run` bật, và output nằm trong `outputs/ai_preview/`.
+Dự án cũng đã bỏ kế hoạch phát triển local web UI trong ngắn hạn để tập trung hoàn toàn vào desktop app.
 
 Phase 007I thêm khu vực `Hướng dẫn & template` trong app với nút mở nhanh
 `docs/artist_workflow_cat_guide_vi.html`, SVG mẫu marker

@@ -42,6 +42,8 @@ clean SVG -> Blender MVP isometric draft / batch dry-run
 | 7.8 | Artist Workflow Cat Guide (007H) | `docs/artist_workflow_cat_guide_vi.html` | Static HTML guide; documentation only |
 | 7.9 | Artist App Guide/Template UX (007I) | `scripts/python/artist_desktop_app.py` | App buttons open guide, marker SVG template, and template folder |
 | 7.10 | Cat-Themed Artist App Visual Polish (007J) | `scripts/python/artist_desktop_app.py` | Pastel ttk palette, cat header, friendly section labels, helper text; v0.7.8 |
+| 7.11 | Cat UI Contrast Fix and Detailed App Guide (007J-F1) | `scripts/python/artist_desktop_app.py` | Contrast fix, detailed guide section in HTML; v0.7.9 |
+| 7.12 | De-emphasize Paid AI Preview in Docs (007J-F2) | `specs/007-artist-desktop-app-mvp/` | Docs aligned to v0.7.9 (007J-F1), AI optionality/deferred cost clarified |
 
 ## Developer Quickstart
 
@@ -130,6 +132,8 @@ Phase 007J polishes the desktop app with a cat-themed pastel UI using ttk.Style
 only (no new dependencies, no external fonts, no binary assets). The app bumps to
 `TuPhuongVoLo Maya Artist App v0.7.8 (007J)`. A warm cream/terracotta palette is
 applied, a friendly 🐱 cat header is added, and section labels become friendlier.
+Phase 007J-F1 resolves Tkinter pastel color contrast issues on Windows and adds a detailed section to the cat-themed HTML guide. The app version bumps to `v0.7.9 (007J-F1)`.
+Phase 007J-F2 de-emphasizes the optional paid AI preview across all artist-facing documentation, explicitly clarifying that no paid API keys (such as `FAL_KEY`) or optional dependencies (such as `fal-client`) are required for the standard workflow. It also confirms the local web UI is dropped from the near-term roadmap.
 Phase 007I keeps the optional desktop app AI polish preview separate and bumps
 the app to `TuPhuongVoLo Maya Artist App v0.7.7 (007I)` in the app title/UI. The
 packaging helper prints the same app version during dry-run. See

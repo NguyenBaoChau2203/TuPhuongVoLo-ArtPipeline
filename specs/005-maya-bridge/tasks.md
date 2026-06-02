@@ -147,3 +147,8 @@ Verified manually on artist/DCC machine with Autodesk Maya 2024 mayapy.exe. .ma 
 - [X] T090 Link template/guide from relevant docs
 - [X] T091 Add non-Maya validation that template is readable and detects supported markers
 - [X] T092 Confirm no Maya logic, SVG parser refactor, Feature 006, AI changes, external API, secrets, dependencies, binary assets, or generated outputs
+
+## Note on Production Direction (005.5-F2)
+
+- [X] T093 Note that AI image/API work is deferred and Maya-first blockout remains the production path
+

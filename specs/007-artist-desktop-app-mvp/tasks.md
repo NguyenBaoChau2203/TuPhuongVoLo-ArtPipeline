@@ -141,3 +141,13 @@
 - [X] Confirm no Maya generation logic, SVG parser logic, AI provider behavior,
   local web UI, Feature 006, external APIs, secrets, new dependencies,
   binary assets, or generated outputs were added
+
+## Phase 007J-F2: De-emphasize Paid AI Preview in Artist Docs
+
+- [X] T067 Clarify AI preview is optional/reference-only in docs and HTML guide
+- [X] T068 Clarify paid AI APIs are deferred due to cost
+- [X] T069 Clarify normal workflow does not require API keys or fal-client
+- [X] T070 Align current app version references to v0.7.9 (007J-F1) in docs
+- [X] T071 Keep local web UI out of near-term roadmap (confirm it's dropped)
+- [X] T072 Confirm docs-only scope (no Python code changes)
+
