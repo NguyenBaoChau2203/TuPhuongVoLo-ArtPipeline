@@ -101,6 +101,11 @@ Expected:
 - Detected room is `phong_kho`
 - `prop_shelf_unit` becomes `shelf_unit`
 - `prop_wooden_crate` becomes `wooden_crate`
+- Prop marker rotation suffixes are optional. Supported suffixes are `_rot90`,
+  `_rot180`, `_rot270`, `_rotation_90`, `_rotation_180`, and `_rotation_270`.
+  For example, `prop_shelf_unit_rot90` becomes `shelf_unit` with
+  `rotation_y_degrees: 90`, and `item_box_rotation_90` becomes `box` with
+  `rotation_y_degrees: 90`.
 - The primary artist-facing marker naming guide lives in
   `docs/artist_workflow_cat_guide_vi.html`
 - The Illustrator copy/paste template lives in
@@ -108,6 +113,9 @@ Expected:
 - Unknown prop names still create the simple cube fallback instead of failing
 - Dry-run prints planned `.ma`, geometry JSON, and preview PNG paths
 - Manifest is not updated
+
+Run this dry-run check before actual Maya execution when adding rotation
+suffixes, then inspect the printed prop marker list and planned `.ma` path.
 
 Template dry-run for Phase 005.3Q:
 

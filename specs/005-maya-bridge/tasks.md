@@ -152,3 +152,11 @@ Verified manually on artist/DCC machine with Autodesk Maya 2024 mayapy.exe. .ma 
 
 - [X] T093 Note that AI image/API work is deferred and Maya-first blockout remains the production path
 
+## Phase 17: Prop Orientation Markers MVP (005.3R)
+
+- [X] T094 Support `_rot90`, `_rot180`, `_rot270`, `_rotation_90`, `_rotation_180`, and `_rotation_270` suffixes on existing SVG prop markers
+- [X] T095 Strip orientation suffixes from normalized prop marker type/name while storing `rotation_y_degrees`
+- [X] T096 Apply `rotation_y_degrees` around Maya vertical/Y axis for explicit SVG prop placeholders
+- [X] T097 Add non-Maya tests for unrotated markers, supported rotation suffixes, JSON handoff metadata, and Maya transform application
+- [X] T098 Update Vietnamese artist SVG checklist and quickstart with supported suffixes and dry-run recommendation
+- [X] T099 Confirm no AI API, web UI, Feature 006, new dependencies, generated output commits, door/window logic, material/color logic, broad SVG parser refactor, or scaling/dimension changes are added

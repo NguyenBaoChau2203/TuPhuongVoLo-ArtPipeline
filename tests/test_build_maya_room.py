@@ -68,6 +68,24 @@ def write_svg(path: Path) -> Path:
     return path
 
 
+def write_prop_rotation_svg(path: Path) -> Path:
+    """Write a clean SVG with one unrotated and one rotated prop marker."""
+
+    path.write_text(
+        """<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120">
+  <g id="room_kho">
+    <path d="M0 0 L100 0 L100 100 L0 100 Z"/>
+    <g id="prop_shelf_unit"><rect x="10" y="10" width="20" height="8"/></g>
+    <g id="prop_table_rot90"><rect x="40" y="40" width="16" height="12"/></g>
+  </g>
+</svg>
+""",
+        encoding="utf-8",
+    )
+    return path
+
+
 def isolated_manifest(monkeypatch, tmp_path: Path) -> Path:
     """Redirect manifest lookups to a temp file."""
 
@@ -448,6 +466,33 @@ def test_geometry_json_payload_contains_svg_prop_markers(
     assert markers[0]["center_maya"] == [0.3, -0.14]
     assert markers[1]["center_maya"][0] == 0.65
     assert round(markers[1]["center_maya"][1], 2) == -0.35
+
+
+def test_geometry_json_payload_contains_prop_rotation_metadata(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg = write_prop_rotation_svg(tmp_path / "prop_rotation.svg")
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+    plan = builder.build_plan(args)
+
+    builder.write_geometry_json(plan)
+    payload = json.loads(plan.geometry_json.read_text(encoding="utf-8"))
+
+    markers = payload["prop_markers"]
+    assert [marker["prop_type"] for marker in markers] == ["shelf_unit", "table"]
+    assert [marker["rotation_y_degrees"] for marker in markers] == [0, 90]
 
 
 def test_output_naming_follows_convention(tmp_path: Path, monkeypatch) -> None:
@@ -843,6 +888,38 @@ def test_maya_scene_builder_uses_procedural_group_and_generic_fallback() -> None
     fallback = next(cube for cube in cmds.cubes if cube["name"] == "prop_unknown_totem_01")
     assert fallback["size"] == scene_builder.GENERIC_PROP_SIZE
     assert ("prop_unknown_totem_01", "props") in cmds.parents
+
+
+def test_maya_scene_builder_applies_marker_y_rotation_to_props() -> None:
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+
+    created = scene_builder.create_svg_prop_markers(
+        cmds,
+        [
+            {
+                "prop_type": "shelf_unit",
+                "center_maya": [1.0, -2.0],
+                "rotation_y_degrees": 90,
+                "bbox_svg": [0.0, 0.0, 80.0, 40.0],
+            },
+            {
+                "prop_type": "unknown_totem",
+                "center_maya": [2.0, -3.0],
+                "rotation_y_degrees": 270,
+                "bbox_svg": [0.0, 0.0, 50.0, 50.0],
+            },
+        ],
+        "MAT_props",
+        "MAT_prop_details",
+        "props",
+        units_scale=0.01,
+    )
+
+    assert created == 2
+    assert cmds.transforms["prop_shelf_unit_01"]["rotation"] == (0.0, 90.0, 0.0)
+    assert cmds.transforms["prop_shelf_unit_01"]["pivots"] == (1.0, 0.0, -2.0)
+    assert cmds.transforms["prop_unknown_totem_01"]["rotation"] == (0.0, 270.0, 0.0)
 
 
 def test_maya_scene_builder_prefers_svg_markers_over_preset_props() -> None:

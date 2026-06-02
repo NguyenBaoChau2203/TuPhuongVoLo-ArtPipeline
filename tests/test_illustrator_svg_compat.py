@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from detect_rooms_from_svg import detect_rooms, normalize_prop_marker_type
+import pytest
+
+from detect_rooms_from_svg import (
+    detect_rooms,
+    normalize_prop_marker_label,
+    normalize_prop_marker_type,
+)
 
 FIXTURE_DIR = Path(__file__).parent / "in"
 
@@ -44,6 +50,57 @@ def test_prop_marker_name_normalization() -> None:
     assert normalize_prop_marker_type("item_cardboard_box") == "cardboard_box"
     assert normalize_prop_marker_type("object_console_desk") == "console_desk"
     assert normalize_prop_marker_type("room_kho") is None
+    assert normalize_prop_marker_label("prop_shelf_unit") == ("shelf_unit", 0)
+
+
+@pytest.mark.parametrize(
+    ("label", "expected_type", "expected_rotation"),
+    [
+        ("prop_shelf_unit_rot90", "shelf_unit", 90),
+        ("prop_wooden_crate_rot180", "wooden_crate", 180),
+        ("prop_table_rot270", "table", 270),
+        ("item_box_rotation_90", "box", 90),
+        ("object_barrel_rotation_270", "barrel", 270),
+    ],
+)
+def test_prop_marker_rotation_suffix_normalization(
+    label: str,
+    expected_type: str,
+    expected_rotation: int,
+) -> None:
+    assert normalize_prop_marker_label(label) == (expected_type, expected_rotation)
+    assert normalize_prop_marker_type(label) == expected_type
+
+
+@pytest.mark.parametrize(
+    ("label", "expected_type", "expected_rotation"),
+    [
+        ("prop_shelf_unit", "shelf_unit", 0),
+        ("prop_shelf_unit_rot90", "shelf_unit", 90),
+        ("prop_wooden_crate_rot180", "wooden_crate", 180),
+        ("prop_table_rot270", "table", 270),
+        ("item_box_rotation_90", "box", 90),
+    ],
+)
+def test_detected_prop_marker_rotation_metadata(
+    tmp_path: Path,
+    label: str,
+    expected_type: str,
+    expected_rotation: int,
+) -> None:
+    svg = write_svg(
+        tmp_path / f"{label}.svg",
+        '<g id="room_kho">'
+        '<path d="M0 0 L100 0 L100 100 L0 100 Z"/>'
+        f'<g id="{label}"><rect x="20" y="30" width="10" height="8"/></g>'
+        "</g>",
+    )
+
+    kho = _room(detect_rooms(svg), "kho")
+
+    assert len(kho.prop_markers) == 1
+    assert kho.prop_markers[0].prop_type == expected_type
+    assert kho.prop_markers[0].rotation_y_degrees == expected_rotation
 
 
 def test_nested_groups_fixture_detects_both_rooms() -> None:
@@ -185,6 +242,7 @@ def test_nested_prop_markers_fixture_detects_room_markers() -> None:
         "shelf_unit",
         "wooden_crate",
     ]
+    assert [marker.rotation_y_degrees for marker in kho.prop_markers] == [0, 0]
     assert "hidden_box" not in {marker.prop_type for marker in kho.prop_markers}
     assert kho.group_path == ["Layer 1", "Phòng Kho"]
 

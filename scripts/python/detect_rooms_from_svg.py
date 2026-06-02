@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -47,6 +48,9 @@ from svg_shapes import (
 
 INKSCAPE_LABEL_ATTR = "{http://www.inkscape.org/namespaces/inkscape}label"
 PROP_MARKER_PREFIXES = ("prop_", "item_", "object_")
+PROP_ROTATION_SUFFIX_RE = re.compile(
+    r"_(?:rot(?P<short>90|180|270)|rotation_(?P<long>90|180|270))$"
+)
 
 
 @dataclass(frozen=True)
@@ -59,6 +63,7 @@ class PropMarker:
     center_svg: Point2D
     bbox_svg: tuple[float, float, float, float]
     source_kind: str
+    rotation_y_degrees: int = 0
     warnings: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -71,6 +76,7 @@ class PropMarker:
             "center_svg": [self.center_svg[0], self.center_svg[1]],
             "bbox_svg": list(self.bbox_svg),
             "source_kind": self.source_kind,
+            "rotation_y_degrees": self.rotation_y_degrees,
             "warnings": list(self.warnings),
         }
 
@@ -134,11 +140,24 @@ def normalize_room_name(label: str) -> str:
 def normalize_prop_marker_type(label: str) -> str | None:
     """Return the normalized prop type for prop/item/object marker labels."""
 
+    normalized, _rotation = normalize_prop_marker_label(label)
+    return normalized
+
+
+def normalize_prop_marker_label(label: str) -> tuple[str | None, int]:
+    """Return normalized prop type and optional Y-axis rotation for a marker label."""
+
     normalized = normalize_asset_name(label.strip())
     for prefix in PROP_MARKER_PREFIXES:
         if normalized.startswith(prefix) and len(normalized) > len(prefix):
-            return normalized[len(prefix) :]
-    return None
+            prop_type = normalized[len(prefix) :]
+            rotation = 0
+            suffix_match = PROP_ROTATION_SUFFIX_RE.search(prop_type)
+            if suffix_match:
+                rotation = int(suffix_match.group("short") or suffix_match.group("long"))
+                prop_type = prop_type[: suffix_match.start()]
+            return prop_type, rotation
+    return None, 0
 
 
 def _element_label(element: object) -> str:
@@ -214,6 +233,7 @@ class _PropMarkerBucket:
     """Mutable accumulator for one prop marker group/layer."""
 
     prop_type: str
+    rotation_y_degrees: int
     original_label: str
     group_path: list[str]
     candidates: list[ShapeCandidate] = field(default_factory=list)
@@ -316,6 +336,7 @@ def _make_prop_marker(marker: _PropMarkerBucket) -> tuple[PropMarker | None, lis
             center_svg=((min_x + max_x) / 2.0, (min_y + max_y) / 2.0),
             bbox_svg=bbox,
             source_kind=source_kind,
+            rotation_y_degrees=marker.rotation_y_degrees,
             warnings=list(dict.fromkeys(warnings)),
         ),
         [],
@@ -351,10 +372,11 @@ def _collect_shapes(
         if tag in CONTAINER_TAGS:
             label = _element_label(child)
             if label:
-                prop_type = normalize_prop_marker_type(label)
+                prop_type, rotation_y_degrees = normalize_prop_marker_label(label)
                 if prop_type:
                     marker_bucket = _PropMarkerBucket(
                         prop_type=prop_type,
+                        rotation_y_degrees=rotation_y_degrees,
                         original_label=label,
                         group_path=[*group_path, label],
                         warnings=list(transform_warnings),
