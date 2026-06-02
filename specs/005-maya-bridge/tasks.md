@@ -131,3 +131,11 @@ Verified manually on artist/DCC machine with Autodesk Maya 2024 mayapy.exe. .ma 
 - [X] T080 Add non-Maya tests for prop-aware scene bounds, malformed marker safety, showcase dry-run marker detection, dry-run manifest safety, and render preview planning
 - [X] T081 Update Vietnamese artist docs, quickstart, README, and verification notes with marker/showcase guidance
 - [X] T082 Confirm no Feature 006, AI provider changes, desktop app AI behavior changes, external APIs, secrets, dependencies, binary assets, SVG parser refactor, manifest safety changes, or generated output commits are added
+
+## Phase 15: Procedural Prop Preview DCC Verification Checkpoint (005.3P-V1-R)
+
+- [X] T083 Create `docs/verification/005_3P_V1_procedural_prop_preview_verified.md`
+- [X] T084 Record DCC verification status as pending real Maya/DCC verification until operator results are provided
+- [X] T085 Document preview visual sanity improvements from 005.3P-V1
+- [X] T086 Add next-improvement audit with prioritized future phases
+- [X] T087 Confirm documentation/checkpoint/audit only: no generated outputs, no Feature 006, no AI changes, no Python/Maya/parser/desktop app logic changes, no external APIs, secrets, dependencies, binary assets, build/dist, exe/spec/zip, or reports
