@@ -82,6 +82,14 @@ python scripts/python/build_maya_room.py --input drops/phong_cua_ban.svg --room 
       Hãy chạy dry-run trước để kiểm tra tên prop và kế hoạch dựng Maya trước khi chạy thật.
 - [ ] Đây chỉ là blockout để kiểm tra bố cục, **không phải model 3D cuối cùng**. Họa sĩ vẫn polish và thay asset thật trong Maya sau.
 
+## Đánh dấu cửa và cửa sổ trong SVG
+
+- [ ] Để Maya tạo marker vị trí cửa/cửa sổ, đặt tên group/layer bắt đầu bằng `door_` hoặc `window_`.
+      Ví dụ: `door_main`, `door_left`, `window_small`, `window_back_01`.
+- [ ] Phase 005.3S chỉ tạo khối marker đơn giản trong Maya để nhìn vị trí. Pipeline **chưa khoét tường**,
+      chưa boolean, và chưa tạo lỗ cửa/cửa sổ thật.
+- [ ] Sau khi build `.ma`, mở scene trong Maya và kiểm tra group `openings` để xem marker có đúng vị trí không.
+
 > Checkpoint kỹ thuật: procedural prop blockout đã được kiểm chứng trong Maya ở `docs/verification/005_3P_procedural_prop_blockout_verified.md`. File test chỉ kiểm tra đúng kỹ thuật; preview có thể còn đơn giản và sẽ cần một phase polish visual riêng.
 
 > Ghi chú visual sanity 005.3P-V1: `tests/in/illustrator_prop_markers.svg` là fixture kỹ thuật nhỏ nên ảnh preview có thể nhìn thưa hoặc chỉ nổi bật một vài prop cao. Khi muốn kiểm tra nhiều loại prop blockout rõ hơn, dùng `tests/in/illustrator_prop_showcase.svg` với phòng `phong_showcase`. Prop procedural vẫn là blockout để kiểm tra bố cục, không phải model cuối cùng.

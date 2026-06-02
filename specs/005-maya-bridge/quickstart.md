@@ -117,6 +117,23 @@ Expected:
 Run this dry-run check before actual Maya execution when adding rotation
 suffixes, then inspect the printed prop marker list and planned `.ma` path.
 
+Door/window marker dry-run for Phase 005.3S:
+
+```powershell
+python scripts/python/build_maya_room.py `
+  --input tests/in/illustrator_opening_markers.svg `
+  --room kho `
+  --output-dir outputs `
+  --dry-run
+```
+
+Marker groups/layers whose normalized names start with `door_` or `window_`
+are written to geometry JSON as `opening_markers`. Maya creates simple
+placeholder cubes under an `openings` group, with deterministic names such as
+`door_main_01` and `window_back_01`. This phase intentionally does not cut
+walls, run booleans, or create real architectural holes; inspect the markers in
+Maya after the build.
+
 Template dry-run for Phase 005.3Q:
 
 ```powershell

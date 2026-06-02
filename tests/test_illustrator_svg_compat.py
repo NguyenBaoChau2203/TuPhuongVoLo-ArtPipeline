@@ -8,6 +8,7 @@ import pytest
 
 from detect_rooms_from_svg import (
     detect_rooms,
+    normalize_opening_marker_label,
     normalize_prop_marker_label,
     normalize_prop_marker_type,
 )
@@ -45,12 +46,28 @@ def _prop(report, prop_type):
     raise AssertionError(f"Prop {prop_type} not found in {[m.prop_type for m in report.prop_markers]}")
 
 
+def _opening(report, marker_type, marker_name):
+    for marker in report.opening_markers:
+        if marker.marker_type == marker_type and marker.marker_name == marker_name:
+            return marker
+    found = [(m.marker_type, m.marker_name) for m in report.opening_markers]
+    raise AssertionError(f"Opening {marker_type}:{marker_name} not found in {found}")
+
+
 def test_prop_marker_name_normalization() -> None:
     assert normalize_prop_marker_type("prop_shelf_unit") == "shelf_unit"
     assert normalize_prop_marker_type("item_cardboard_box") == "cardboard_box"
     assert normalize_prop_marker_type("object_console_desk") == "console_desk"
     assert normalize_prop_marker_type("room_kho") is None
     assert normalize_prop_marker_label("prop_shelf_unit") == ("shelf_unit", 0)
+
+
+def test_opening_marker_name_normalization() -> None:
+    assert normalize_opening_marker_label("door_main") == ("door", "main")
+    assert normalize_opening_marker_label("door_left") == ("door", "left")
+    assert normalize_opening_marker_label("window_back_01") == ("window", "back_01")
+    assert normalize_opening_marker_label("prop_shelf_unit") == (None, None)
+    assert normalize_opening_marker_label("door") == (None, None)
 
 
 @pytest.mark.parametrize(
@@ -229,6 +246,29 @@ def test_existing_simple_fixture_still_works() -> None:
     assert len(reports) == 1
     assert reports[0].room_name == "kho"
     assert reports[0].has_usable_boundary
+    assert reports[0].opening_markers == []
+
+
+def test_detect_door_and_window_opening_markers(tmp_path: Path) -> None:
+    svg = write_svg(
+        tmp_path / "openings.svg",
+        '<g id="room_kho">'
+        '<path d="M0 0 L120 0 L120 80 L0 80 Z"/>'
+        '<g id="door_main"><rect x="8" y="72" width="16" height="4"/></g>'
+        '<g id="window_back_01"><rect x="80" y="0" width="20" height="4"/></g>'
+        "</g>",
+    )
+
+    kho = _room(detect_rooms(svg), "kho")
+    door = _opening(kho, "door", "main")
+    window = _opening(kho, "window", "back_01")
+
+    assert door.source_name == "door_main"
+    assert door.group_path == ["room_kho", "door_main"]
+    assert door.center_svg == (16.0, 74.0)
+    assert door.bbox_svg == (8.0, 72.0, 24.0, 76.0)
+    assert window.source_name == "window_back_01"
+    assert window.center_svg == (90.0, 2.0)
 
 
 def test_nested_prop_markers_fixture_detects_room_markers() -> None:
@@ -260,3 +300,21 @@ def test_prop_markers_preserve_group_path_and_transform_centers() -> None:
     assert crate.source_kind == "polygon"
     assert crate.center_svg == (80.0, 60.0)
     assert any("prop_decorative_text" in warning for warning in kho.warnings)
+
+
+def test_opening_markers_do_not_change_prop_marker_detection(tmp_path: Path) -> None:
+    svg = write_svg(
+        tmp_path / "openings_and_props.svg",
+        '<g id="room_kho">'
+        '<path d="M0 0 L120 0 L120 80 L0 80 Z"/>'
+        '<g id="door_main"><rect x="8" y="72" width="16" height="4"/></g>'
+        '<g id="prop_shelf_unit"><rect x="40" y="30" width="20" height="8"/></g>'
+        "</g>",
+    )
+
+    kho = _room(detect_rooms(svg), "kho")
+
+    assert [_marker.prop_type for _marker in kho.prop_markers] == ["shelf_unit"]
+    assert [(marker.marker_type, marker.marker_name) for marker in kho.opening_markers] == [
+        ("door", "main")
+    ]

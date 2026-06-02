@@ -160,3 +160,13 @@ Verified manually on artist/DCC machine with Autodesk Maya 2024 mayapy.exe. .ma 
 - [X] T097 Add non-Maya tests for unrotated markers, supported rotation suffixes, JSON handoff metadata, and Maya transform application
 - [X] T098 Update Vietnamese artist SVG checklist and quickstart with supported suffixes and dry-run recommendation
 - [X] T099 Confirm no AI API, web UI, Feature 006, new dependencies, generated output commits, door/window logic, material/color logic, broad SVG parser refactor, or scaling/dimension changes are added
+
+## Phase 18: Door/Window Markers MVP (005.3S)
+
+- [X] T100 Detect SVG group/layer names starting with `door_` or `window_` as opening markers
+- [X] T101 Add `opening_markers` geometry JSON handoff entries with SVG/local/Maya centers and SVG bbox
+- [X] T102 Create a deterministic Maya `openings` group only when opening markers exist
+- [X] T103 Create simple door/window placeholder cubes with deterministic sanitized names
+- [X] T104 Add non-Maya tests for door/window detection, JSON handoff, Maya placeholder names, no-marker compatibility, and unchanged prop markers
+- [X] T105 Update Vietnamese artist docs and quickstart with marker naming and marker-only guidance
+- [X] T106 Confirm no AI API, web UI, Feature 006, new dependencies, generated output commits, wall cutting, boolean operations, material changes, prop library changes, or unrelated parser/Maya refactor are added

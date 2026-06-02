@@ -300,6 +300,18 @@ def geometry_payload(
         marker_payload["center_maya"] = [maya_center[0], maya_center[1]]
         prop_markers.append(marker_payload)
 
+    opening_markers: list[dict[str, Any]] = []
+    for marker in room.opening_markers:
+        local_center = (
+            marker.center_svg[0] - source_min_x,
+            marker.center_svg[1] - source_min_y,
+        )
+        maya_center = scale_points_to_blender([local_center], SVG_TO_MAYA_SCALE)[0]
+        marker_payload = marker.to_dict()
+        marker_payload["center_local"] = [local_center[0], local_center[1]]
+        marker_payload["center_maya"] = [maya_center[0], maya_center[1]]
+        opening_markers.append(marker_payload)
+
     return {
         "room_name": room.room_name,
         "original_label": room.original_label,
@@ -320,6 +332,7 @@ def geometry_payload(
         "room_preset_name": room_preset_name,
         "room_preset": room_preset,
         "prop_markers": prop_markers,
+        "opening_markers": opening_markers,
     }
 
 
@@ -454,6 +467,11 @@ def print_plan(plan: MayaBuildPlan) -> None:
     if plan.room.prop_markers:
         props = ", ".join(marker.prop_type for marker in plan.room.prop_markers)
         print(f"Prop marker SVG ({len(plan.room.prop_markers)}): {props}")
+    if plan.room.opening_markers:
+        openings = ", ".join(
+            f"{marker.marker_type}:{marker.marker_name}" for marker in plan.room.opening_markers
+        )
+        print(f"Opening marker SVG ({len(plan.room.opening_markers)}): {openings}")
     print(
         "Transform: "
         + ("đã áp dụng vào tọa độ phòng." if plan.transform_applied else "không có/không cần.")

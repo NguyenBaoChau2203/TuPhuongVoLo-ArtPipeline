@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="100">
+  <g id="Layer 1">
+    <g id="room_kho">
+      <path d="M0 0 L120 0 L120 80 L0 80 Z"/>
+      <g id="door_main">
+        <rect x="8" y="72" width="16" height="4"/>
+      </g>
+      <g id="window_back_01">
+        <rect x="80" y="0" width="20" height="4"/>
+      </g>
+      <g id="prop_shelf_unit">
+        <rect x="40" y="30" width="20" height="8"/>
+      </g>
+    </g>
+  </g>
+</svg>

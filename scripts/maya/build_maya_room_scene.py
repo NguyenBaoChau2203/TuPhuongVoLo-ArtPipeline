@@ -21,6 +21,16 @@ MIN_ORTHOGRAPHIC_WIDTH = 6.0
 GENERIC_PROP_SIZE = (0.5, 0.6, 0.5)
 MARKER_BBOX_DEFAULT_SCALE = 0.01
 PROP_MARKER_PREFIXES = ("prop_", "item_", "object_")
+OPENING_MARKER_TYPES = {"door", "window"}
+OPENING_MARKER_SIZES = {
+    "door": (0.7, 2.0, 0.06),
+    "window": (0.8, 1.0, 0.06),
+}
+OPENING_MARKER_CENTER_Y = {
+    "door": 1.0,
+    "window": 1.35,
+}
+OPENING_NUMBER_SUFFIX_RE = re.compile(r"_\d{2,}$")
 PROCEDURAL_PROP_SIZES = {
     "bed": (0.9, 0.55, 1.6),
     "table": (1.0, 0.75, 0.65),
@@ -345,6 +355,90 @@ def safe_maya_name(value: Any, fallback: str = "prop") -> str:
     if not text or not text[0].isalpha():
         return fallback
     return text
+
+
+def opening_marker_type(value: Any) -> str:
+    """Return a supported opening marker type."""
+
+    token = safe_maya_name(value, fallback="opening")
+    return token if token in OPENING_MARKER_TYPES else "opening"
+
+
+def opening_marker_center_maya(marker: dict[str, Any]) -> tuple[float, float] | None:
+    """Return an opening marker center from geometry JSON, or None if invalid."""
+
+    try:
+        return point2(marker.get("center_maya"))
+    except (TypeError, ValueError):
+        return None
+
+
+def opening_marker_size(marker_type: Any) -> tuple[float, float, float]:
+    """Return a simple thin placeholder size for door/window markers."""
+
+    return OPENING_MARKER_SIZES.get(opening_marker_type(marker_type), (0.6, 1.0, 0.06))
+
+
+def opening_marker_center_y(marker_type: Any) -> float:
+    """Return a simple vertical center for the opening marker placeholder."""
+
+    return OPENING_MARKER_CENTER_Y.get(opening_marker_type(marker_type), 0.5)
+
+
+def opening_marker_node_name(marker: dict[str, Any], name_counts: dict[str, int]) -> str:
+    """Return a deterministic Maya node name for one opening marker."""
+
+    marker_type = opening_marker_type(marker.get("marker_type"))
+    marker_name = safe_maya_name(marker.get("marker_name"), fallback="marker")
+    base = safe_maya_name(f"{marker_type}_{marker_name}", fallback=f"{marker_type}_marker")
+    count = name_counts.get(base, 0) + 1
+    name_counts[base] = count
+    if OPENING_NUMBER_SUFFIX_RE.search(base) and count == 1:
+        return base
+    return f"{base}_{count:02d}"
+
+
+def create_opening_marker_cube(
+    cmds: Any,
+    name: str,
+    marker_type: str,
+    center: tuple[float, float],
+    parent: str,
+) -> str:
+    """Create one simple door/window placeholder cube without cutting walls."""
+
+    width, height, depth = opening_marker_size(marker_type)
+    node = cmds.polyCube(name=name, width=width, height=height, depth=depth)[0]
+    cmds.xform(
+        node,
+        translation=(center[0], opening_marker_center_y(marker_type), center[1]),
+    )
+    cmds.parent(node, parent)
+    return node
+
+
+def create_svg_opening_markers(
+    cmds: Any,
+    opening_markers: list[Any],
+    parent: str,
+) -> int:
+    """Create placeholder door/window markers from explicit SVG markers."""
+
+    created = 0
+    name_counts: dict[str, int] = {}
+    for raw_marker in opening_markers:
+        if not isinstance(raw_marker, dict):
+            continue
+        center = opening_marker_center_maya(raw_marker)
+        if center is None:
+            continue
+        marker_type = opening_marker_type(raw_marker.get("marker_type"))
+        if marker_type not in OPENING_MARKER_TYPES:
+            continue
+        name = opening_marker_node_name(raw_marker, name_counts)
+        create_opening_marker_cube(cmds, name, marker_type, center, parent)
+        created += 1
+    return created
 
 
 def normalize_prop_type(value: Any) -> str:
@@ -1094,6 +1188,9 @@ def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
     prop_markers = data.get("prop_markers", [])
     if not isinstance(prop_markers, list):
         prop_markers = []
+    opening_markers = data.get("opening_markers", [])
+    if not isinstance(opening_markers, list):
+        opening_markers = []
     points = [point2(point) for point in data["boundary_points"]]
     wall_segments = [
         (point2(segment["start"]), point2(segment["end"]))
@@ -1112,6 +1209,10 @@ def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
     cmds.parent(walls_group, root)
     cmds.parent(props_group, root)
     cmds.parent(lights_group, root)
+    openings_group: str | None = None
+    if opening_markers:
+        openings_group = cmds.group(empty=True, name="openings")
+        cmds.parent(openings_group, root)
 
     floor_mat = create_material(
         cmds,
@@ -1163,6 +1264,8 @@ def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
         )
     else:
         create_placeholder_props(cmds, room_preset, bounds, prop_mat, prop_detail_mat, props_group)
+    if openings_group is not None:
+        create_svg_opening_markers(cmds, opening_markers, openings_group)
     create_camera_and_lights(cmds, room_name, camera_bounds, framing_height, lights_group)
 
     maya_output.parent.mkdir(parents=True, exist_ok=True)

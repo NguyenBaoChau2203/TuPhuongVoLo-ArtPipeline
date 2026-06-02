@@ -433,6 +433,7 @@ def test_geometry_json_payload_contains_boundary_and_walls(tmp_path: Path, monke
     assert len(payload["boundary_points"]) == 4
     assert len(payload["wall_segments"]) == 4
     assert payload["units"]["maya_linear"] == "meter"
+    assert payload["opening_markers"] == []
 
 
 def test_geometry_json_payload_contains_svg_prop_markers(
@@ -493,6 +494,43 @@ def test_geometry_json_payload_contains_prop_rotation_metadata(
     markers = payload["prop_markers"]
     assert [marker["prop_type"] for marker in markers] == ["shelf_unit", "table"]
     assert [marker["rotation_y_degrees"] for marker in markers] == [0, 90]
+
+
+def test_geometry_json_payload_contains_opening_markers(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(FIXTURE_DIR / "illustrator_opening_markers.svg"),
+            "--room",
+            "kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+    plan = builder.build_plan(args)
+
+    builder.write_geometry_json(plan)
+    payload = json.loads(plan.geometry_json.read_text(encoding="utf-8"))
+
+    markers = payload["opening_markers"]
+    assert [(marker["marker_type"], marker["marker_name"]) for marker in markers] == [
+        ("door", "main"),
+        ("window", "back_01"),
+    ]
+    assert markers[0]["source_name"] == "door_main"
+    assert markers[0]["group_path"] == ["Layer 1", "room_kho", "door_main"]
+    assert markers[0]["center_svg"] == [16.0, 74.0]
+    assert markers[0]["bbox_svg"] == [8.0, 72.0, 24.0, 76.0]
+    assert markers[0]["center_local"] == [16.0, 74.0]
+    assert markers[0]["center_maya"] == [0.16, -0.74]
+    assert markers[1]["source_name"] == "window_back_01"
+    assert markers[1]["center_maya"] == [0.9, -0.02]
+    assert [marker["prop_type"] for marker in payload["prop_markers"]] == ["shelf_unit"]
 
 
 def test_output_naming_follows_convention(tmp_path: Path, monkeypatch) -> None:
@@ -771,6 +809,11 @@ def test_maya_scene_builder_has_marker_placeholder_helpers() -> None:
     assert scene_builder.normalize_prop_type("prop_couch") == "sofa"
     assert scene_builder.normalize_prop_type("refrigerator") == "fridge"
     assert scene_builder.marker_center_maya({"center_maya": [0.3, -0.14]}) == (0.3, -0.14)
+    assert scene_builder.opening_marker_center_maya({"center_maya": [0.16, -0.74]}) == (
+        0.16,
+        -0.74,
+    )
+    assert scene_builder.opening_marker_size("door") == (0.7, 2.0, 0.06)
 
 
 def test_maya_scene_builder_maps_supported_prop_types_to_procedural_builders() -> None:
@@ -828,6 +871,70 @@ def test_maya_scene_builder_uses_maya_safe_part_suffix_helpers() -> None:
     assert scene_builder.depth_token(1) == "back"
     assert scene_builder.corner_token(-1, -1) == "left_front"
     assert scene_builder.corner_token(1, 1) == "right_back"
+
+
+def test_maya_scene_builder_creates_deterministic_opening_placeholders() -> None:
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+
+    created = scene_builder.create_svg_opening_markers(
+        cmds,
+        [
+            {
+                "marker_type": "door",
+                "marker_name": "main",
+                "source_name": "door_main",
+                "center_maya": [0.16, -0.74],
+            },
+            {
+                "marker_type": "window",
+                "marker_name": "back_01",
+                "source_name": "window_back_01",
+                "center_maya": [0.9, -0.02],
+            },
+        ],
+        "openings",
+    )
+
+    assert created == 2
+    assert [cube["name"] for cube in cmds.cubes] == ["door_main_01", "window_back_01"]
+    assert cmds.transforms["door_main_01"]["translation"] == (0.16, 1.0, -0.74)
+    assert cmds.transforms["window_back_01"]["translation"] == (0.9, 1.35, -0.02)
+    assert ("door_main_01", "openings") in cmds.parents
+    assert ("window_back_01", "openings") in cmds.parents
+
+
+def test_maya_scene_builder_names_duplicate_opening_placeholders() -> None:
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+
+    created = scene_builder.create_svg_opening_markers(
+        cmds,
+        [
+            {"marker_type": "window", "marker_name": "back_01", "center_maya": [0.9, -0.02]},
+            {"marker_type": "window", "marker_name": "back_01", "center_maya": [1.1, -0.02]},
+            {"marker_type": "door", "marker_name": "main", "center_maya": [0.16, -0.74]},
+            {"marker_type": "door", "marker_name": "main", "center_maya": [0.4, -0.74]},
+        ],
+        "openings",
+    )
+
+    assert created == 4
+    assert [cube["name"] for cube in cmds.cubes] == [
+        "window_back_01",
+        "window_back_01_02",
+        "door_main_01",
+        "door_main_02",
+    ]
+
+
+def test_maya_scene_builder_wires_openings_group() -> None:
+    script_path = builder.repo_root() / "scripts" / "maya" / "build_maya_room_scene.py"
+    script_text = script_path.read_text(encoding="utf-8")
+
+    assert "opening_markers" in script_text
+    assert "create_svg_opening_markers" in script_text
+    assert 'name="openings"' in script_text
 
 
 def test_procedural_prop_child_names_do_not_use_signed_suffixes() -> None:
