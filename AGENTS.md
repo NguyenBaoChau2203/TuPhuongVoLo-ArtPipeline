@@ -6,7 +6,7 @@ shell commands, and other important information, read the current plan
 # TuPhuongVoLo-ArtPipeline — AI Agent Instructions
 
 > **Project**: Art pipeline automation for the indie game "Tứ Phương Vô Lộ"
-> **Phase**: SDD Bootstrap / Planning — no production logic implemented yet
+> **Phase**: Maya-first production workflow verified through 007J-F1
 > **Owner**: Artist-developer hybrid workflow
 
 ---
@@ -16,22 +16,22 @@ shell commands, and other important information, read the current plan
 This repository contains semi-automated tooling for an indie game art pipeline.
 The primary user is a **Vietnamese-speaking artist** working on Windows with:
 - **Adobe Illustrator** — 2D vector art, floor plans, top-down maps, isometric illustration
-- **Blender** — Default isometric draft bridge (SVG → curve/mesh → extrude → camera → render)
-- **Autodesk Maya** — Advanced/studio 3D branch (optional, not default)
+- **Autodesk Maya** — Primary production DCC backend (Python geometry JSON → `.ma` blockout → artist polish)
+- **Blender** — Legacy/fallback isometric draft bridge (retained, not required for production)
 - **Python** — CLI tools, SVG processing, manifest management, asset naming
 
-The pipeline flow is:
+The production pipeline flow is:
 ```
-Illustrator authoring/export
-→ clean SVG export (JSX/ExtendScript)
-→ optional vectorization:
-    - B&W line art / masks → mkbitmap + Potrace 1.16
-    - Color art / transparency → Vectorizer.AI or Image Trace
-→ vpype 1.15.0 cleanup (linemerge, linesort, reloop, linesimplify)
-→ svgpathtools 1.7.2 rule-based validation
-→ Blender LTS 4.x SVG import / extrude / isometric camera / render
-→ optional Maya advanced branch (Python parser or USD bridge)
-→ editable outputs for artist polish
+Illustrator authoring / clean SVG export
+→ Python SVG cleanup + validation
+→ Python room detection + geometry JSON handoff
+→ Autodesk Maya .ma blockout (primary production DCC)
+→ artist polish in Maya
+```
+
+Optional/fallback path (legacy, retained but not required):
+```
+clean SVG → Blender MVP isometric draft / batch dry-run
 ```
 
 ---
@@ -55,8 +55,8 @@ All scripts, paths, and launchers MUST work on Windows 10/11.
 Prefer programmatic automation over fragile UI automation:
 - ✅ Illustrator JSX / ExtendScript
 - ✅ Python CLI with `argparse` or `click`
-- ✅ Blender Python (`bpy`) — headless batch mode preferred
-- ✅ Maya Python / MEL / `mayapy`
+- ✅ Maya Python / MEL / `mayapy` — primary production DCC
+- ✅ Blender Python (`bpy`) — legacy/fallback headless batch
 - ✅ `.bat` launchers calling scripts
 - ❌ No mouse-click macro recording
 - ❌ No screen-scraping or pixel-based automation
@@ -71,7 +71,8 @@ Prefer programmatic automation over fragile UI automation:
 ### 5. Editable Outputs
 Generated outputs must remain editable:
 - SVG outputs must be valid, clean SVG that Illustrator can reopen
-- Blender outputs must be `.blend` scene files the artist can modify
+- Maya outputs must be `.ma` scene files the artist can modify
+- Blender outputs (legacy) must be `.blend` scene files the artist can modify
 - PNG renders are previews — the editable source must always be preserved
 
 ### 6. Manifest & Versioning
@@ -122,11 +123,11 @@ vpype read tests/tmp/motel_room_trace.svg linemerge --tolerance 0.2mm linesort r
 # Validate SVG structure (future)
 python scripts/python/validate_svg_contract.py --input drops/
 
-# Build isometric room (future)
-python scripts/python/detect_rooms_from_svg.py --input assets/2d/svg_clean/example.svg
+# Build Maya room (dry-run)
+python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --room kho --dry-run
 
-# Blender headless render (future)
-blender -b -P scripts/blender/build_isometric_room.py -- --input room.svg
+# Build Maya room (actual, needs mayapy)
+python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --room kho --maya-path "C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe"
 ```
 
 ---
@@ -185,7 +186,7 @@ Research-confirmed decisions:
 - **Potrace 1.16** for B&W deterministic tracing; **Vectorizer.AI** for color/transparency
 - **vpype 1.15.0** pipeline: `read → linemerge → linesort → reloop → linesimplify → write`
 - **svgpathtools 1.7.2** for rule-based cleanup: filter by path length, bbox size, area
-- **Blender LTS 4.x** as default 3D bridge; Maya only via Python parser or USD
+- **Maya** as primary production DCC backend; **Blender LTS 4.x** as legacy/fallback
 - **Illustrator 29.8.7 LTS** for production; 30.4 for R&D only
 - Two mandatory test cases: **motel room** (interior, walls, furniture) and **island map** (coastline, paths, cleanup)
 
