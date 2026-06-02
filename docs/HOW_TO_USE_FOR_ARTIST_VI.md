@@ -1,5 +1,10 @@
 # Hướng dẫn sử dụng cho họa sĩ - TuPhuongVoLo-ArtPipeline
 
+> **Phiên bản hiện tại**: `v0.7.9 (007J-F1)`
+> **Giao diện hiện tại**: Desktop App (Tkinter) chạy local. Dự án đã bỏ kế hoạch phát triển local web UI trong ngắn hạn để tập trung hoàn toàn vào ứng dụng desktop.
+> **Quy trình chính (Maya-first)**: Illustrator SVG -> dry-run -> Dựng Maya .ma thật -> Họa sĩ polish thủ công trong Maya.
+> **⚠️ Lưu ý về AI và Phí**: Tính năng AI Preview là hoàn toàn tùy chọn, mang tính tham khảo và hiện tại đang tạm hoãn vì chi phí API. Họa sĩ **KHÔNG** cần cài đặt fal.ai, OpenAI, Gemini, ComfyUI, hay cấu hình bất kỳ API Key nào cho công việc hàng ngày. Vui lòng không dán API Key vào tài liệu, mã nguồn hoặc các commit. Không commit file `.env` hoặc các ảnh AI được sinh ra.
+
 ## Tổng quan
 
 Pipeline này giúp tự động hóa một phần công việc lặp lại trong quy trình vẽ game:
@@ -239,5 +244,5 @@ Feature 006 natural-language control vẫn deferred.
 Phase 007J thêm giao diện mèo thân thiện cho desktop app (bảng màu pastel ấm,
 header mèo, tiêu đề step thân thiện, nhãn gợi ý). Chỉ dùng `ttk.Style` nội
 bộ; không thêm thư viện, font, web UI, hay ảnh nhị phân. Phiên bản app:
-`v0.7.8 (007J)`. HTML guide vẫn là nguồn hướng dẫn chính cho họa sĩ; app
+`v0.7.9 (007J-F1)`. HTML guide vẫn là nguồn hướng dẫn chính cho họa sĩ; app
 vẫn giao toàn bộ pipeline cho script CLI hiện có.
