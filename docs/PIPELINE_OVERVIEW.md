@@ -1,3 +1,8 @@
+> ⚠️ **Note**: The "Blender default, Maya optional" framing in this document is
+> superseded by `docs/architecture/MAYA_FIRST_WORKFLOW_AUDIT.md`. Maya is now the
+> primary production DCC backend. This document is retained for its architecture
+> diagrams and toolchain reference.
+
 # Pipeline Overview — TuPhuongVoLo-ArtPipeline
 
 ## Architecture

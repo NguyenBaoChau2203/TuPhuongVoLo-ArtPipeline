@@ -4,7 +4,10 @@ globs: ["scripts/blender/**/*.py"]
 alwaysApply: false
 ---
 
-# Blender Pipeline Rules
+# Blender Pipeline Rules (Legacy/Fallback)
+
+> **Status**: Blender is retained as a legacy/fallback backend. Maya is the primary
+> production DCC. These rules apply when working with Blender scripts.
 
 ## Execution Mode
 - Prefer headless batch mode: `blender --background --python script.py -- args`
@@ -41,3 +44,4 @@ alwaysApply: false
 - Do not import external addons without checking availability
 - Do not hardcode file paths
 - Do not use Blender's internal Python packages for non-Blender tasks
+- Do not prioritize Blender development over Maya production workflow
