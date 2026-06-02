@@ -76,8 +76,8 @@ AI_PROVIDER_ERROR = "Provider AI phải là mock hoặc fal."
 MAYAPY_REQUIRED_ERROR = "Chạy thật cần đường dẫn mayapy.exe hợp lệ."
 MAYAPY_NOT_FOUND_ERROR = "Không tìm thấy mayapy.exe. Hãy kiểm tra lại đường dẫn."
 DRY_RUN_REQUIRED_ERROR = (
-    "Chưa có dry-run thành công cho SVG/phòng/output/render hiện tại. "
-    "Hãy bấm 'Chạy dry-run' trước khi chạy Maya thật."
+    "Chưa chạy thử an toàn thành công cho SVG/phòng/output/render hiện tại. "
+    "Hãy bấm 'Chạy thử an toàn' trước khi dựng Maya thật."
 )
 OUTPUT_SUBDIRS = {
     "maya": "maya",
@@ -984,9 +984,10 @@ class ArtistDesktopApp:
         self.width_var = tk.StringVar(value=str(DEFAULT_RENDER_WIDTH))
         self.height_var = tk.StringVar(value=str(DEFAULT_RENDER_HEIGHT))
         self.repo_root_var = tk.StringVar(value=repo_root_display_value())
+        self.svg_status_var = tk.StringVar(value="Chưa kiểm tra")
         self.status_var = tk.StringVar(value=STATUS_READY)
         self.workflow_status_var = tk.StringVar(
-            value="Luồng khuyến nghị: Kiểm tra SVG → Chạy dry-run → Chạy Maya thật → Mở output."
+            value="Luồng khuyến nghị: Chọn SVG (1) → Kiểm tra SVG (2) → Chạy thử an toàn (3) → Dựng Maya thật (4) → Mở kết quả (5)."
         )
         self.command_var = tk.StringVar(value="")
         self.ai_png_var = tk.StringVar()
@@ -1006,13 +1007,43 @@ class ArtistDesktopApp:
         tk = self.tk
         ttk = self.ttk
 
-        outer = ttk.Frame(self.root, padding=12)
-        outer.pack(fill=tk.BOTH, expand=True)
-        outer.columnconfigure(0, weight=1)
-        outer.rowconfigure(6, weight=1)
+        # ── Scrollable Container Setup ────────────────────────────────────────
+        canvas = tk.Canvas(self.root, bg=THEME_BG, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(self.root, orient=tk.VERTICAL, command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas, padding=12)
+        scrollable_frame.columnconfigure(0, weight=1)
+
+        canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda event: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        def _configure_canvas(event):
+            canvas.itemconfig(canvas_window, width=event.width)
+        canvas.bind("<Configure>", _configure_canvas)
+
+        def _on_mousewheel(event):
+            if hasattr(self, "log_text"):
+                w = event.widget
+                while w:
+                    if w == self.log_text:
+                        return
+                    try:
+                        w = w.master
+                    except AttributeError:
+                        break
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # ── Cat-themed header ────────────────────────────────────────────────
-        header_frame = ttk.Frame(outer)
+        header_frame = ttk.Frame(scrollable_frame)
         header_frame.grid(row=0, column=0, sticky=tk.EW, pady=(0, 6))
         ttk.Label(
             header_frame,
@@ -1038,92 +1069,125 @@ class ArtistDesktopApp:
             style="Hint.TLabel",
         ).pack(anchor=tk.W, pady=(2, 0))
 
-        # ── Step 1: Chọn bản vẽ SVG ─────────────────────────────────────────
-        svg_section = ttk.LabelFrame(
-            outer, text="🐾 Step 1: Chọn bản vẽ SVG", padding=8
+        # ── Hướng dẫn & SVG mẫu ──────────────────────────────────────────
+        doc_section = ttk.LabelFrame(
+            scrollable_frame, text="📖 Tài liệu & SVG mẫu", padding=8
         )
-        svg_section.grid(row=1, column=0, sticky=tk.EW, pady=(0, 6))
-        svg_section.columnconfigure(1, weight=1)
+        doc_section.grid(row=1, column=0, sticky=tk.EW, pady=(0, 6))
+        doc_buttons = ttk.Frame(doc_section)
+        doc_buttons.pack(fill=tk.X)
+        ttk.Button(
+            doc_buttons,
+            text="Mở hướng dẫn",
+            command=self._open_artist_guide,
+            style=STYLE_GUIDE_BUTTON,
+        ).pack(side=tk.LEFT)
+        ttk.Button(
+            doc_buttons,
+            text="Mở SVG mẫu marker",
+            command=self._open_prop_marker_template,
+            style=STYLE_GUIDE_BUTTON,
+        ).pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Button(
+            doc_buttons,
+            text="Mở thư mục template",
+            command=self._open_prop_marker_template_dir,
+            style=STYLE_UTILITY_BUTTON,
+        ).pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Button(
+            doc_buttons,
+            text="Copy đường dẫn SVG mẫu",
+            command=self._copy_template_path,
+            style=STYLE_UTILITY_BUTTON,
+        ).pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Label(
+            doc_section,
+            text=(
+                "💡 Sổ tay mèo HTML là hướng dẫn chính. "
+                "SVG mẫu marker dùng để copy/paste prop vào Illustrator."
+            ),
+            style="Hint.TLabel",
+        ).pack(anchor=tk.W, pady=(4, 0))
 
-        ttk.Label(svg_section, text="File SVG sạch").grid(row=0, column=0, sticky=tk.W, pady=3)
-        ttk.Entry(svg_section, textvariable=self.svg_var).grid(
+        # ── Step 1: Chọn SVG sạch ─────────────────────────────────────────
+        step1_section = ttk.LabelFrame(
+            scrollable_frame, text="🐾 Step 1: Chọn SVG sạch", padding=8
+        )
+        step1_section.grid(row=2, column=0, sticky=tk.EW, pady=(0, 6))
+        step1_section.columnconfigure(1, weight=1)
+
+        ttk.Label(step1_section, text="Chọn SVG sạch").grid(row=0, column=0, sticky=tk.W, pady=3)
+        ttk.Entry(step1_section, textvariable=self.svg_var).grid(
             row=0, column=1, sticky=tk.EW, pady=3
         )
         ttk.Button(
-            svg_section, text="Chọn SVG", command=self._choose_svg, style=STYLE_UTILITY_BUTTON
+            step1_section, text="Chọn SVG", command=self._choose_svg, style=STYLE_UTILITY_BUTTON
         ).grid(row=0, column=2, padx=(8, 0), pady=3)
 
-        ttk.Label(svg_section, text="Tên phòng/layer").grid(row=1, column=0, sticky=tk.W, pady=3)
-        ttk.Entry(svg_section, textvariable=self.room_var).grid(
+        ttk.Label(step1_section, text="Tên phòng/layer").grid(row=1, column=0, sticky=tk.W, pady=3)
+        ttk.Entry(step1_section, textvariable=self.room_var).grid(
             row=1, column=1, columnspan=2, sticky=tk.EW, pady=3
         )
 
-        ttk.Label(svg_section, text="Repo root").grid(row=2, column=0, sticky=tk.W, pady=3)
-        ttk.Entry(svg_section, textvariable=self.repo_root_var, state="readonly").grid(
+        ttk.Label(step1_section, text="Repo root").grid(row=2, column=0, sticky=tk.W, pady=3)
+        ttk.Entry(step1_section, textvariable=self.repo_root_var, state="readonly").grid(
             row=2, column=1, columnspan=2, sticky=tk.EW, pady=3
         )
 
         ttk.Label(
-            svg_section,
+            step1_section,
             text="💡 Chọn file SVG sạch đã xuất từ Illustrator (không phải .ai gốc).",
             style="Hint.TLabel",
         ).grid(row=3, column=0, columnspan=3, sticky=tk.W, pady=(0, 2))
-        ttk.Label(
-            svg_section,
-            text=(
-                "Luồng an toàn: Kiểm tra SVG → Chạy dry-run → "
-                "Chạy Maya thật → Mở outputs/maya và outputs/preview."
-            ),
-            style="Hint.TLabel",
-        ).grid(row=4, column=0, columnspan=3, sticky=tk.W, pady=(0, 4))
+
+        # ── Step 2: Kiểm tra SVG ─────────────────────────────────────────
+        step2_section = ttk.LabelFrame(
+            scrollable_frame, text="🔍 Step 2: Kiểm tra SVG", padding=8
+        )
+        step2_section.grid(row=3, column=0, sticky=tk.EW, pady=(0, 6))
+
         self.preflight_button = ttk.Button(
-            svg_section,
+            step2_section,
             text="Kiểm tra SVG",
             command=self._run_preflight_clicked,
             style=STYLE_GUIDE_BUTTON,
         )
-        self.preflight_button.grid(row=5, column=0, sticky=tk.W, pady=(2, 0))
+        self.preflight_button.pack(side=tk.LEFT)
+        ttk.Label(
+            step2_section,
+            text="💡 Kiểm tra cấu trúc SVG xem có lỗi đặt tên/marker/layer trước khi dựng hình.",
+            style="Hint.TLabel",
+        ).pack(side=tk.LEFT, padx=(10, 0))
 
-        # ── Step 2: Dựng Maya blockout ───────────────────────────────────────
-        maya_section = ttk.LabelFrame(
-            outer, text="🏠 Step 2: Dựng Maya blockout", padding=8
+        # ── Step 3: Chạy dry-run ──────────────────────────────────────────
+        step3_section = ttk.LabelFrame(
+            scrollable_frame, text="🛡️ Step 3: Chạy thử an toàn (Chạy dry-run)", padding=8
         )
-        maya_section.grid(row=2, column=0, sticky=tk.EW, pady=(0, 6))
-        maya_section.columnconfigure(1, weight=1)
+        step3_section.grid(row=4, column=0, sticky=tk.EW, pady=(0, 6))
+        step3_section.columnconfigure(1, weight=1)
 
-        ttk.Label(maya_section, text="Thư mục output").grid(row=0, column=0, sticky=tk.W, pady=3)
-        ttk.Entry(maya_section, textvariable=self.output_var).grid(
+        ttk.Label(step3_section, text="Thư mục output").grid(row=0, column=0, sticky=tk.W, pady=3)
+        ttk.Entry(step3_section, textvariable=self.output_var).grid(
             row=0, column=1, sticky=tk.EW, pady=3
         )
         ttk.Button(
-            maya_section,
+            step3_section,
             text="Chọn thư mục",
             command=self._choose_output_dir,
             style=STYLE_UTILITY_BUTTON,
         ).grid(row=0, column=2, padx=(8, 0), pady=3)
 
-        ttk.Label(maya_section, text="mayapy.exe").grid(row=1, column=0, sticky=tk.W, pady=3)
-        ttk.Entry(maya_section, textvariable=self.mayapy_var).grid(
-            row=1, column=1, sticky=tk.EW, pady=3
-        )
-        ttk.Button(
-            maya_section,
-            text="Chọn mayapy",
-            command=self._choose_mayapy,
-            style=STYLE_UTILITY_BUTTON,
-        ).grid(row=1, column=2, padx=(8, 0), pady=3)
+        checks = ttk.Frame(step3_section)
+        checks.grid(row=1, column=0, columnspan=3, sticky=tk.W, pady=(6, 2))
 
-        checks = ttk.Frame(maya_section)
-        checks.grid(row=2, column=0, columnspan=3, sticky=tk.W, pady=(6, 2))
-        ttk.Checkbutton(checks, text="Dry-run", variable=self.dry_run_var).pack(
-            side=tk.LEFT, padx=(0, 18)
-        )
-        ttk.Checkbutton(checks, text="Render PNG preview", variable=self.render_var).pack(
-            side=tk.LEFT
-        )
+        ttk.Checkbutton(
+            checks,
+            text="Render PNG preview sau khi build Maya",
+            variable=self.render_var,
+        ).pack(side=tk.LEFT)
 
-        render_frame = ttk.Frame(maya_section)
-        render_frame.grid(row=3, column=0, columnspan=3, sticky=tk.W, pady=3)
+        render_frame = ttk.Frame(step3_section)
+        render_frame.grid(row=2, column=0, columnspan=3, sticky=tk.W, pady=3)
         ttk.Label(render_frame, text="Render width").pack(side=tk.LEFT)
         ttk.Entry(render_frame, textvariable=self.width_var, width=8).pack(
             side=tk.LEFT, padx=(6, 16)
@@ -1133,55 +1197,113 @@ class ArtistDesktopApp:
             side=tk.LEFT, padx=(6, 0)
         )
 
-        ttk.Label(
-            maya_section,
-            text="🐾 Nhớ dry-run trước. Chạy thật cần đường dẫn mayapy.exe hợp lệ.",
-            style="Hint.TLabel",
-        ).grid(row=4, column=0, columnspan=3, sticky=tk.W, pady=(0, 2))
+        dry_run_buttons_frame = ttk.Frame(step3_section)
+        dry_run_buttons_frame.grid(row=3, column=0, columnspan=3, sticky=tk.W, pady=(6, 4))
 
-        guided_buttons = ttk.Frame(maya_section)
-        guided_buttons.grid(row=5, column=0, columnspan=3, sticky=tk.W, pady=(6, 4))
         self.dry_run_button = ttk.Button(
-            guided_buttons,
-            text="Chạy dry-run",
+            dry_run_buttons_frame,
+            text="Chạy thử an toàn",
             command=self._run_dry_run_clicked,
             style=STYLE_GUIDE_BUTTON,
         )
         self.dry_run_button.pack(side=tk.LEFT)
-        self.actual_run_button = ttk.Button(
-            guided_buttons,
-            text="Chạy Maya thật",
-            command=self._run_actual_clicked,
-            style=STYLE_PRIMARY_BUTTON,
-        )
-        self.actual_run_button.pack(side=tk.LEFT, padx=(8, 0))
         ttk.Label(
-            guided_buttons,
-            text="Dry-run thành công sẽ mở khóa bước chạy thật cho đúng SVG/settings.",
+            dry_run_buttons_frame,
+            text="💡 Chạy thử không cần cài Maya để tạo cấu trúc dữ liệu JSON kiểm nghiệm.",
             style="Hint.TLabel",
         ).pack(side=tk.LEFT, padx=(10, 0))
 
-        buttons = ttk.Frame(maya_section)
-        buttons.grid(row=6, column=0, columnspan=3, sticky=tk.W, pady=(2, 4))
-        self.run_button = ttk.Button(
-            buttons,
-            text="Chạy pipeline",
-            command=self._run_clicked,
-            style=STYLE_UTILITY_BUTTON,
+        # ── Step 4: Chạy Maya thật ─────────────────────────────────────────
+        step4_section = ttk.LabelFrame(
+            scrollable_frame, text="⚡ Step 4: Dựng Maya thật", padding=8
         )
-        self.run_button.pack(side=tk.LEFT)
+        step4_section.grid(row=5, column=0, sticky=tk.EW, pady=(0, 6))
+        step4_section.columnconfigure(1, weight=1)
+
+        ttk.Label(step4_section, text="mayapy.exe").grid(row=0, column=0, sticky=tk.W, pady=3)
+        ttk.Entry(step4_section, textvariable=self.mayapy_var).grid(
+            row=0, column=1, sticky=tk.EW, pady=3
+        )
         ttk.Button(
-            buttons, text="Xóa log", command=self._clear_log, style=STYLE_UTILITY_BUTTON
-        ).pack(side=tk.LEFT, padx=(8, 0))
-        ttk.Button(
-            buttons, text="Copy lệnh", command=self._copy_command, style=STYLE_UTILITY_BUTTON
-        ).pack(side=tk.LEFT, padx=(8, 0))
+            step4_section,
+            text="Chọn mayapy",
+            command=self._choose_mayapy,
+            style=STYLE_UTILITY_BUTTON,
+        ).grid(row=0, column=2, padx=(8, 0), pady=3)
+
+        actual_run_buttons_frame = ttk.Frame(step4_section)
+        actual_run_buttons_frame.grid(row=1, column=0, columnspan=3, sticky=tk.W, pady=(6, 4))
+
+        self.actual_run_button = ttk.Button(
+            actual_run_buttons_frame,
+            text="Dựng Maya thật",
+            command=self._run_actual_clicked,
+            style=STYLE_PRIMARY_BUTTON,
+        )
+        self.actual_run_button.pack(side=tk.LEFT)
+        ttk.Label(
+            actual_run_buttons_frame,
+            text="💡 Chỉ khả dụng sau khi chạy dry-run thành công cho cùng SVG và thiết lập.",
+            style="Hint.TLabel",
+        ).pack(side=tk.LEFT, padx=(10, 0))
+
+        # ── Tính năng AI (AI preview) ───────────────────────────────────────
+        ai_section = ttk.LabelFrame(
+            scrollable_frame, text="✨ Tính năng AI (Xem trước)", padding=8
+        )
+        ai_section.grid(row=6, column=0, sticky=tk.EW, pady=(0, 6))
+        ttk.Label(
+            ai_section,
+            text="AI preview: chưa bật trong workflow hiện tại. Tính năng này có thể được cập nhật sau.",
+            style="Hint.TLabel",
+        ).pack(anchor=tk.W)
+
+        # Hidden elements for backwards compatibility
+        self.run_button = ttk.Button(step3_section)
+        self.ai_run_button = ttk.Button(ai_section)
+
+        # ── Step 5: Mở output / xem log ──────────────────────────────────────
+        step5_section = ttk.LabelFrame(
+            scrollable_frame, text="📋 Step 5: Mở thư mục kết quả & Xem log", padding=8
+        )
+        step5_section.grid(row=7, column=0, sticky=tk.NSEW)
+        step5_section.columnconfigure(1, weight=1)
+
+        ttk.Label(step5_section, text="Trạng thái SVG").grid(
+            row=0, column=0, sticky=tk.W, pady=(0, 2)
+        )
+        ttk.Label(step5_section, textvariable=self.svg_status_var).grid(
+            row=0, column=1, sticky=tk.W, pady=(0, 2)
+        )
+
+        ttk.Label(step5_section, text="Trạng thái Maya").grid(
+            row=1, column=0, sticky=tk.W, pady=3
+        )
+        ttk.Label(step5_section, textvariable=self.status_var).grid(
+            row=1, column=1, sticky=tk.W, pady=3
+        )
+
+        ttk.Label(step5_section, text="Lệnh gần nhất").grid(row=2, column=0, sticky=tk.W, pady=3)
+        ttk.Entry(step5_section, textvariable=self.command_var, state="readonly").grid(
+            row=2, column=1, sticky=tk.EW, pady=3
+        )
+
+        ttk.Label(step5_section, text="Kết quả gần nhất").grid(
+            row=3, column=0, sticky=tk.W, pady=3
+        )
+        ttk.Label(step5_section, textvariable=self.workflow_status_var).grid(
+            row=3, column=1, sticky=tk.W, pady=3
+        )
+
+        buttons = ttk.Frame(step5_section)
+        buttons.grid(row=4, column=0, columnspan=2, sticky=tk.W, pady=(6, 4))
+
         ttk.Button(
             buttons,
             text="Mở outputs/maya",
             command=lambda: self._open_output("maya"),
             style=STYLE_UTILITY_BUTTON,
-        ).pack(side=tk.LEFT, padx=(8, 0))
+        ).pack(side=tk.LEFT)
         ttk.Button(
             buttons,
             text="Mở outputs/preview",
@@ -1195,90 +1317,17 @@ class ArtistDesktopApp:
             style=STYLE_UTILITY_BUTTON,
         ).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(
+            buttons, text="Xóa log", command=self._clear_log, style=STYLE_UTILITY_BUTTON
+        ).pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Button(
+            buttons, text="Copy lệnh", command=self._copy_command, style=STYLE_UTILITY_BUTTON
+        ).pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Button(
             buttons, text="Mở repo", command=self._open_repo, style=STYLE_UTILITY_BUTTON
         ).pack(side=tk.LEFT, padx=(8, 0))
 
-        # ── Step 3: Hướng dẫn & SVG mẫu ────────────────────────────────────
-        guide_section = ttk.LabelFrame(
-            outer, text="📖 Step 3: Hướng dẫn & SVG mẫu", padding=8
-        )
-        guide_section.grid(row=3, column=0, sticky=tk.EW, pady=(0, 6))
-
-        guide_buttons = ttk.Frame(guide_section)
-        guide_buttons.pack(fill=tk.X)
-        ttk.Button(
-            guide_buttons,
-            text="Mở hướng dẫn",
-            command=self._open_artist_guide,
-            style=STYLE_GUIDE_BUTTON,
-        ).pack(side=tk.LEFT)
-        ttk.Button(
-            guide_buttons,
-            text="Mở SVG mẫu marker",
-            command=self._open_prop_marker_template,
-            style=STYLE_GUIDE_BUTTON,
-        ).pack(side=tk.LEFT, padx=(8, 0))
-        ttk.Button(
-            guide_buttons,
-            text="Mở thư mục template",
-            command=self._open_prop_marker_template_dir,
-            style=STYLE_UTILITY_BUTTON,
-        ).pack(side=tk.LEFT, padx=(8, 0))
-        ttk.Button(
-            guide_buttons,
-            text="Copy đường dẫn SVG mẫu",
-            command=self._copy_template_path,
-            style=STYLE_UTILITY_BUTTON,
-        ).pack(side=tk.LEFT, padx=(8, 0))
-        ttk.Label(
-            guide_section,
-            text=(
-                "💡 Sổ tay mèo HTML là hướng dẫn chính. "
-                "SVG mẫu marker dùng để copy/paste prop vào Illustrator."
-            ),
-            style="Hint.TLabel",
-        ).pack(anchor=tk.W, pady=(4, 0))
-
-        # ── Step 4: AI preview ───────────────────────────────────────────────
-        self._build_ai_preview_section(outer, row=4)
-
-        # ── Log / trạng thái ─────────────────────────────────────────────────
-        status_section = ttk.LabelFrame(outer, text="📋 Log / trạng thái", padding=8)
-        status_section.grid(row=6, column=0, sticky=tk.NSEW)
-        status_section.columnconfigure(1, weight=1)
-        status_section.rowconfigure(5, weight=1)
-
-        ttk.Label(status_section, text="Trạng thái Maya").grid(
-            row=0, column=0, sticky=tk.W, pady=(0, 2)
-        )
-        ttk.Label(status_section, textvariable=self.status_var).grid(
-            row=0, column=1, sticky=tk.W, pady=(0, 2)
-        )
-
-        ttk.Label(status_section, text="Lệnh Maya").grid(row=1, column=0, sticky=tk.W, pady=3)
-        ttk.Entry(status_section, textvariable=self.command_var, state="readonly").grid(
-            row=1, column=1, sticky=tk.EW, pady=3
-        )
-
-        ttk.Label(status_section, text="Trạng thái AI").grid(row=2, column=0, sticky=tk.W, pady=3)
-        ttk.Label(status_section, textvariable=self.ai_status_var).grid(
-            row=2, column=1, sticky=tk.W, pady=3
-        )
-
-        ttk.Label(status_section, text="Lệnh AI").grid(row=3, column=0, sticky=tk.W, pady=3)
-        ttk.Entry(status_section, textvariable=self.ai_command_var, state="readonly").grid(
-            row=3, column=1, sticky=tk.EW, pady=3
-        )
-
-        ttk.Label(status_section, text="Luồng khuyến nghị").grid(
-            row=4, column=0, sticky=tk.W, pady=3
-        )
-        ttk.Label(status_section, textvariable=self.workflow_status_var).grid(
-            row=4, column=1, sticky=tk.W, pady=3
-        )
-
         self.log_text = scrolledtext_module.ScrolledText(
-            status_section,
+            step5_section,
             height=12,
             wrap=tk.WORD,
             bg=THEME_CARD,
@@ -1288,107 +1337,6 @@ class ArtistDesktopApp:
             borderwidth=1,
         )
         self.log_text.grid(row=5, column=0, columnspan=2, sticky=tk.NSEW, pady=(6, 0))
-
-    def _build_ai_preview_section(self, outer, *, row: int) -> None:
-        tk = self.tk
-        ttk = self.ttk
-
-        section = ttk.LabelFrame(
-            outer, text="✨ Step 4: AI polish preview tùy chọn", padding=8
-        )
-        section.grid(row=row, column=0, sticky=tk.EW, pady=(0, 6))
-        section.columnconfigure(1, weight=1)
-
-        ttk.Label(
-            section,
-            text=(
-                "⭐ Tùy chọn / reference-only — không bắt buộc, "
-                "không ảnh hưởng pipeline Maya."
-            ),
-            style="Hint.TLabel",
-        ).grid(row=0, column=0, columnspan=3, sticky=tk.W, pady=(0, 4))
-
-        ttk.Label(section, text="PNG preview").grid(row=1, column=0, sticky=tk.W, pady=3)
-        ttk.Entry(section, textvariable=self.ai_png_var).grid(
-            row=1,
-            column=1,
-            sticky=tk.EW,
-            pady=3,
-        )
-        ttk.Button(
-            section,
-            text="Chọn PNG preview",
-            command=self._choose_ai_png,
-            style=STYLE_UTILITY_BUTTON,
-        ).grid(row=1, column=2, padx=(8, 0), pady=3)
-
-        provider_row = ttk.Frame(section)
-        provider_row.grid(row=2, column=0, columnspan=3, sticky=tk.EW, pady=3)
-        provider_row.columnconfigure(3, weight=1)
-
-        ttk.Label(provider_row, text="Provider").grid(row=0, column=0, sticky=tk.W)
-        ttk.Combobox(
-            provider_row,
-            textvariable=self.ai_provider_var,
-            values=AI_PROVIDERS,
-            state="readonly",
-            width=10,
-        ).grid(row=0, column=1, sticky=tk.W, padx=(8, 18))
-
-        ttk.Label(provider_row, text="Model").grid(row=0, column=2, sticky=tk.W)
-        ttk.Entry(provider_row, textvariable=self.ai_model_var, width=38).grid(
-            row=0,
-            column=3,
-            sticky=tk.EW,
-            padx=(8, 0),
-        )
-
-        prompt_row = ttk.Frame(section)
-        prompt_row.grid(row=3, column=0, columnspan=3, sticky=tk.EW, pady=3)
-        prompt_row.columnconfigure(3, weight=1)
-
-        ttk.Label(prompt_row, text="Prompt preset").grid(row=0, column=0, sticky=tk.W)
-        ttk.Combobox(
-            prompt_row,
-            textvariable=self.ai_prompt_preset_var,
-            values=[DEFAULT_AI_PROMPT_PRESET],
-            width=26,
-        ).grid(row=0, column=1, sticky=tk.W, padx=(8, 18))
-
-        ttk.Label(prompt_row, text="Prompt thêm").grid(row=0, column=2, sticky=tk.W)
-        ttk.Entry(prompt_row, textvariable=self.ai_prompt_var, width=44).grid(
-            row=0,
-            column=3,
-            sticky=tk.EW,
-            padx=(8, 0),
-        )
-
-        checks = ttk.Frame(section)
-        checks.grid(row=4, column=0, columnspan=3, sticky=tk.W, pady=(4, 2))
-        ttk.Checkbutton(
-            checks,
-            text="Bỏ qua nếu thiếu cấu hình AI",
-            variable=self.ai_skip_missing_var,
-        ).pack(side=tk.LEFT, padx=(0, 18))
-        ttk.Checkbutton(checks, text="AI dry-run", variable=self.ai_dry_run_var).pack(
-            side=tk.LEFT
-        )
-
-        actions = ttk.Frame(section)
-        actions.grid(row=5, column=0, columnspan=3, sticky=tk.W, pady=(6, 0))
-        self.ai_run_button = ttk.Button(
-            actions,
-            text="Tạo AI polish preview",
-            command=self._run_ai_clicked,
-            style=STYLE_PRIMARY_BUTTON,
-        )
-        self.ai_run_button.pack(side=tk.LEFT)
-        ttk.Button(
-            actions,
-            text="Mở outputs/ai_preview",
-            command=self._open_ai_output,
-            style=STYLE_UTILITY_BUTTON,
-        ).pack(side=tk.LEFT, padx=(8, 0))
 
     def run(self) -> None:
         self.root.mainloop()
@@ -1492,8 +1440,8 @@ class ArtistDesktopApp:
         self._append_log("\n=== Kiểm tra SVG preflight ===\n")
         self._append_log(f"Repo root: {root}\n")
         self._append_log(display_command + "\n\n")
-        self.status_var.set("Đang kiểm tra SVG...")
-        self.workflow_status_var.set("Bước 1/3: đang kiểm tra SVG trước khi dry-run.")
+        self.svg_status_var.set("Đang kiểm tra SVG...")
+        self.workflow_status_var.set("Bước 2/5: Đang chạy kiểm tra SVG...")
         self.preflight_button.configure(state=self.tk.DISABLED)
         self.preflight_worker = threading.Thread(
             target=self._run_subprocess,
@@ -1546,8 +1494,8 @@ class ArtistDesktopApp:
                 options,
                 root=root,
             ):
-                self.workflow_status_var.set("Chưa thể chạy thật: cần dry-run thành công trước.")
-                self.messagebox.showwarning("Cần chạy dry-run trước", DRY_RUN_REQUIRED_ERROR)
+                self.workflow_status_var.set("Chưa thể dựng thật: cần chạy thử an toàn (Bước 3) trước.")
+                self.messagebox.showwarning("Cần chạy thử an toàn trước", DRY_RUN_REQUIRED_ERROR)
                 return
 
         try:
@@ -1562,11 +1510,14 @@ class ArtistDesktopApp:
         self._append_log("\n=== Lệnh sẽ chạy ===\n")
         self._append_log(f"Repo root: {root}\n")
         self._append_log(display_command + "\n\n")
-        self.status_var.set(STATUS_RUNNING)
+        
         if options.dry_run:
-            self.workflow_status_var.set("Bước 2/3: đang chạy dry-run Maya.")
+            self.status_var.set("Đang chạy thử an toàn...")
+            self.workflow_status_var.set("Bước 3/5: Đang chạy thử an toàn (dry-run) Maya...")
         else:
-            self.workflow_status_var.set("Bước 3/3: đang chạy Maya thật.")
+            self.status_var.set("Đang dựng Maya thật...")
+            self.workflow_status_var.set("Bước 4/5: Đang dựng Maya thật...")
+
         self.run_button.configure(state=self.tk.DISABLED)
         self.dry_run_button.configure(state=self.tk.DISABLED)
         self.actual_run_button.configure(state=self.tk.DISABLED)
@@ -1578,6 +1529,7 @@ class ArtistDesktopApp:
             daemon=True,
         )
         self.worker.start()
+
     def _run_ai_clicked(self) -> None:
         if self.ai_worker and self.ai_worker.is_alive():
             self.messagebox.showinfo(
@@ -1665,46 +1617,48 @@ class ArtistDesktopApp:
                 self.dry_run_button.configure(state=self.tk.NORMAL)
                 self.actual_run_button.configure(state=self.tk.NORMAL)
                 if return_code == 0:
-                    self.status_var.set("Hoàn tất: mã 0")
                     if (
                         self.active_maya_options is not None
                         and self.active_maya_root is not None
                         and self.active_maya_options.dry_run
                     ):
+                        self.status_var.set("Chạy thử xong: mã 0")
                         self.successful_dry_run_key = dry_run_settings_key(
                             self.active_maya_options,
                             root=self.active_maya_root,
                         )
                         self.workflow_status_var.set(
-                            "Dry-run thành công. Bây giờ có thể chạy Maya thật cho cùng SVG/settings."
+                            "Bước 3/5 hoàn tất: Chạy thử an toàn thành công. Bây giờ có thể dựng Maya thật (Bước 4)."
                         )
                     elif (
                         self.active_maya_options is not None
                         and not self.active_maya_options.dry_run
                     ):
+                        self.status_var.set("Dựng thật xong: mã 0")
                         self.workflow_status_var.set(
-                            "Maya build hoàn tất. Hãy mở outputs/maya và outputs/preview để kiểm tra."
+                            "Bước 4/5 hoàn tất: Dựng Maya thành công! Hãy mở thư mục kết quả (Bước 5)."
                         )
                 else:
-                    self.status_var.set(f"Lỗi: mã {return_code}")
                     if self.active_maya_options is not None and self.active_maya_options.dry_run:
-                        self.workflow_status_var.set("Dry-run chưa thành công. Chưa nên chạy Maya thật.")
+                        self.status_var.set(f"Chạy thử lỗi: mã {return_code}")
+                        self.workflow_status_var.set("Bước 3/5: Chạy thử an toàn thất bại. Hãy xem log để sửa lỗi trước khi chạy Maya thật.")
                     else:
-                        self.workflow_status_var.set("Pipeline lỗi. Hãy xem log trước khi chạy lại.")
+                        self.status_var.set(f"Dựng thật lỗi: mã {return_code}")
+                        self.workflow_status_var.set("Bước 4/5: Dựng Maya thật thất bại. Hãy xem log để kiểm tra chi tiết lỗi.")
                 self.active_maya_options = None
                 self.active_maya_root = None
             elif message.startswith(PREFLIGHT_RUN_FINISHED_PREFIX):
                 return_code = int(message.removeprefix(PREFLIGHT_RUN_FINISHED_PREFIX))
                 self.preflight_button.configure(state=self.tk.NORMAL)
                 if return_code == 0:
-                    self.status_var.set("Preflight hoàn tất: mã 0")
+                    self.svg_status_var.set("Kiểm tra xong: mã 0")
                     self.workflow_status_var.set(
-                        "Preflight OK/WARNING. Tiếp theo hãy chạy dry-run Maya."
+                        "Bước 2/5 hoàn tất: Kiểm tra SVG OK. Hãy chạy thử an toàn (Bước 3)."
                     )
                 else:
-                    self.status_var.set(f"Preflight lỗi: mã {return_code}")
+                    self.svg_status_var.set(f"Kiểm tra lỗi: mã {return_code}")
                     self.workflow_status_var.set(
-                        "Preflight FATAL. Hãy sửa file/đường dẫn SVG trước khi dry-run."
+                        "Kiểm tra SVG thất bại/cảnh báo. Hãy sửa file SVG trước khi chạy thử."
                     )
             elif message.startswith(AI_RUN_FINISHED_PREFIX):
                 return_code = int(message.removeprefix(AI_RUN_FINISHED_PREFIX))
