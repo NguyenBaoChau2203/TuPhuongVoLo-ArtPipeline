@@ -93,3 +93,13 @@
 - [X] T053 Add Vietnamese verification checkpoint document for 007G-R
 - [X] T054 Link checkpoint from relevant desktop app and AI preview docs
 - [X] T055 Confirm fal-client remains optional, no external API calls were made, and generated `outputs/ai_preview/` artifacts remain uncommitted
+
+## Phase 13: 007H Artist Workflow Cat Guide
+
+- [X] T056 Create `docs/artist_workflow_cat_guide_vi.html` — single self-contained static HTML, inline CSS, no CDN or external deps
+- [X] T057 Link cat guide from README.md Artist Quickstart section and Feature Status table
+- [X] T058 Link cat guide from `docs/desktop_app_mvp_vi.md` Phase 007G update section
+- [X] T059 Link cat guide from `docs/artist_handoff_desktop_app_vi.md` section 12 related docs
+- [X] T060 Link cat guide from `launchers/README_LAUNCHERS_VI.md`
+- [X] T061 Confirm no Python logic, SVG/Maya/render/AI provider logic, Feature 006, secrets, external assets, CDN, or generated outputs added
+

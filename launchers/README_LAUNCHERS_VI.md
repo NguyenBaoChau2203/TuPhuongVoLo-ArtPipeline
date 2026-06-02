@@ -121,3 +121,8 @@ code 0, chạy thật Maya trả exit code 0, sinh PNG preview, và file `.ma` m
 được trong Maya với Outliner đúng.
 
 Chi tiết checkpoint nằm trong `docs/verification/007C_desktop_app_polish_verified.md`.
+
+## Hướng dẫn thân thiện cho họa sĩ (007H)
+
+Xem sổ tay mèo con tại `docs/artist_workflow_cat_guide_vi.html` — mở trực tiếp trong trình duyệt, không cần cài thêm gì. Hướng dẫn bao gồm toàn bộ quy trình Illustrator → Desktop App → Maya → AI Preview tùy chọn bằng tiếng Việt.
+

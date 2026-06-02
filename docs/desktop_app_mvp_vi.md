@@ -105,6 +105,12 @@ Checkpoint kiểm chứng 007G-R nằm ở:
 docs/verification/007G_desktop_app_ai_preview_verified.md
 ```
 
+Phase 007H thêm hướng dẫn web thân thiện cho họa sĩ (sổ tay mèo con). Xem:
+
+```text
+docs/artist_workflow_cat_guide_vi.html
+```
+
 ## Cách chạy từ source
 
 ```powershell
