@@ -556,6 +556,45 @@ def test_maya_scene_builder_normalizes_required_prop_aliases() -> None:
         assert scene_builder.has_procedural_prop(alias)
 
 
+def test_maya_scene_builder_uses_maya_safe_part_suffix_helpers() -> None:
+    scene_builder = load_maya_scene_builder()
+
+    assert scene_builder.side_token(-1) == "left"
+    assert scene_builder.side_token(1) == "right"
+    assert scene_builder.depth_token(-1) == "front"
+    assert scene_builder.depth_token(1) == "back"
+    assert scene_builder.corner_token(-1, -1) == "left_front"
+    assert scene_builder.corner_token(1, 1) == "right_back"
+
+
+def test_procedural_prop_child_names_do_not_use_signed_suffixes() -> None:
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+
+    for prop_type in ("table", "chair", "sofa", "shelf_unit"):
+        scene_builder.create_procedural_prop(
+            cmds,
+            f"prop_{prop_type}_01",
+            prop_type,
+            (1.0, -2.0),
+            None,
+            "MAT_props",
+            "MAT_prop_details",
+            "props",
+        )
+
+    cube_names = {str(cube["name"]) for cube in cmds.cubes}
+    assert not any("-" in name for name in cube_names)
+    assert "prop_table_01_leg_left_front" in cube_names
+    assert "prop_table_01_leg_right_back" in cube_names
+    assert "prop_chair_01_leg_left_back" in cube_names
+    assert "prop_chair_01_leg_right_front" in cube_names
+    assert "prop_sofa_01_arm_left" in cube_names
+    assert "prop_sofa_01_arm_right" in cube_names
+    assert "prop_shelf_unit_01_side_left" in cube_names
+    assert "prop_shelf_unit_01_side_right" in cube_names
+
+
 def test_maya_scene_builder_uses_procedural_group_and_generic_fallback() -> None:
     scene_builder = load_maya_scene_builder()
     cmds = _FakeMayaCmds()
