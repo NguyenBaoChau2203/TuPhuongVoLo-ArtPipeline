@@ -10,12 +10,13 @@ MVP hiện tại cho phép:
 
 - Mở desktop app từ launcher hoặc file `.exe` đã build.
 - Chọn file SVG sạch đã xuất từ Illustrator.
+- Bấm `Kiểm tra SVG` để chạy preflight read-only trước khi dựng Maya.
 - Chạy `dry-run` trước để kiểm tra lệnh và output dự kiến.
 - Chạy thật bằng Autodesk Maya thông qua `mayapy.exe`.
 - Kiểm tra file `.ma` và ảnh PNG preview được tạo ra.
 - Tạo AI polish preview tùy chọn từ một PNG preview đã có, bằng nút riêng trong app.
 - Mở file `.ma` trong Maya để polish thủ công.
-- Xem phiên bản app trong title/UI hoặc bằng `--version`: `v0.7.7 (007I)`.
+- Xem phiên bản app trong title/UI hoặc bằng `--version`: `v0.7.10 (007L)`.
 
 Desktop app chỉ là wrapper local cho pipeline CLI đã kiểm chứng. App không thay
 thế Maya, không tự parse SVG, không sửa SVG gốc. AI `fal` chỉ có thể gọi external
@@ -92,18 +93,19 @@ set TUPHUONGVOLO_PYTHON_EXE=C:\Path\To\python.exe
 1. Mở app.
 2. Chọn SVG sạch, ví dụ `tests\in\illustrator_prop_markers.svg` khi retest.
 3. Nhập tên phòng, ví dụ `phong_kho`.
-4. Giữ `Dry-run` cho lần chạy đầu tiên.
+4. Bấm `Kiểm tra SVG` và đọc log preflight.
 5. Bật `Render PNG preview` nếu muốn tạo ảnh kiểm tra nhanh.
 6. Kiểm tra repo root và command preview trong app.
-7. Bấm chạy pipeline và đọc log.
-8. Nếu dry-run trả exit code 0 và lệnh đúng, bỏ chọn `Dry-run`.
-9. Kiểm tra đường dẫn `mayapy.exe`.
-10. Chạy thật để tạo `.ma` và PNG preview.
+7. Bấm `Chạy dry-run` và đọc log.
+8. Nếu dry-run trả exit code 0 và lệnh đúng, kiểm tra đường dẫn `mayapy.exe`.
+9. Bấm `Chạy Maya thật` để tạo `.ma` và PNG preview.
+10. Mở `outputs\maya\` và `outputs\preview\`.
 11. Mở file `.ma` trong Maya để kiểm tra Outliner và polish thủ công.
 12. Nếu cần ảnh AI reference, chọn PNG preview trong khu vực AI, giữ `AI dry-run`
     cho lần đầu, rồi bấm `Tạo AI polish preview`.
 
-Dry-run không cần Maya và không tạo scene thật. Chạy thật cần `mayapy.exe` hợp lệ.
+Preflight không sửa SVG. Dry-run không cần Maya và không tạo scene thật. Chạy
+thật cần dry-run thành công cho đúng settings hiện tại và cần `mayapy.exe` hợp lệ.
 AI preview không tự chạy sau Maya; đây là workflow riêng và output nằm trong
 `outputs\ai_preview\`.
 
@@ -113,12 +115,14 @@ Dùng checklist này khi bàn giao hoặc xác nhận lại build `.exe`:
 
 - [ ] Repo đang ở branch `workflow/maya-first-artist-pipeline`.
 - [ ] App hoặc `.exe` mở được.
-- [ ] App hiển thị phiên bản `v0.7.7 (007I)`.
+- [ ] App hiển thị phiên bản `v0.7.10 (007L)`.
 - [ ] App hiển thị repo root.
 - [ ] App hiển thị command preview.
 - [ ] SVG input là file SVG sạch.
 - [ ] Room name không trống, ví dụ `phong_kho`.
+- [ ] Nút `Kiểm tra SVG` chạy preflight và ghi report/log.
 - [ ] Dry-run chạy trước và trả exit code 0.
+- [ ] App không cho chạy Maya thật nếu settings hiện tại chưa có dry-run thành công.
 - [ ] Chạy thật dùng đúng `mayapy.exe`.
 - [ ] Actual Maya run trả exit code 0.
 - [ ] File `.ma` được tạo trong `outputs\maya\`.
@@ -211,6 +215,7 @@ Nếu cần lưu output làm fixture/test case, phải làm riêng và có lý d
 | --- | --- |
 | App báo không tìm thấy repo root | Chạy app từ thư mục repo hoặc đặt `TUPHUONGVOLO_REPO_ROOT`. |
 | `.exe` báo không tìm thấy Python | Cài Python vào `PATH` hoặc đặt `TUPHUONGVOLO_PYTHON_EXE`. |
+| Preflight báo `FATAL` | Kiểm tra file có tồn tại, XML hợp lệ, root là `<svg>`, và export lại từ Illustrator nếu cần. |
 | Dry-run chạy được nhưng chạy thật lỗi | Kiểm tra lại đường dẫn `mayapy.exe`. |
 | Không có PNG preview | Kiểm tra đã bật `Render PNG preview` và đọc log Maya render. |
 | File `.ma` mở được nhưng hình còn đơn giản | Đây là blockout kỹ thuật, chưa phải final art; họa sĩ polish tiếp trong Maya. |

@@ -21,7 +21,7 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 | `00_maya_env_check.bat` | Kiểm tra Python/PyYAML/mayapy | Khi chuẩn bị chạy Maya thật |
 | `07_build_maya_room.bat` | Dựng một phòng Maya từ SVG sạch | Chạy dry-run trước, sau đó tạo `.ma` nếu cần |
 | `08_batch_maya_room.bat` | Batch Maya nhiều SVG/phòng | Tạo report dry-run hoặc chạy nhiều job Maya |
-| `09_artist_desktop_app.bat` | Mở desktop app Maya MVP | Cách thân thiện nhất để chạy một SVG/một phòng |
+| `09_artist_desktop_app.bat` | Mở desktop app Maya MVP | Cách thân thiện nhất để kiểm tra SVG, dry-run, rồi chạy Maya thật |
 | `10_package_artist_app.bat` | Dry-run lệnh package desktop app | Dành cho developer muốn tạo `.exe` local bằng PyInstaller |
 
 ---
@@ -57,19 +57,21 @@ Chỉ cần **nhấp đúp** (double-click) vào file `.bat` để chạy.
 ### Bước 7: Dựng Maya blockout
 1. Chạy `00_maya_env_check.bat` nếu chưa chắc máy đã có Python/PyYAML/mayapy.
 2. Ưu tiên chạy `09_artist_desktop_app.bat` để mở app thân thiện cho một file SVG/một phòng.
-3. Trong app, chọn SVG, nhập phòng, giữ dry-run trước, và đọc log.
-4. Khi dry-run đúng, bỏ dry-run và cung cấp `mayapy.exe` để tạo `.ma` thật.
-5. Nếu muốn dùng CLI launcher cũ, chạy `07_build_maya_room.bat` cho một file SVG/phòng.
-6. Chạy `08_batch_maya_room.bat` nếu cần xử lý nhiều SVG hoặc nhiều phòng. Report JSON mặc định nằm trong `outputs/reports/batch_maya_report.json`.
+3. Trong app, chọn SVG rồi bấm `Kiểm tra SVG` để chạy preflight read-only.
+4. Nhập phòng, bấm `Chạy dry-run`, và đọc log.
+5. Khi dry-run đúng, cung cấp `mayapy.exe` rồi bấm `Chạy Maya thật` để tạo `.ma`.
+6. Mở `outputs/maya` và `outputs/preview` trong app để kiểm tra kết quả.
+7. Nếu muốn dùng CLI launcher cũ, chạy `07_build_maya_room.bat` cho một file SVG/phòng.
+8. Chạy `08_batch_maya_room.bat` nếu cần xử lý nhiều SVG hoặc nhiều phòng. Report JSON mặc định nằm trong `outputs/reports/batch_maya_report.json`.
 
 Desktop app đã được polish ở phase 007C: app kiểm tra lỗi trước khi chạy, hiển
 thị repo root, lệnh chuẩn bị chạy, trạng thái chạy, exit code cuối cùng, và có
 nút `Xóa log` / `Copy lệnh`. Hãy dry-run trước. Chạy thật cần `mayapy.exe` hợp
 lệ, ví dụ `C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe`.
 
-Từ phase 007J, app có giao diện mèo thân thiện (bảng màu pastel ấm, header
-mèo 🐱, tiêu đề step thân thiện) và hiển thị phiên bản `v0.7.9 (007J-F1)` trong
-title/UI. Developer có thể kiểm tra nhanh bằng:
+Từ phase 007L, app có luồng rõ ràng `Kiểm tra SVG` -> `Chạy dry-run` ->
+`Chạy Maya thật`, đồng thời vẫn giữ các control nâng cao. App hiển thị phiên
+bản `v0.7.10 (007L)` trong title/UI. Developer có thể kiểm tra nhanh bằng:
 
 ```powershell
 python scripts/python/artist_desktop_app.py --version

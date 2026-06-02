@@ -4,8 +4,23 @@
 
 ```powershell
 python scripts/python/artist_desktop_app.py
+python scripts/python/artist_desktop_app.py --help
 python scripts/python/artist_desktop_app.py --version
 ```
+
+## Phase 007L Guided Artist Workflow
+
+The desktop app now guides the artist through the safe Maya-first order:
+
+1. Choose a clean SVG copy.
+2. Click `Kiểm tra SVG` to run `scripts/python/svg_preflight_check.py`.
+3. Click `Chạy dry-run` to run the Maya command in dry-run mode.
+4. Click `Chạy Maya thật` only after the matching dry-run succeeds.
+5. Open `outputs/maya`, `outputs/preview`, and `outputs/reports` from the app.
+
+The app tracks dry-run success for the current SVG, room, output folder, and
+render settings. If those settings change, actual Maya run is blocked until a
+new matching dry-run succeeds.
 
 ## Run With Launcher
 
@@ -132,18 +147,20 @@ local packaging notes, and generated artifacts that must not be committed.
 ## Recommended Artist Flow
 
 1. Select a clean SVG file.
-2. Keep dry-run enabled for the first run.
+2. Click `Kiểm tra SVG`.
 3. Enter the room name, for example `phong_kho`.
 4. Enable PNG preview if a preview image is needed.
-5. Use `Mở hướng dẫn` or `Mở SVG mẫu marker` if marker naming help is needed.
+5. Click `Chạy dry-run`.
 6. Review the command and log output in the app.
-7. For actual Maya execution, disable dry-run and provide `mayapy.exe`.
+7. For actual Maya execution, provide `mayapy.exe` and click `Chạy Maya thật`.
+8. Use `Mở hướng dẫn` or `Mở SVG mẫu marker` if marker naming help is needed.
 
 ## Validation
 
 ```powershell
 python scripts/python/artist_desktop_app.py --help
 python scripts/python/artist_desktop_app.py --version
+python scripts/python/svg_preflight_check.py --help
 python scripts/python/ai_polish_preview.py --help
 python scripts/python/ai_polish_preview.py --version
 python scripts/python/ai_polish_preview.py --dry-run --provider mock --input tests/in/sample_preview.png

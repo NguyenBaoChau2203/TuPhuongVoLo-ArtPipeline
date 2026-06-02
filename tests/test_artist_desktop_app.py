@@ -19,12 +19,14 @@ def _fake_repo(root: Path) -> Path:
     script_path.write_text("print('fake pipeline')\n", encoding="utf-8")
     ai_script_path = root / "scripts" / "python" / "ai_polish_preview.py"
     ai_script_path.write_text("print('fake ai preview')\n", encoding="utf-8")
+    preflight_script_path = root / "scripts" / "python" / "svg_preflight_check.py"
+    preflight_script_path.write_text("print('fake svg preflight')\n", encoding="utf-8")
     return root
 
 
 def test_app_version_metadata_is_display_ready() -> None:
-    assert app.APP_VERSION == "0.7.9"
-    assert app.APP_PHASE == "007J-F1"
+    assert app.APP_VERSION == "0.7.10"
+    assert app.APP_PHASE == "007L"
     assert f"v{app.APP_VERSION}" in app.APP_TITLE
     assert app.APP_PHASE in app.APP_TITLE
     assert app.APP_VERSION in app.app_version_display()
@@ -242,6 +244,9 @@ def test_build_script_path_uses_detected_repo_root(tmp_path: Path) -> None:
     assert app.build_script_path(fake_root) == (
         fake_root / "scripts" / "python" / "build_maya_room.py"
     )
+    assert app.preflight_script_path(fake_root) == (
+        fake_root / "scripts" / "python" / "svg_preflight_check.py"
+    )
 
 
 def test_frozen_repo_root_uses_exe_location_not_appdata(monkeypatch, tmp_path: Path) -> None:
@@ -359,6 +364,75 @@ def test_output_root_resolves_relative_path_from_repo_root(tmp_path: Path) -> No
     assert app.resolve_output_root(tmp_path / "custom_outputs", fake_root) == (
         tmp_path / "custom_outputs"
     )
+
+
+def test_svg_preflight_command_writes_report_under_outputs_reports(tmp_path: Path) -> None:
+    fake_root = _fake_repo(tmp_path / "repo")
+    options = app.preflight_options_from_strings(
+        svg_path="tests/in/room.svg",
+        output_dir="outputs",
+    )
+
+    command = app.build_svg_preflight_command(
+        options,
+        python_executable="python",
+        root=fake_root,
+    )
+
+    assert command[0] == "python"
+    assert any("svg_preflight_check.py" in part for part in command)
+    assert command[command.index("--input") + 1] == str(Path("tests/in/room.svg"))
+    assert command[command.index("--json-output") + 1] == str(
+        Path("outputs") / "reports" / "svg_preflight_report.json"
+    )
+
+
+def test_preflight_validation_rejects_missing_svg(tmp_path: Path) -> None:
+    fake_root = _fake_repo(tmp_path / "repo")
+    options = app.ArtistPreflightOptions(svg_path=Path("tests/in/missing.svg"))
+
+    errors = app.validate_preflight_paths(options, root=fake_root)
+
+    assert app.SVG_NOT_FOUND_ERROR in errors
+
+
+def test_dry_run_settings_key_must_match_before_actual_run(tmp_path: Path) -> None:
+    fake_root = tmp_path / "repo"
+    svg = fake_root / "tests" / "in" / "room.svg"
+    svg.parent.mkdir(parents=True)
+    svg.write_text("<svg />\n", encoding="utf-8")
+    dry_run_options = app.ArtistAppOptions(
+        svg_path=Path("tests/in/room.svg"),
+        room_name="phong_kho",
+        output_dir=Path("outputs"),
+        dry_run=True,
+        render_preview=True,
+        render_width=1280,
+        render_height=720,
+    )
+    actual_options = app.ArtistAppOptions(
+        svg_path=Path("tests/in/room.svg"),
+        room_name="phong_kho",
+        output_dir=Path("outputs"),
+        dry_run=False,
+        render_preview=True,
+        render_width=1280,
+        render_height=720,
+    )
+    changed_options = app.ArtistAppOptions(
+        svg_path=Path("tests/in/room.svg"),
+        room_name="phong_bep",
+        output_dir=Path("outputs"),
+        dry_run=False,
+        render_preview=True,
+        render_width=1280,
+        render_height=720,
+    )
+
+    key = app.dry_run_settings_key(dry_run_options, root=fake_root)
+
+    assert app.dry_run_matches_current_settings(key, actual_options, root=fake_root)
+    assert not app.dry_run_matches_current_settings(key, changed_options, root=fake_root)
 
 
 def test_ai_mock_dry_run_command_wraps_ai_polish_preview(tmp_path: Path) -> None:
