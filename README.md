@@ -181,6 +181,8 @@ Supported SVG prop markers such as `prop_bed`, `prop_table`, `prop_chair`,
 `prop_wooden_crate` now create simple procedural Maya blockouts instead of
 only generic cubes. They remain editable draft geometry for artist polish, and
 unknown prop names still fall back to a simple placeholder cube.
+Phase 005.3P-R DCC verification is recorded in
+`docs/verification/005_3P_procedural_prop_blockout_verified.md`.
 
 Phase 005.5A documents the optional AI polish preview stage. Phase 005.5B adds
 a local mock preview workflow. Phase 005.5C adds optional fal.ai integration

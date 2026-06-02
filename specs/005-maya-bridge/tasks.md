@@ -115,3 +115,10 @@ Verified manually on artist/DCC machine with Autodesk Maya 2024 mayapy.exe. .ma 
 - [X] T070 Add non-Maya tests for procedural builder mapping, alias normalization, marker creation, and unknown fallback behavior
 - [X] T071 Update Vietnamese artist docs with supported prop marker examples and blockout/fallback guidance
 - [X] T072 Confirm no Feature 006, AI provider changes, external API calls, SVG parser refactor, manifest safety changes, generated outputs, binary assets, or external 3D assets are added
+
+## Phase 13: Procedural Prop Blockout DCC Verification Checkpoint (005.3P-R)
+
+- [X] T073 Add `docs/verification/005_3P_procedural_prop_blockout_verified.md`
+- [X] T074 Record real Maya/DCC verification for `.ma` open, Outliner hierarchy, multi-piece shelf/crate props, Maya-safe child names, camera, and generated PNG preview
+- [X] T075 Document that `tests/in/illustrator_prop_markers.svg` validates technical correctness, not final visual quality, and recommend `005.3P-V1` for preview visual sanity polish
+- [X] T076 Confirm checkpoint is documentation-only with no Python/Maya logic, SVG parser, AI provider, desktop app, Feature 006, external API, secret, dependency, binary asset, generated output, build/dist, or generated report changes
