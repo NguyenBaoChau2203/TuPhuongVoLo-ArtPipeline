@@ -41,6 +41,14 @@ python scripts/python/build_maya_room.py --input drops/ten_file.svg --room ten_p
 python scripts/python/build_maya_room.py --input drops/ten_file.svg --room ten_phong --maya-path "C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe"
 ```
 
+## Marker cửa và cửa sổ
+
+- Nếu SVG có cửa/cửa sổ, đặt tên group/layer bắt đầu bằng `door_` hoặc `window_`, ví dụ
+  `door_main`, `door_left`, `window_small`, `window_back_01`.
+- Phase 005.3S chỉ tạo marker hình khối đơn giản trong group `openings` của Maya. Pipeline chưa khoét
+  tường, chưa boolean, và chưa tạo lỗ thật.
+- Sau khi build `.ma`, mở Maya và kiểm tra marker trong `openings` trước khi polish thủ công.
+
 ## Ghi lại vấn đề thật
 
 Khi test SVG thật, hãy ghi lại:

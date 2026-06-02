@@ -48,6 +48,7 @@ from svg_shapes import (
 
 INKSCAPE_LABEL_ATTR = "{http://www.inkscape.org/namespaces/inkscape}label"
 PROP_MARKER_PREFIXES = ("prop_", "item_", "object_")
+OPENING_MARKER_PREFIXES = ("door_", "window_")
 PROP_ROTATION_SUFFIX_RE = re.compile(
     r"_(?:rot(?P<short>90|180|270)|rotation_(?P<long>90|180|270))$"
 )
@@ -81,6 +82,30 @@ class PropMarker:
         }
 
 
+@dataclass(frozen=True)
+class OpeningMarker:
+    """Artist-authored door/window marker from a named SVG group/layer."""
+
+    marker_type: str
+    marker_name: str
+    source_name: str
+    group_path: list[str]
+    center_svg: Point2D
+    bbox_svg: tuple[float, float, float, float]
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-friendly representation."""
+
+        return {
+            "marker_type": self.marker_type,
+            "marker_name": self.marker_name,
+            "source_name": self.source_name,
+            "group_path": list(self.group_path),
+            "center_svg": [self.center_svg[0], self.center_svg[1]],
+            "bbox_svg": list(self.bbox_svg),
+        }
+
+
 @dataclass
 class RoomReport:
     """Room detection summary for one SVG group or fallback path set."""
@@ -97,6 +122,7 @@ class RoomReport:
     transform_applied: bool = False
     group_path: list[str] = field(default_factory=list)
     prop_markers: list[PropMarker] = field(default_factory=list)
+    opening_markers: list[OpeningMarker] = field(default_factory=list)
 
     @property
     def has_usable_boundary(self) -> bool:
@@ -110,6 +136,7 @@ class RoomReport:
         data = asdict(self)
         data["bbox"] = list(self.bbox) if self.bbox else None
         data["prop_markers"] = [marker.to_dict() for marker in self.prop_markers]
+        data["opening_markers"] = [marker.to_dict() for marker in self.opening_markers]
         if include_boundary and self.boundary is not None:
             data["boundary"] = self.boundary.to_dict()
         else:
@@ -158,6 +185,16 @@ def normalize_prop_marker_label(label: str) -> tuple[str | None, int]:
                 prop_type = prop_type[: suffix_match.start()]
             return prop_type, rotation
     return None, 0
+
+
+def normalize_opening_marker_label(label: str) -> tuple[str | None, str | None]:
+    """Return marker type/name for door/window marker labels."""
+
+    normalized = normalize_asset_name(label.strip())
+    for prefix in OPENING_MARKER_PREFIXES:
+        if normalized.startswith(prefix) and len(normalized) > len(prefix):
+            return prefix[:-1], normalized[len(prefix) :]
+    return None, None
 
 
 def _element_label(element: object) -> str:
@@ -224,7 +261,9 @@ class _RoomBucket:
     unsupported: list[str] = field(default_factory=list)
     transform_warnings: list[str] = field(default_factory=list)
     prop_warnings: list[str] = field(default_factory=list)
+    opening_warnings: list[str] = field(default_factory=list)
     prop_markers: list[PropMarker] = field(default_factory=list)
+    opening_markers: list[OpeningMarker] = field(default_factory=list)
     transform_applied: bool = False
 
 
@@ -235,6 +274,20 @@ class _PropMarkerBucket:
     prop_type: str
     rotation_y_degrees: int
     original_label: str
+    group_path: list[str]
+    candidates: list[ShapeCandidate] = field(default_factory=list)
+    unsupported: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    transform_applied: bool = False
+
+
+@dataclass
+class _OpeningMarkerBucket:
+    """Mutable accumulator for one door/window marker group/layer."""
+
+    marker_type: str
+    marker_name: str
+    source_name: str
     group_path: list[str]
     candidates: list[ShapeCandidate] = field(default_factory=list)
     unsupported: list[str] = field(default_factory=list)
@@ -269,6 +322,59 @@ def _collect_prop_marker_shapes(
 
         if tag in CONTAINER_TAGS:
             _collect_prop_marker_shapes(child, child_matrix, css_rules, marker)
+            continue
+
+        if tag in SUPPORTED_SHAPES:
+            points, closed, kind, warnings = _shape_points(child, child_matrix)
+            if not is_identity(child_matrix):
+                marker.transform_applied = True
+            marker.candidates.append(
+                ShapeCandidate(
+                    points=points,
+                    closed=closed,
+                    source_index=len(marker.candidates),
+                    source_kind=kind,
+                    warnings=warnings,
+                )
+            )
+            continue
+
+        if tag in UNSUPPORTED_DRAWABLE:
+            element_id = child.get("id") or ""  # type: ignore[attr-defined]
+            label = f"<{tag}>" + (f" id={element_id}" if element_id else "")
+            marker.unsupported.append(label)
+            continue
+
+        marker.unsupported.append(f"<{tag}>")
+
+
+def _collect_opening_marker_shapes(
+    element: object,
+    matrix: Matrix,
+    css_rules: dict[str, dict[str, str]],
+    marker: _OpeningMarkerBucket,
+) -> None:
+    """Collect supported marker geometry inside one door/window marker group."""
+
+    for child in list(element):  # type: ignore[call-overload]
+        tag_raw = getattr(child, "tag", None)
+        if not isinstance(tag_raw, str):
+            continue
+        tag = local_name(tag_raw).lower()
+        if tag in SKIP_SUBTREE_TAGS:
+            continue
+        if _element_hidden(child, css_rules):
+            continue
+
+        child_matrix, transform_warnings = matrix, []
+        own_transform = child.get("transform")  # type: ignore[attr-defined]
+        if own_transform:
+            own_matrix, transform_warnings = parse_transform(own_transform)
+            child_matrix = matrix_multiply(matrix, own_matrix)
+            marker.warnings.extend(transform_warnings)
+
+        if tag in CONTAINER_TAGS:
+            _collect_opening_marker_shapes(child, child_matrix, css_rules, marker)
             continue
 
         if tag in SUPPORTED_SHAPES:
@@ -343,6 +449,50 @@ def _make_prop_marker(marker: _PropMarkerBucket) -> tuple[PropMarker | None, lis
     )
 
 
+def _make_opening_marker(
+    marker: _OpeningMarkerBucket,
+) -> tuple[OpeningMarker | None, list[str]]:
+    """Create a door/window marker from collected geometry, or return skip warnings."""
+
+    warnings: list[str] = list(marker.warnings)
+    all_points: list[Point2D] = []
+    for candidate in marker.candidates:
+        warnings.extend(
+            f"shape {candidate.source_index} ({candidate.source_kind}): {warning}"
+            for warning in candidate.warnings
+        )
+        if candidate.points:
+            all_points.extend(candidate.points)
+
+    if marker.unsupported:
+        unique_unsupported = list(dict.fromkeys(marker.unsupported))
+        warnings.append(
+            f"Opening marker '{marker.source_name}' chưa hỗ trợ một số phần tử, đã bỏ qua: "
+            + ", ".join(unique_unsupported)
+            + "."
+        )
+
+    if not all_points:
+        warnings.append(
+            f"Opening marker '{marker.source_name}' không có rect/path/polygon/polyline hợp lệ; bỏ qua."
+        )
+        return None, list(dict.fromkeys(warnings))
+
+    bbox = calculate_bbox(all_points)
+    min_x, min_y, max_x, max_y = bbox
+    return (
+        OpeningMarker(
+            marker_type=marker.marker_type,
+            marker_name=marker.marker_name,
+            source_name=marker.source_name,
+            group_path=list(marker.group_path),
+            center_svg=((min_x + max_x) / 2.0, (min_y + max_y) / 2.0),
+            bbox_svg=bbox,
+        ),
+        [],
+    )
+
+
 def _collect_shapes(
     element: object,
     matrix: Matrix,
@@ -372,6 +522,29 @@ def _collect_shapes(
         if tag in CONTAINER_TAGS:
             label = _element_label(child)
             if label:
+                marker_type, marker_name = normalize_opening_marker_label(label)
+                if marker_type and marker_name:
+                    marker_bucket = _OpeningMarkerBucket(
+                        marker_type=marker_type,
+                        marker_name=marker_name,
+                        source_name=label,
+                        group_path=[*group_path, label],
+                        warnings=list(transform_warnings),
+                    )
+                    _collect_opening_marker_shapes(
+                        child,
+                        child_matrix,
+                        css_rules,
+                        marker_bucket,
+                    )
+                    opening_marker, opening_warnings = _make_opening_marker(marker_bucket)
+                    if opening_marker is not None:
+                        current.opening_markers.append(opening_marker)
+                    current.opening_warnings.extend(opening_warnings)
+                    if marker_bucket.transform_applied:
+                        current.transform_applied = True
+                    continue
+
                 prop_type, rotation_y_degrees = normalize_prop_marker_label(label)
                 if prop_type:
                     marker_bucket = _PropMarkerBucket(
@@ -429,7 +602,11 @@ def _collect_shapes(
 
 def _make_room_report_from_bucket(label: str, bucket: _RoomBucket) -> RoomReport:
     room_name = normalize_room_name(label)
-    warnings: list[str] = [*bucket.transform_warnings, *bucket.prop_warnings]
+    warnings: list[str] = [
+        *bucket.transform_warnings,
+        *bucket.prop_warnings,
+        *bucket.opening_warnings,
+    ]
     boundary = choose_largest_closed_boundary_from_candidates(bucket.candidates)
     closed_count = sum(
         1
@@ -474,6 +651,7 @@ def _make_room_report_from_bucket(label: str, bucket: _RoomBucket) -> RoomReport
         transform_applied=bucket.transform_applied,
         group_path=list(bucket.group_path),
         prop_markers=list(bucket.prop_markers),
+        opening_markers=list(bucket.opening_markers),
     )
 
 
@@ -562,6 +740,11 @@ def print_room_report(report: RoomReport) -> None:
         for marker in report.prop_markers:
             for warning in marker.warnings:
                 print(f"  Cảnh báo prop {marker.original_label}: {warning}")
+    if report.opening_markers:
+        openings = ", ".join(
+            f"{marker.marker_type}:{marker.marker_name}" for marker in report.opening_markers
+        )
+        print(f"  Opening marker: {openings}")
     for warning in report.warnings:
         print(f"  Cảnh báo: {warning}")
 
