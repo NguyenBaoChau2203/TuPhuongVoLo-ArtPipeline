@@ -228,6 +228,7 @@ Các phần sau chưa thuộc MVP bàn giao này hoặc vẫn là giới hạn a
 
 ## 12. Tài liệu liên quan
 
+- `docs\artist_workflow_cat_guide_vi.html` — sổ tay mèo con thân thiện cho họa sĩ (007H)
 - `docs\desktop_app_mvp_vi.md`
 - `docs\release_packaging_checklist_vi.md`
 - `docs\HOW_TO_USE_FOR_ARTIST_VI.md`
@@ -239,3 +240,4 @@ Các phần sau chưa thuộc MVP bàn giao này hoặc vẫn là giới hạn a
 - `docs\verification\007C_desktop_app_polish_verified.md`
 - `docs\verification\007G_desktop_app_ai_preview_verified.md`
 - `specs\007-artist-desktop-app-mvp\quickstart.md`
+

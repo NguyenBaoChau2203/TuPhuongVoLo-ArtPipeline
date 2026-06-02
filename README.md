@@ -38,6 +38,7 @@ clean SVG -> Blender MVP isometric draft / batch dry-run
 | 5.5C | AI Polish Preview fal Provider | `docs/ai_polish_preview_fal_vi.md` | Optional fal.ai reference workflow; no required dependency |
 | 6 | Natural Language Agent Control | `specs/006-natural-language-agent-control/` | Spec only; not implemented |
 | 7 | Artist Desktop App MVP | `specs/007-artist-desktop-app-mvp/` | Local Tkinter wrapper with independent optional AI preview controls |
+| 7.8 | Artist Workflow Cat Guide (007H) | `docs/artist_workflow_cat_guide_vi.html` | Static HTML guide; documentation only |
 
 ## Developer Quickstart
 
@@ -152,6 +153,7 @@ Feature 005 MVP actual execution supports `mayapy.exe` only. `maya.exe` and
 
 Vietnamese guides:
 
+- [Sổ tay mèo con — hướng dẫn thân thiện cho họa sĩ (007H)](docs/artist_workflow_cat_guide_vi.html)
 - [Bàn giao desktop app Maya](docs/artist_handoff_desktop_app_vi.md)
 - [Checklist release/packaging desktop app](docs/release_packaging_checklist_vi.md)
 - [Hướng dẫn cài đặt](docs/INSTALL_VI.md)

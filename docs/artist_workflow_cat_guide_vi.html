@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sổ tay mèo con – Pipeline Tứ Phương Vô Lộ</title>
+  <meta name="description" content="Hướng dẫn thân thiện cho họa sĩ về cách chuẩn bị file Illustrator và sử dụng pipeline Maya một cách an toàn trong dự án Tứ Phương Vô Lộ.">
+  <style>
+    /* === Reset & Base === */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #fdf6f0;
+      color: #3d2c1e;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* === Color Tokens === */
+    :root {
+      --peach:    #ffb997;
+      --salmon:   #ff8c69;
+      --rose:     #f9627d;
+      --sand:     #f5e6d8;
+      --cream:    #fdf6f0;
+      --lilac:    #e8d5f5;
+      --mint:     #d4f0e8;
+      --sky:      #d0eaff;
+      --warm-brown: #8b5e3c;
+      --dark:     #3d2c1e;
+      --muted:    #8d6e63;
+      --card-bg:  #fff8f3;
+      --card-border: #f0d9c8;
+      --success:  #4caf8a;
+      --warning:  #f5a623;
+      --danger:   #e05260;
+      --shadow:   rgba(139, 94, 60, 0.13);
+    }
+
+    /* === Typography === */
+    h1 { font-size: clamp(1.8rem, 5vw, 2.8rem); font-weight: 800; color: var(--warm-brown); }
+    h2 { font-size: clamp(1.2rem, 3vw, 1.7rem); font-weight: 700; color: var(--warm-brown); margin-bottom: 0.6rem; }
+    h3 { font-size: 1.1rem; font-weight: 700; color: var(--warm-brown); margin-bottom: 0.4rem; }
+    p  { margin-bottom: 0.85rem; }
+    ul, ol { padding-left: 1.3rem; margin-bottom: 0.85rem; }
+    li { margin-bottom: 0.35rem; }
+    code {
+      font-family: "Cascadia Code", "Consolas", "Menlo", monospace;
+      background: #f0ddd0;
+      color: #7b3f2b;
+      padding: 0.1em 0.45em;
+      border-radius: 5px;
+      font-size: 0.88em;
+    }
+    strong { color: var(--warm-brown); }
+
+    /* === Layout === */
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 1.5rem 4rem;
+    }
+
+    /* === Hero === */
+    .hero {
+      background: linear-gradient(135deg, #ff8c69 0%, #ffb997 45%, #f9c6d0 100%);
+      padding: 3.5rem 1.5rem 3rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 70% 30%, rgba(255,255,255,0.25) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-title {
+      color: #fff;
+      text-shadow: 0 2px 8px rgba(139,60,30,0.35);
+      margin-bottom: 0.5rem;
+      position: relative;
+    }
+    .hero-subtitle {
+      color: rgba(255,255,255,0.92);
+      font-size: 1.05rem;
+      font-weight: 500;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+    /* Cute cat CSS art */
+    .cat-art {
+      display: inline-block;
+      position: relative;
+      margin: 0 auto;
+      user-select: none;
+    }
+    .cat-body {
+      font-size: 6rem;
+      line-height: 1;
+      display: block;
+      animation: catBob 2.8s ease-in-out infinite;
+      filter: drop-shadow(0 4px 12px rgba(139,60,30,0.3));
+    }
+    .cat-paws {
+      display: flex;
+      justify-content: center;
+      gap: 1.2rem;
+      margin-top: -0.5rem;
+      font-size: 2rem;
+    }
+    .cat-paw-left  { animation: pawWave 2.8s ease-in-out infinite; }
+    .cat-paw-right { animation: pawWave 2.8s ease-in-out infinite 1.4s; }
+    .cat-sparkles {
+      position: absolute;
+      top: -0.6rem; right: -1.6rem;
+      font-size: 1.4rem;
+      animation: sparkle 2s ease-in-out infinite;
+    }
+    @keyframes catBob {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-8px); }
+    }
+    @keyframes pawWave {
+      0%,100% { transform: rotate(-10deg); }
+      50%      { transform: rotate(15deg); }
+    }
+    @keyframes sparkle {
+      0%,100% { opacity: 1; transform: scale(1) rotate(0deg); }
+      50%      { opacity: 0.5; transform: scale(1.3) rotate(20deg); }
+    }
+
+    /* Paw print decoration */
+    .paw-trail {
+      display: flex;
+      gap: 1.1rem;
+      justify-content: center;
+      margin-top: 1.5rem;
+      opacity: 0.5;
+      position: relative;
+    }
+    .paw-trail span { font-size: 1.2rem; }
+    .paw-trail span:nth-child(even) { transform: translateY(6px) rotate(20deg); }
+
+    /* === Section card === */
+    .section {
+      margin-top: 2.8rem;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      margin-bottom: 1rem;
+      border-bottom: 2.5px solid var(--peach);
+      padding-bottom: 0.5rem;
+    }
+    .section-icon {
+      font-size: 1.6rem;
+      flex-shrink: 0;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 18px;
+      padding: 1.4rem 1.5rem;
+      box-shadow: 0 3px 16px var(--shadow);
+      transition: transform 0.18s, box-shadow 0.18s;
+      margin-bottom: 1rem;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px var(--shadow);
+    }
+
+    /* === Workflow Map === */
+    .workflow-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.8rem;
+      margin-top: 0.5rem;
+    }
+    .step-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1rem 1.1rem;
+      text-align: center;
+      box-shadow: 0 2px 10px var(--shadow);
+      transition: transform 0.18s;
+      position: relative;
+    }
+    .step-card:hover { transform: translateY(-3px); }
+    .step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem; height: 2rem;
+      background: linear-gradient(135deg, var(--salmon), var(--rose));
+      color: #fff;
+      border-radius: 50%;
+      font-weight: 800;
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+    }
+    .step-icon { font-size: 1.8rem; display: block; margin-bottom: 0.2rem; }
+    .step-label { font-size: 0.9rem; font-weight: 600; color: var(--warm-brown); }
+    .step-sub { font-size: 0.78rem; color: var(--muted); margin-top: 0.15rem; }
+    .step-arrow {
+      display: none;
+    }
+    @media (min-width: 640px) {
+      .workflow-wrapper {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+      .step-card { flex: 1; min-width: 130px; }
+      .step-arrow {
+        display: block;
+        font-size: 1.4rem;
+        color: var(--peach);
+        flex-shrink: 0;
+      }
+    }
+
+    /* === Rule list === */
+    .rule-list { list-style: none; padding: 0; }
+    .rule-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px dashed var(--card-border);
+    }
+    .rule-list li:last-child { border-bottom: none; }
+    .rule-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 0.05rem; }
+
+    /* === Naming pill grid === */
+    .pill-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 0.6rem 0;
+    }
+    .pill {
+      background: linear-gradient(135deg, var(--peach) 0%, #ffd4b0 100%);
+      border: 1.5px solid var(--salmon);
+      border-radius: 999px;
+      padding: 0.28rem 0.85rem;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #7b3f2b;
+      display: inline-block;
+      transition: transform 0.13s;
+    }
+    .pill:hover { transform: scale(1.07); }
+
+    /* === Two-column capability table === */
+    .cap-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+    @media (max-width: 540px) { .cap-grid { grid-template-columns: 1fr; } }
+    .cap-col {
+      border-radius: 14px;
+      padding: 1rem 1.1rem;
+    }
+    .cap-col.yes { background: #e8f9f1; border: 1.5px solid #a8e6cf; }
+    .cap-col.no  { background: #fdf0f2; border: 1.5px solid #f9c0c8; }
+    .cap-heading {
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+    .cap-col.yes .cap-heading { color: #2e8b57; }
+    .cap-col.no  .cap-heading { color: #c0392b; }
+    .cap-list { list-style: none; padding: 0; }
+    .cap-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.45rem;
+      margin-bottom: 0.4rem;
+      font-size: 0.88rem;
+    }
+    .cap-list li::before {
+      flex-shrink: 0;
+      margin-top: 0.05rem;
+    }
+    .cap-col.yes .cap-list li::before { content: "✅"; }
+    .cap-col.no  .cap-list li::before { content: "🚧"; }
+
+    /* === Steps numbered list === */
+    .step-list { list-style: none; padding: 0; counter-reset: step-count; }
+    .step-list li {
+      counter-increment: step-count;
+      display: flex;
+      gap: 0.8rem;
+      margin-bottom: 0.65rem;
+      align-items: flex-start;
+    }
+    .step-list li::before {
+      content: counter(step-count);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.7rem; height: 1.7rem;
+      min-width: 1.7rem;
+      background: linear-gradient(135deg, var(--peach), var(--salmon));
+      color: #fff;
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: 0.8rem;
+      margin-top: 0.1rem;
+    }
+
+    /* === Glossary === */
+    .glossary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.8rem;
+      margin-top: 0.5rem;
+    }
+    .gloss-card {
+      background: var(--lilac);
+      border: 1.5px solid #d4bfea;
+      border-radius: 14px;
+      padding: 0.85rem 1rem;
+    }
+    .gloss-term {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #5b2d8e;
+      margin-bottom: 0.3rem;
+    }
+    .gloss-def { font-size: 0.85rem; color: #4a3065; margin: 0; }
+
+    /* === Checklist card === */
+    .checklist-card {
+      background: linear-gradient(135deg, #e8f9f1 0%, #d4f0e8 100%);
+      border: 2px solid #a8e6cf;
+      border-radius: 18px;
+      padding: 1.4rem 1.5rem;
+      box-shadow: 0 3px 16px rgba(76,175,138,0.12);
+    }
+    .checklist-title {
+      color: #2e8b57;
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.45rem 0;
+      border-bottom: 1px dashed #c8e8d8;
+      font-size: 0.92rem;
+    }
+    .check-item:last-child { border-bottom: none; }
+    .check-box {
+      width: 1.3rem; height: 1.3rem;
+      min-width: 1.3rem;
+      border: 2.5px solid #4caf8a;
+      border-radius: 5px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: transparent;
+      font-size: 0.8rem;
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+    .check-box:hover { background: #c8f0e0; color: #2e8b57; }
+
+    /* === Safety / Warning card === */
+    .safety-card {
+      background: #fff8e8;
+      border: 2px solid #f5d76e;
+      border-radius: 18px;
+      padding: 1.4rem 1.5rem;
+      box-shadow: 0 3px 14px rgba(245,166,35,0.12);
+      margin-bottom: 1rem;
+    }
+    .safety-title {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #9a6500;
+      margin-bottom: 0.7rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .safety-list { list-style: none; padding: 0; }
+    .safety-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.55rem;
+      padding: 0.38rem 0;
+      font-size: 0.9rem;
+    }
+    .safety-list li .icon { flex-shrink: 0; }
+
+    /* === Info banner === */
+    .banner {
+      border-radius: 12px;
+      padding: 0.85rem 1.1rem;
+      margin: 0.8rem 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-size: 0.9rem;
+    }
+    .banner.info  { background: var(--sky);   border: 1.5px solid #a8d8f5; color: #1a5276; }
+    .banner.warn  { background: #fff8e8; border: 1.5px solid #f5d76e; color: #7d5a00; }
+    .banner.good  { background: var(--mint);  border: 1.5px solid #a8e6cf; color: #1a6845; }
+    .banner-icon  { font-size: 1.2rem; flex-shrink: 0; }
+
+    /* === Footer === */
+    .footer {
+      text-align: center;
+      padding: 2.5rem 1rem 1.5rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      border-top: 2px dashed var(--peach);
+      margin-top: 3rem;
+    }
+    .footer .footer-cats { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
+
+    /* === Utility === */
+    .tag {
+      display: inline-block;
+      background: var(--peach);
+      color: var(--warm-brown);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.15rem 0.65rem;
+      margin-left: 0.4rem;
+      vertical-align: middle;
+    }
+    .tag.optional { background: var(--sky); color: #1a5276; }
+    .tag.safe     { background: var(--mint); color: #1a6845; }
+    .divider {
+      border: none;
+      border-top: 2px dashed var(--peach);
+      margin: 2.5rem 0;
+    }
+    .note {
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-style: italic;
+      margin-top: 0.3rem;
+    }
+
+    /* Scroll-to-top paw */
+    .to-top {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: linear-gradient(135deg, var(--salmon), var(--rose));
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 3rem; height: 3rem;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(200,70,50,0.28);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      transition: transform 0.18s, box-shadow 0.18s;
+      z-index: 100;
+    }
+    .to-top:hover {
+      transform: scale(1.12);
+      box-shadow: 0 6px 24px rgba(200,70,50,0.38);
+    }
+
+    /* nav */
+    .nav-bar {
+      background: rgba(253,246,240,0.95);
+      border-bottom: 2px solid var(--peach);
+      padding: 0.6rem 1.5rem;
+      display: flex;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(6px);
+    }
+    .nav-bar a {
+      color: var(--warm-brown);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 0.22rem 0.7rem;
+      border-radius: 999px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .nav-bar a:hover {
+      background: var(--peach);
+      color: #fff;
+    }
+    .nav-logo { font-size: 1.2rem; margin-right: 0.2rem; }
+  </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav-bar" role="navigation" aria-label="Mục lục">
+  <span class="nav-logo">🐱</span>
+  <a href="#workflow">Quy trình</a>
+  <a href="#illustrator">Illustrator</a>
+  <a href="#naming">Đặt tên</a>
+  <a href="#what-tool-knows">Khả năng</a>
+  <a href="#desktop-app">Desktop App</a>
+  <a href="#ai-preview">AI Preview</a>
+  <a href="#safety">An toàn</a>
+  <a href="#glossary">Từ điển</a>
+  <a href="#checklist">Checklist</a>
+</nav>
+
+<!-- Hero -->
+<header class="hero" id="top">
+  <div class="container">
+    <div class="cat-art">
+      <span class="cat-body">🐱</span>
+      <div class="cat-paws">
+        <span class="cat-paw-left">🐾</span>
+        <span class="cat-paw-right">🐾</span>
+      </div>
+      <span class="cat-sparkles">✨</span>
+    </div>
+
+    <h1 class="hero-title" style="margin-top:1rem;">
+      Sổ tay mèo con<br>cho pipeline Tứ Phương Vô Lộ
+    </h1>
+    <p class="hero-subtitle">
+      Illustrator → Desktop App → Maya → AI Preview <em style="opacity:0.85">(tùy chọn)</em>
+    </p>
+
+    <div class="paw-trail" aria-hidden="true">
+      <span>🐾</span><span>🐾</span><span>🐾</span><span>🐾</span><span>🐾</span><span>🐾</span>
+    </div>
+  </div>
+</header>
+
+<!-- Main content -->
+<main class="container">
+
+  <!-- ─── 1. Sơ đồ quy trình ─────────────────────────────────── -->
+  <section class="section" id="workflow" aria-labelledby="h-workflow">
+    <div class="section-header">
+      <span class="section-icon">🗺️</span>
+      <h2 id="h-workflow">Bản đồ quy trình làm việc</h2>
+    </div>
+
+    <div class="card" style="overflow-x:auto;">
+      <div class="workflow-wrapper">
+
+        <div class="step-card">
+          <span class="step-num">1</span>
+          <span class="step-icon">🎨</span>
+          <div class="step-label">Vẽ trong<br>Illustrator</div>
+          <div class="step-sub">Group rõ từng phòng</div>
+        </div>
+        <span class="step-arrow">➜</span>
+
+        <div class="step-card">
+          <span class="step-num">2</span>
+          <span class="step-icon">📄</span>
+          <div class="step-label">Xuất SVG sạch</div>
+          <div class="step-sub">Dùng script JSX hoặc<br>File → Save As → SVG</div>
+        </div>
+        <span class="step-arrow">➜</span>
+
+        <div class="step-card">
+          <span class="step-num">3</span>
+          <span class="step-icon">🖥️</span>
+          <div class="step-label">Mở Desktop App</div>
+          <div class="step-sub"><code>09_artist_desktop_app.bat</code></div>
+        </div>
+        <span class="step-arrow">➜</span>
+
+        <div class="step-card">
+          <span class="step-num">4</span>
+          <span class="step-icon">🧪</span>
+          <div class="step-label">Dry-run trước</div>
+          <div class="step-sub">Kiểm tra lệnh — không tạo file thật</div>
+        </div>
+        <span class="step-arrow">➜</span>
+
+        <div class="step-card">
+          <span class="step-num">5</span>
+          <span class="step-icon">⚙️</span>
+          <div class="step-label">Chạy Maya thật</div>
+          <div class="step-sub">Cần đường dẫn <code>mayapy.exe</code></div>
+        </div>
+        <span class="step-arrow">➜</span>
+
+        <div class="step-card">
+          <span class="step-num">6</span>
+          <span class="step-icon">🏛️</span>
+          <div class="step-label">Mở .ma trong Maya</div>
+          <div class="step-sub">Polish thủ công theo ý thích</div>
+        </div>
+        <span class="step-arrow">➜</span>
+
+        <div class="step-card" style="border-color:#d0eaff; background:#f5fbff;">
+          <span class="step-num" style="background: linear-gradient(135deg,#6db3f2,#4a90d9);">7</span>
+          <span class="step-icon">🤖</span>
+          <div class="step-label">AI Preview<br><span class="tag optional">tùy chọn</span></div>
+          <div class="step-sub">Từ PNG → tham khảo mood</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="banner info">
+      <span class="banner-icon">🐾</span>
+      <span><strong>Ghi nhớ:</strong> File <code>.ma</code> trong <code>outputs/maya/</code> là nguồn sự thật duy nhất để polish cuối. AI preview chỉ là ảnh tham khảo, không thay thế việc chỉnh tay trong Maya.</span>
+    </div>
+  </section>
+
+  <!-- ─── 2. Quy tắc Illustrator ──────────────────────────────── -->
+  <section class="section" id="illustrator" aria-labelledby="h-illustrator">
+    <div class="section-header">
+      <span class="section-icon">🎨</span>
+      <h2 id="h-illustrator">Quy tắc vẽ trong Illustrator</h2>
+    </div>
+
+    <div class="card">
+      <ul class="rule-list">
+        <li>
+          <span class="rule-icon">📁</span>
+          <span>Mỗi phòng nên nằm trong <strong>group hoặc layer riêng</strong>. Pipeline đọc tên group/layer để nhận diện phòng.</span>
+        </li>
+        <li>
+          <span class="rule-icon">🏷️</span>
+          <span>Đặt tên group/layer <strong>rõ ràng, không dấu, không khoảng trắng</strong>: ví dụ <code>phong_kho</code>, <code>phong_bep</code>, <code>phong_ngu</code>, <code>sanh_chinh</code>.</span>
+        </li>
+        <li>
+          <span class="rule-icon">🔒</span>
+          <span>Đường bao phòng phải <strong>đóng kín</strong> — không để hở góc tường hay nối thiếu điểm cuối.</span>
+        </li>
+        <li>
+          <span class="rule-icon">📐</span>
+          <span>Ưu tiên tường bằng <strong>đường thẳng và path đơn giản</strong>. Tránh freehand quá cong phức tạp cho vùng tường chính.</span>
+        </li>
+        <li>
+          <span class="rule-icon">🚫</span>
+          <span><strong>Không ghi đè file <code>.ai</code> gốc.</strong> Luôn xuất SVG riêng ra thư mục khác.</span>
+        </li>
+        <li>
+          <span class="rule-icon">📤</span>
+          <span>Xuất SVG sạch sang thư mục bên ngoài thư mục <code>assets/</code> — ví dụ: bỏ vào <code>drops/</code> trước khi chạy app.</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="banner warn">
+      <span class="banner-icon">⚠️</span>
+      <span>File <code>.ai</code> gốc <strong>không được phép bị ghi đè hoặc xóa</strong> bởi bất kỳ bước nào trong pipeline. Nếu app hỏi chọn file SVG, chỉ chọn file <code>.svg</code> đã xuất riêng.</span>
+    </div>
+  </section>
+
+  <!-- ─── 3. Quy ước đặt tên ──────────────────────────────────── -->
+  <section class="section" id="naming" aria-labelledby="h-naming">
+    <div class="section-header">
+      <span class="section-icon">🏷️</span>
+      <h2 id="h-naming">Quy ước đặt tên</h2>
+    </div>
+
+    <div class="card">
+      <h3>Tên phòng</h3>
+      <p>Tên phòng phải <strong>viết thường, không dấu, dùng dấu gạch dưới</strong>. Pipeline dùng tên phòng để đặt tên cảnh Maya và tên output file.</p>
+      <div class="pill-grid">
+        <span class="pill">phong_kho</span>
+        <span class="pill">phong_bep</span>
+        <span class="pill">phong_ngu</span>
+        <span class="pill">sanh_chinh</span>
+        <span class="pill">phong_tam</span>
+        <span class="pill">hanh_lang</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Marker cho đồ vật / prop</h3>
+      <p>Trong Illustrator, đặt tên group/layer cho các đồ vật theo tiền tố <strong><code>prop_</code></strong> (hoặc <code>item_</code> / <code>object_</code>). Pipeline đọc tên này để tạo placeholder/blockout trong cảnh Maya.</p>
+
+      <div class="banner good" style="margin-bottom:0.8rem;">
+        <span class="banner-icon">🐱</span>
+        <span>Pipeline đọc <em>tên group/layer</em> — không đọc từ nội dung vẽ bên trong. Đặt tên đúng là bước quan trọng nhất!</span>
+      </div>
+
+      <div class="pill-grid">
+        <span class="pill">prop_bed</span>
+        <span class="pill">prop_table</span>
+        <span class="pill">prop_chair</span>
+        <span class="pill">prop_sofa</span>
+        <span class="pill">prop_fridge</span>
+        <span class="pill">prop_sink</span>
+        <span class="pill">prop_kitchen_counter</span>
+        <span class="pill">prop_cabinet</span>
+        <span class="pill">prop_locker</span>
+        <span class="pill">prop_plant</span>
+      </div>
+
+      <p class="note" style="margin-top:0.8rem;">Tiền tố thay thế được chấp nhận: <code>item_</code> và <code>object_</code>. Ví dụ: <code>item_lamp</code>, <code>object_door</code>.</p>
+    </div>
+
+    <div class="card">
+      <h3>Định dạng tên file output</h3>
+      <p>Mọi output được tạo ra sẽ tự động theo mẫu:</p>
+      <div style="background:#f0ddd0; border-radius:10px; padding:0.7rem 1rem; font-family: monospace; font-size:0.88rem; color:#7b3f2b;">
+        tu_phuong_vo_lo_<em>{tên_asset}</em>_<em>{variant}</em>_<em>{stage}</em>_v<em>{version}</em>
+      </div>
+      <p class="note">Họa sĩ không cần nhớ định dạng này — pipeline tự xử lý khi chạy.</p>
+    </div>
+  </section>
+
+  <!-- ─── 4. Công cụ hiểu gì / chưa hiểu gì ─────────────────── -->
+  <section class="section" id="what-tool-knows" aria-labelledby="h-capabilities">
+    <div class="section-header">
+      <span class="section-icon">🔍</span>
+      <h2 id="h-capabilities">Công cụ hiểu gì — chưa hiểu gì</h2>
+    </div>
+
+    <div class="cap-grid">
+      <div class="cap-col yes">
+        <div class="cap-heading">✅ Hiểu được ngay bây giờ</div>
+        <ul class="cap-list">
+          <li>Đường bao phòng (room boundary)</li>
+          <li>Tên phòng từ group/layer</li>
+          <li>Các shape SVG cơ bản được hỗ trợ</li>
+          <li>Prop marker theo tên group/layer</li>
+          <li>Tạo file <code>.ma</code> blockout trong Maya</li>
+          <li>Tạo ảnh PNG preview</li>
+          <li>AI preview từ PNG (tùy chọn, tham khảo)</li>
+        </ul>
+      </div>
+
+      <div class="cap-col no">
+        <div class="cap-heading">🚧 Chưa hiểu đầy đủ</div>
+        <ul class="cap-list">
+          <li>Toàn bộ nét vẽ freehand của đồ vật</li>
+          <li>Line art chi tiết của nội thất</li>
+          <li>Tự tạo cảnh isometric final đã polish</li>
+          <li>Điều khiển bằng lệnh tự nhiên (Feature 006 — chưa làm)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="banner info" style="margin-top:0.9rem;">
+      <span class="banner-icon">💡</span>
+      <span>Pipeline tạo ra <strong>blockout kỹ thuật</strong> — khung 3D cơ bản cho họa sĩ polish tiếp. Đây là bước trung gian, không phải final art tự động.</span>
+    </div>
+  </section>
+
+  <!-- ─── 5. Dùng Desktop App ─────────────────────────────────── -->
+  <section class="section" id="desktop-app" aria-labelledby="h-desktop">
+    <div class="section-header">
+      <span class="section-icon">🖥️</span>
+      <h2 id="h-desktop">Cách dùng Desktop App</h2>
+    </div>
+
+    <div class="banner good">
+      <span class="banner-icon">🐱</span>
+      <span><strong>Cách ưu tiên nhất:</strong> Double-click vào <code>launchers/09_artist_desktop_app.bat</code> để mở app. Không cần mở terminal hay nhập lệnh.</span>
+    </div>
+
+    <div class="card" style="margin-top:0.9rem;">
+      <ol class="step-list">
+        <li>Mở <code>launchers/09_artist_desktop_app.bat</code> (double-click).</li>
+        <li>Bấm <strong>Browse</strong> để chọn file SVG sạch đã xuất từ Illustrator.</li>
+        <li>Nhập <strong>Tên phòng</strong>, ví dụ: <code>phong_kho</code>.</li>
+        <li>Giữ <strong>Dry-run</strong> ở trạng thái bật cho lần chạy đầu tiên.</li>
+        <li>Bật <strong>Render PNG preview</strong> nếu muốn xem ảnh kiểm tra nhanh.</li>
+        <li>Kiểm tra <em>Repo root</em> và <em>Command preview</em> hiển thị đúng trong app.</li>
+        <li>Bấm <strong>Chạy pipeline</strong> và đọc log bên dưới — dry-run không tạo file thật.</li>
+        <li>Nếu log dry-run trả <strong>exit code 0</strong> và lệnh trông đúng → bỏ chọn Dry-run.</li>
+        <li>Kiểm tra đường dẫn <code>mayapy.exe</code> (ví dụ: <code>C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe</code>).</li>
+        <li>Bấm <strong>Chạy pipeline</strong> lần nữa để tạo file <code>.ma</code> thật.</li>
+        <li>Mở thư mục <code>outputs/maya/</code> để lấy file <code>.ma</code> và mở trong Maya để polish.</li>
+      </ol>
+    </div>
+
+    <div class="banner info">
+      <span class="banner-icon">📂</span>
+      <span>App có nút tắt để mở nhanh: <code>outputs/maya/</code>, <code>outputs/preview/</code>, và thư mục repo. Dùng nút này để tìm file output mà không cần tìm thủ công.</span>
+    </div>
+  </section>
+
+  <!-- ─── 6. AI Preview ───────────────────────────────────────── -->
+  <section class="section" id="ai-preview" aria-labelledby="h-ai">
+    <div class="section-header">
+      <span class="section-icon">🤖</span>
+      <h2 id="h-ai">AI Preview — tùy chọn, tham khảo thôi <span class="tag optional">không bắt buộc</span></h2>
+    </div>
+
+    <div class="banner warn">
+      <span class="banner-icon">⚠️</span>
+      <span>AI Preview <strong>không tự chạy</strong> sau khi Maya sinh ra file. Đây là tính năng riêng biệt — họa sĩ phải tự chọn PNG và bấm nút riêng.</span>
+    </div>
+
+    <div class="card" style="margin-top:0.9rem;">
+      <h3>Dùng AI Preview với mock (không cần API key)</h3>
+      <ol class="step-list">
+        <li>Sau khi Maya tạo xong ảnh preview, chuyển sang khu vực <strong>AI polish preview</strong> trong app.</li>
+        <li>Chọn file PNG preview đã tạo (thường trong <code>outputs/preview/</code>).</li>
+        <li>Chọn <strong>Provider: mock</strong> — không cần API key, không cần internet.</li>
+        <li>Giữ <strong>AI dry-run</strong> bật cho lần đầu để chỉ xem kế hoạch.</li>
+        <li>Bấm <strong>Tạo AI polish preview</strong> và đọc log.</li>
+        <li>Nếu muốn xem ảnh mock thật, tắt AI dry-run rồi bấm lại.</li>
+        <li>Ảnh output nằm trong <code>outputs/ai_preview/</code>.</li>
+      </ol>
+    </div>
+
+    <div class="card" style="border-color:#d0eaff; background:#f5fbff;">
+      <h3>Về provider <code>fal</code> <span class="tag optional">tùy chọn nâng cao</span></h3>
+      <ul class="rule-list">
+        <li>
+          <span class="rule-icon">🔑</span>
+          <span>Provider <code>fal</code> chỉ hoạt động khi máy đã cài <code>fal-client</code> và đặt biến môi trường <code>FAL_KEY</code>. Không cần làm bước này cho workflow bình thường.</span>
+        </li>
+        <li>
+          <span class="rule-icon">🛡️</span>
+          <span>Nếu thiếu <code>FAL_KEY</code> và bật <strong>Bỏ qua nếu thiếu cấu hình AI</strong>, pipeline Maya vẫn chạy bình thường — AI chỉ skip an toàn.</span>
+        </li>
+        <li>
+          <span class="rule-icon">📌</span>
+          <span>Ảnh AI chỉ là <strong>tham khảo mood, ánh sáng, vật liệu</strong>. File <code>.ma</code> vẫn là nguồn để polish cuối trong Maya.</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ─── 7. Checklist An toàn ────────────────────────────────── -->
+  <section class="section" id="safety" aria-labelledby="h-safety">
+    <div class="section-header">
+      <span class="section-icon">🛡️</span>
+      <h2 id="h-safety">Danh sách an toàn</h2>
+    </div>
+
+    <div class="safety-card">
+      <div class="safety-title">⚠️ Những điều KHÔNG được làm</div>
+      <ul class="safety-list">
+        <li><span class="icon">🚫</span> <span>Không xóa hoặc ghi đè file <code>.ai</code> gốc bằng bất kỳ bước nào.</span></li>
+        <li><span class="icon">🚫</span> <span>Không commit các file trong <code>outputs/</code> lên Git — đây là output tạm thời.</span></li>
+        <li><span class="icon">🚫</span> <span>Không chạy thật trước khi dry-run trả exit code 0.</span></li>
+        <li><span class="icon">🚫</span> <span>Không xóa file <code>.ma</code> trong <code>outputs/maya/</code> khi đang polish trong Maya — đó là nguồn chỉnh sửa.</span></li>
+        <li><span class="icon">🚫</span> <span>Nếu không chắc bước nào — dừng lại và hỏi dev/operator.</span></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="safety-title" style="color:#2e8b57;">✅ Những điều NÊN làm</div>
+      <ul class="safety-list">
+        <li><span class="icon">✅</span> <span>Luôn chạy dry-run trước khi chạy thật.</span></li>
+        <li><span class="icon">✅</span> <span>Giữ file <code>.ai</code> gốc trong thư mục riêng, chỉ xuất SVG riêng để dùng với pipeline.</span></li>
+        <li><span class="icon">✅</span> <span>File <code>.ma</code> là nguồn editable chính — polish trong Maya, không sửa file SVG từ bước Maya.</span></li>
+        <li><span class="icon">✅</span> <span>Đọc log trong app sau mỗi bước — log bằng tiếng Việt và sẽ thông báo lỗi rõ ràng.</span></li>
+        <li><span class="icon">✅</span> <span>Nếu app báo lỗi về Python hoặc repo — chạy từ thư mục repo hoặc dùng launcher <code>.bat</code>.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ─── 8. Từ điển nhỏ ─────────────────────────────────────── -->
+  <section class="section" id="glossary" aria-labelledby="h-glossary">
+    <div class="section-header">
+      <span class="section-icon">📖</span>
+      <h2 id="h-glossary">Từ điển nhỏ 🐾</h2>
+    </div>
+
+    <div class="glossary-grid">
+      <div class="gloss-card">
+        <div class="gloss-term">SVG sạch</div>
+        <p class="gloss-def">File SVG đã được xuất đúng cách từ Illustrator — không có layer ẩn rác, không có metadata thừa. Đây là file bạn nạp vào app.</p>
+      </div>
+
+      <div class="gloss-card">
+        <div class="gloss-term">Boundary</div>
+        <p class="gloss-def">Đường bao phòng — path khép kín xác định ranh giới tường/sàn của một phòng. Pipeline đọc boundary để dựng blockout.</p>
+      </div>
+
+      <div class="gloss-card">
+        <div class="gloss-term">Prop marker</div>
+        <p class="gloss-def">Group/layer trong Illustrator có tên bắt đầu bằng <code>prop_</code> (hoặc <code>item_</code>, <code>object_</code>). Pipeline đọc tên để tạo placeholder đồ vật trong Maya.</p>
+      </div>
+
+      <div class="gloss-card">
+        <div class="gloss-term">Blockout</div>
+        <p class="gloss-def">Khung 3D cơ bản — tường, sàn, placeholder đồ vật đơn giản — được tạo tự động. Họa sĩ polish lại blockout này trong Maya.</p>
+      </div>
+
+      <div class="gloss-card">
+        <div class="gloss-term">Polish</div>
+        <p class="gloss-def">Bước chỉnh tay cuối cùng trong Maya — thêm chi tiết, ánh sáng, vật liệu, animation, và mọi thứ mà pipeline tự động không làm được.</p>
+      </div>
+
+      <div class="gloss-card">
+        <div class="gloss-term">Dry-run</div>
+        <p class="gloss-def">Chế độ "thử không làm thật" — app in lệnh sẽ chạy và kiểm tra logic, nhưng không tạo file Maya thật. Luôn dry-run trước.</p>
+      </div>
+
+      <div class="gloss-card">
+        <div class="gloss-term">mayapy</div>
+        <p class="gloss-def">Chương trình Python của Autodesk Maya dùng để chạy script tạo cảnh <code>.ma</code>. Đường dẫn thường là <code>C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe</code>.</p>
+      </div>
+
+      <div class="gloss-card">
+        <div class="gloss-term">AI preview</div>
+        <p class="gloss-def">Ảnh tham khảo được tạo bởi AI từ PNG preview. Chỉ dùng để xem mood / cảm hứng — không thay thế file <code>.ma</code> để polish.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 9. Quick Checklist ──────────────────────────────────── -->
+  <section class="section" id="checklist" aria-labelledby="h-checklist">
+    <div class="section-header">
+      <span class="section-icon">✅</span>
+      <h2 id="h-checklist">Checklist nhanh trước khi bấm Chạy 🐾</h2>
+    </div>
+
+    <div class="checklist-card">
+      <div class="checklist-title">
+        <span>🐱</span> Kiểm tra trước khi bấm Chạy pipeline
+      </div>
+
+      <div class="check-item">
+        <span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span>
+        <span>Đã chọn file <strong>SVG</strong> đúng (file <code>.svg</code> đã xuất, không phải <code>.ai</code>).</span>
+      </div>
+      <div class="check-item">
+        <span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span>
+        <span><strong>Tên phòng</strong> đã nhập đúng, không trống, không có khoảng trắng hay dấu tiếng Việt.</span>
+      </div>
+      <div class="check-item">
+        <span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span>
+        <span><strong>Dry-run đang bật</strong> — đặc biệt cho lần chạy đầu tiên.</span>
+      </div>
+      <div class="check-item">
+        <span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span>
+        <span>Thư mục output là <code>outputs</code> (mặc định) hoặc thư mục bạn muốn lưu.</span>
+      </div>
+      <div class="check-item">
+        <span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span>
+        <span>Đường dẫn <code>mayapy.exe</code> chỉ cần điền khi <strong>chạy thật</strong> — không cần cho dry-run.</span>
+      </div>
+      <div class="check-item">
+        <span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span>
+        <span>AI preview là <strong>tùy chọn</strong> — không ảnh hưởng đến pipeline Maya dù có hay không.</span>
+      </div>
+
+      <div class="banner good" style="margin-top:1rem;">
+        <span class="banner-icon">🐾</span>
+        <span>Nếu mọi ô đều tích rồi → bạn sẵn sàng bấm <strong>Chạy pipeline</strong>! 🎉</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+  <span class="footer-cats" aria-hidden="true">🐾 🐱 🐾</span>
+  <p>Sổ tay này dành cho họa sĩ của dự án <strong>Tứ Phương Vô Lộ</strong>.</p>
+  <p>Pipeline phiên bản <strong>v0.7.6 (007G)</strong> · Branch <code>workflow/maya-first-artist-pipeline</code></p>
+  <p style="margin-top:0.5rem;">📄 Tài liệu chi tiết: <code>docs/desktop_app_mvp_vi.md</code> · <code>docs/artist_handoff_desktop_app_vi.md</code></p>
+  <p>🛡️ File <code>.ma</code> là nguồn editable cuối cùng. AI chỉ tham khảo. Dry-run trước, chạy thật sau.</p>
+  <p style="margin-top:0.8rem; opacity:0.6; font-size:0.75rem;">Phase 007H · Tài liệu tĩnh, chỉ đọc trong trình duyệt. Không phụ thuộc CDN hay mạng.</p>
+</footer>
+
+<!-- Back to top -->
+<a href="#top" class="to-top" aria-label="Lên đầu trang" title="Lên đầu trang">🐾</a>
+
+<script>
+  /* Tiny inline script — toggle checkboxes visually only, no server calls */
+  document.querySelectorAll('.check-box').forEach(function(box) {
+    function toggle() {
+      var checked = box.getAttribute('aria-checked') === 'true';
+      box.setAttribute('aria-checked', checked ? 'false' : 'true');
+      box.textContent = checked ? '☐' : '☑';
+      box.style.background = checked ? '' : '#c8f0e0';
+      box.style.color = checked ? 'transparent' : '#2e8b57';
+    }
+    box.addEventListener('click', toggle);
+    box.addEventListener('keydown', function(e) {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); }
+    });
+  });
+</script>
+
+</body>
+</html>
