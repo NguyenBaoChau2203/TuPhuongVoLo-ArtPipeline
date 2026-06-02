@@ -103,3 +103,10 @@
 - [X] T060 Link cat guide from `launchers/README_LAUNCHERS_VI.md`
 - [X] T061 Confirm no Python logic, SVG/Maya/render/AI provider logic, Feature 006, secrets, external assets, CDN, or generated outputs added
 
+## Phase 007I: Artist App Guide and Template UX Polish
+
+- [X] T062 Add app buttons to open guide/template/template folder
+- [X] T063 Improve grouping/layout clarity
+- [X] T064 Keep AI preview optional
+- [X] T065 Add/update tests
+- [X] T066 Confirm no pipeline logic or AI provider behavior changes

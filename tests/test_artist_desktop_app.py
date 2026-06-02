@@ -23,8 +23,8 @@ def _fake_repo(root: Path) -> Path:
 
 
 def test_app_version_metadata_is_display_ready() -> None:
-    assert app.APP_VERSION == "0.7.6"
-    assert app.APP_PHASE == "007G"
+    assert app.APP_VERSION == "0.7.7"
+    assert app.APP_PHASE == "007I"
     assert f"v{app.APP_VERSION}" in app.APP_TITLE
     assert app.APP_PHASE in app.APP_TITLE
     assert app.APP_VERSION in app.app_version_display()
@@ -428,3 +428,83 @@ def test_ai_output_folder_helper_points_to_outputs_ai_preview(tmp_path: Path) ->
         Path("outputs") / "ai_preview"
     )
     assert app.ai_output_dir_path(root) == root / "outputs" / "ai_preview"
+
+
+def test_artist_guide_and_template_paths_use_repo_root(tmp_path: Path) -> None:
+    fake_root = _fake_repo(tmp_path / "repo")
+
+    assert app.artist_guide_path(fake_root) == (
+        fake_root / "docs" / "artist_workflow_cat_guide_vi.html"
+    )
+    assert app.prop_marker_template_path(fake_root) == (
+        fake_root
+        / "assets"
+        / "2d"
+        / "templates"
+        / "illustrator_prop_marker_template.svg"
+    )
+    assert app.prop_marker_template_dir(fake_root) == fake_root / "assets" / "2d" / "templates"
+
+
+def test_open_artist_guide_uses_mocked_browser_opener(tmp_path: Path) -> None:
+    fake_root = _fake_repo(tmp_path / "repo")
+    guide = app.artist_guide_path(fake_root)
+    guide.parent.mkdir(parents=True)
+    guide.write_text("<!doctype html><title>guide</title>\n", encoding="utf-8")
+    opened: list[str] = []
+
+    returned = app.open_artist_guide(fake_root, opener=opened.append)
+
+    assert returned == guide
+    assert opened == [guide.resolve().as_uri()]
+
+
+def test_open_prop_marker_template_uses_mocked_os_opener(tmp_path: Path) -> None:
+    fake_root = _fake_repo(tmp_path / "repo")
+    template = app.prop_marker_template_path(fake_root)
+    template.parent.mkdir(parents=True)
+    template.write_text("<svg xmlns=\"http://www.w3.org/2000/svg\" />\n", encoding="utf-8")
+    opened: list[Path] = []
+
+    returned = app.open_prop_marker_template(fake_root, opener=opened.append)
+
+    assert returned == template
+    assert opened == [template]
+
+
+def test_open_template_folder_uses_mocked_os_opener(tmp_path: Path) -> None:
+    fake_root = _fake_repo(tmp_path / "repo")
+    template_dir = app.prop_marker_template_dir(fake_root)
+    template_dir.mkdir(parents=True)
+    opened: list[Path] = []
+
+    returned = app.open_prop_marker_template_dir(fake_root, opener=opened.append)
+
+    assert returned == template_dir
+    assert opened == [template_dir]
+
+
+def test_missing_guide_and_template_raise_friendly_errors(tmp_path: Path) -> None:
+    fake_root = _fake_repo(tmp_path / "repo")
+
+    with pytest.raises(FileNotFoundError, match=app.GUIDE_MISSING_ERROR):
+        app.open_artist_guide(fake_root, opener=lambda path: None)
+
+    with pytest.raises(FileNotFoundError, match=app.TEMPLATE_MISSING_ERROR):
+        app.open_prop_marker_template(fake_root, opener=lambda path: None)
+
+    with pytest.raises(FileNotFoundError, match=app.TEMPLATE_DIR_MISSING_ERROR):
+        app.open_prop_marker_template_dir(fake_root, opener=lambda path: None)
+
+
+def test_os_open_failure_raises_friendly_runtime_error(tmp_path: Path) -> None:
+    fake_root = _fake_repo(tmp_path / "repo")
+    template = app.prop_marker_template_path(fake_root)
+    template.parent.mkdir(parents=True)
+    template.write_text("<svg xmlns=\"http://www.w3.org/2000/svg\" />\n", encoding="utf-8")
+
+    def fail_open(_path: Path) -> None:
+        raise OSError("blocked")
+
+    with pytest.raises(RuntimeError, match=app.OS_OPEN_ERROR):
+        app.open_prop_marker_template(fake_root, opener=fail_open)

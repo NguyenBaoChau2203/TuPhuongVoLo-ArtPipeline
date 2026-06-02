@@ -33,12 +33,14 @@ clean SVG -> Blender MVP isometric draft / batch dry-run
 | 3 | Floorplan to Isometric Room | `specs/001-floorplan-to-isometric-room/` | MVP done; Blender optional/fallback |
 | 4 | Batch Isometric Render | `specs/004-batch-isometric-render/` | MVP dry-run/report for previous backend |
 | 5 | Maya Bridge | `specs/005-maya-bridge/` | Primary DCC backend; launcher workflow verified |
+| 5.3Q | Illustrator Prop Marker Template | `assets/2d/templates/illustrator_prop_marker_template.svg` | Artist copy/paste marker template and guide links |
 | 5.5A | AI Polish Preview Evaluation | `docs/ai_polish_preview_evaluation_vi.md` | Documentation only; evaluation complete |
 | 5.5B | AI Polish Preview Local Mock | `docs/ai_polish_preview_mock_vi.md` | Mock-only local workflow; no external API |
 | 5.5C | AI Polish Preview fal Provider | `docs/ai_polish_preview_fal_vi.md` | Optional fal.ai reference workflow; no required dependency |
 | 6 | Natural Language Agent Control | `specs/006-natural-language-agent-control/` | Spec only; not implemented |
 | 7 | Artist Desktop App MVP | `specs/007-artist-desktop-app-mvp/` | Local Tkinter wrapper with independent optional AI preview controls |
 | 7.8 | Artist Workflow Cat Guide (007H) | `docs/artist_workflow_cat_guide_vi.html` | Static HTML guide; documentation only |
+| 7.9 | Artist App Guide/Template UX (007I) | `scripts/python/artist_desktop_app.py` | App buttons open guide, marker SVG template, and template folder |
 
 ## Developer Quickstart
 
@@ -123,8 +125,8 @@ Phase 005.5B-R verification is recorded in
 verification is recorded in
 `docs/verification/005_5C_ai_polish_fal_verified.md`.
 
-Phase 007G adds desktop app AI polish preview controls and bumps the app to
-`TuPhuongVoLo Maya Artist App v0.7.6 (007G)` in the app title/UI. The
+Phase 007I keeps the optional desktop app AI polish preview separate and bumps
+the app to `TuPhuongVoLo Maya Artist App v0.7.7 (007I)` in the app title/UI. The
 packaging helper prints the same app version during dry-run. See
 `docs/release_packaging_checklist_vi.md` for the Vietnamese release packaging
 checklist. Phase 007G-R verification is recorded in
@@ -176,23 +178,13 @@ Core artist flow:
 
 Generated `.ma`, `.png`, `outputs/tmp/`, and normal batch reports are local outputs and should not be committed unless intentionally added as test fixtures.
 
-Supported SVG prop markers such as `prop_bed`, `prop_table`, `prop_chair`,
-`prop_sofa`, `prop_fridge`, `prop_sink`, `prop_kitchen_counter`,
-`prop_cabinet`, `prop_locker`, `prop_plant`, `prop_shelf_unit`, and
-`prop_wooden_crate` now create simple procedural Maya blockouts instead of
-only generic cubes. They remain editable draft geometry for artist polish, and
-unknown prop names still fall back to a simple placeholder cube.
-Phase 005.3P-R DCC verification is recorded in
-`docs/verification/005_3P_procedural_prop_blockout_verified.md`.
-`tests/in/illustrator_prop_markers.svg` is a small technical fixture and may
-look sparse in PNG preview renders. Use
-`tests/in/illustrator_prop_showcase.svg` for a clearer procedural prop variety
-smoke test; generated preview framing now includes explicit marker extents and
-uses a visible floor fallback when a preset floor color is too pale.
-Phase 005.3P-V1-R checkpoint and next-improvement audit are recorded in
-`docs/verification/005_3P_V1_procedural_prop_preview_verified.md`; real Maya/DCC
-verification for the showcase fixture remains pending until run on a Maya
-machine.
+For Illustrator prop markers, use the copy/paste template at
+`assets/2d/templates/illustrator_prop_marker_template.svg`. The primary
+Vietnamese naming guide lives in `docs/artist_workflow_cat_guide_vi.html`;
+Markdown docs should link there instead of duplicating the full taxonomy.
+Procedural prop blockout verification remains recorded in
+`docs/verification/005_3P_procedural_prop_blockout_verified.md` and
+`docs/verification/005_3P_V1_procedural_prop_preview_verified.md`.
 
 Phase 005.5A documents the optional AI polish preview stage. Phase 005.5B adds
 a local mock preview workflow. Phase 005.5C adds optional fal.ai integration

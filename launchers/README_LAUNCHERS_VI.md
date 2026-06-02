@@ -67,7 +67,7 @@ thị repo root, lệnh chuẩn bị chạy, trạng thái chạy, exit code cu�
 nút `Xóa log` / `Copy lệnh`. Hãy dry-run trước. Chạy thật cần `mayapy.exe` hợp
 lệ, ví dụ `C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe`.
 
-Từ phase 007G, app hiển thị phiên bản `v0.7.6 (007G)` trong title/UI. Developer
+Từ phase 007I, app hiển thị phiên bản `v0.7.7 (007I)` trong title/UI. Developer
 có thể kiểm tra nhanh bằng:
 
 ```powershell
@@ -79,6 +79,11 @@ chạy Maya; người dùng phải chọn một PNG preview có sẵn và bấm 
 preview`. Mặc định provider là `mock`, `AI dry-run` bật, và output nằm trong
 `outputs/ai_preview/`. Provider `fal` là tùy chọn, chỉ dùng khi máy đã có
 `fal-client` và `FAL_KEY`.
+
+Phase 007I thêm khu vực `Hướng dẫn & template` trong app với nút mở nhanh
+`docs/artist_workflow_cat_guide_vi.html`, SVG mẫu marker
+`assets/2d/templates/illustrator_prop_marker_template.svg`, và thư mục
+`assets/2d/templates/`.
 
 ### Bước 8: Package desktop app thành .exe (developer-only)
 1. Chạy `10_package_artist_app.bat` để in lệnh package dry-run.
@@ -124,5 +129,4 @@ Chi tiết checkpoint nằm trong `docs/verification/007C_desktop_app_polish_ver
 
 ## Hướng dẫn thân thiện cho họa sĩ (007H)
 
-Xem sổ tay mèo con tại `docs/artist_workflow_cat_guide_vi.html` — mở trực tiếp trong trình duyệt, không cần cài thêm gì. Hướng dẫn bao gồm toàn bộ quy trình Illustrator → Desktop App → Maya → AI Preview tùy chọn bằng tiếng Việt.
-
+Xem sổ tay mèo con tại `docs/artist_workflow_cat_guide_vi.html` — mở trực tiếp trong trình duyệt hoặc bấm `Mở hướng dẫn` trong desktop app. Hướng dẫn bao gồm toàn bộ quy trình Illustrator → Desktop App → Maya → AI Preview tùy chọn bằng tiếng Việt.

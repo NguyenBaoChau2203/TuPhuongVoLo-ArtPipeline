@@ -697,14 +697,25 @@
     </div>
 
     <div class="card">
-      <h3>Marker cho đồ vật / prop</h3>
-      <p>Trong Illustrator, đặt tên group/layer cho các đồ vật theo tiền tố <strong><code>prop_</code></strong> (hoặc <code>item_</code> / <code>object_</code>). Pipeline đọc tên này để tạo blockout đồ vật dễ nhận ra hơn trong cảnh Maya.</p>
+      <h3>🐾 Bộ marker prop cho Illustrator</h3>
+      <p>Prop marker là group/layer nhỏ đặt bên trong group phòng để nói với pipeline: “ở đây có một món đồ cần dựng blockout”. Tên marker quan trọng vì pipeline đọc <em>tên group/layer</em>, không hiểu toàn bộ nét vẽ freehand của đồ nội thất.</p>
 
       <div class="banner good" style="margin-bottom:0.8rem;">
         <span class="banner-icon">🐱</span>
-        <span>Pipeline đọc <em>tên group/layer</em> — không đọc từ nội dung vẽ bên trong. Đặt tên đúng là bước quan trọng nhất!</span>
+        <span>Mở SVG mẫu tại <code>assets/2d/templates/illustrator_prop_marker_template.svg</code>, copy marker cần dùng, paste vào group phòng thật, rồi di chuyển/scale trong Illustrator.</span>
       </div>
 
+      <ol class="step-list">
+        <li>Mở template SVG trong Illustrator.</li>
+        <li>Copy một group marker, ví dụ <code>prop_bed</code>.</li>
+        <li>Paste marker vào group phòng thật, ví dụ <code>phong_kho</code>.</li>
+        <li>Di chuyển/scale marker để tâm marker nằm đúng vị trí đặt prop; kích thước marker chỉ là gợi ý footprint an toàn.</li>
+        <li>Xuất SVG sạch, mở desktop app, chạy dry-run trước.</li>
+        <li>Đọc danh sách <strong>Prop marker SVG</strong> trong log dry-run.</li>
+        <li>Khi dry-run đúng, bỏ dry-run và chạy Maya build thật.</li>
+      </ol>
+
+      <h3>Tên canonical nên dùng</h3>
       <div class="pill-grid">
         <span class="pill">prop_bed</span>
         <span class="pill">prop_table</span>
@@ -720,10 +731,20 @@
         <span class="pill">prop_wooden_crate</span>
       </div>
 
-      <p class="note" style="margin-top:0.8rem;">Alias an toàn cũng dùng được: <code>desk</code> → <code>table</code>, <code>couch</code> → <code>sofa</code>, <code>refrigerator</code> → <code>fridge</code>, <code>counter</code> → <code>kitchen_counter</code>, <code>cupboard</code> → <code>cabinet</code>, <code>potted_plant</code> → <code>plant</code>, <code>shelf</code>/<code>shelving</code> → <code>shelf_unit</code>, <code>crate</code>/<code>box</code> → <code>wooden_crate</code>.</p>
-      <p class="note">Nếu tên prop chưa được hỗ trợ, Maya vẫn tạo cube placeholder đơn giản. Marker bên trong group nên là <code>rect</code>, <code>polygon</code>, <code>polyline</code>, hoặc path thẳng; blockout vẫn là draft để polish/thay model thật trong Maya.</p>
-      <p class="note">Fixture <code>tests/in/illustrator_prop_markers.svg</code> chỉ kiểm tra kỹ thuật nên preview có thể thưa. Để kiểm tra nhiều prop rõ hơn, dùng <code>tests/in/illustrator_prop_showcase.svg</code> với room <code>phong_showcase</code>; camera preview sẽ tính thêm vùng marker và sàn có màu fallback dễ nhìn nếu preset quá nhạt.</p>
-      <p class="note">Checkpoint <code>005.3P-V1-R</code> có checklist Maya/DCC thật trong <code>docs/verification/005_3P_V1_procedural_prop_preview_verified.md</code>; showcase fixture vẫn cần operator chạy trên máy có <code>mayapy.exe</code> trước khi đánh dấu verified.</p>
+      <p class="note" style="margin-top:0.8rem;">Alias dùng được nhưng tên canonical vẫn nên ưu tiên: <code>prop_desk</code> → <code>table</code>, <code>prop_couch</code> → <code>sofa</code>, <code>prop_refrigerator</code> → <code>fridge</code>, <code>prop_counter</code> → <code>kitchen_counter</code>, <code>prop_cupboard</code> → <code>cabinet</code>, <code>prop_potted_plant</code> → <code>plant</code>, <code>prop_shelf</code>/<code>prop_shelving</code> → <code>shelf_unit</code>, <code>prop_crate</code>/<code>prop_box</code> → <code>wooden_crate</code>.</p>
+
+      <ul class="rule-list">
+        <li><span class="rule-icon">✅</span><span>Tên marker viết <strong>lowercase ASCII</strong>, dùng dấu gạch dưới, bắt đầu bằng <code>prop_</code>.</span></li>
+        <li><span class="rule-icon">✅</span><span>Không dùng khoảng trắng, dấu tiếng Việt, dấu câu, emoji, hoặc ký tự trang trí trong tên group/layer.</span></li>
+        <li><span class="rule-icon">✅</span><span>Trong group marker, dùng shape đơn giản như <code>rect</code>, <code>polygon</code>, <code>polyline</code>, hoặc path thẳng.</span></li>
+      </ul>
+
+      <div class="banner warn" style="margin-top:0.9rem;">
+        <span class="banner-icon">⚠️</span>
+        <span>Pipeline hiện chưa hiểu đầy đủ mọi nét vẽ nội thất tự do. Prop tạo ra là blockout để kiểm tra bố cục, chưa phải model cuối cùng. Họa sĩ vẫn polish/thay prop trong Maya. Feature 006 điều khiển bằng ngôn ngữ tự nhiên chưa nằm trong workflow này.</span>
+      </div>
+
+      <p class="note">Nếu tên prop chưa được hỗ trợ, Maya vẫn tạo cube placeholder đơn giản thay vì dừng pipeline. Fixture <code>tests/in/illustrator_prop_showcase.svg</code> dùng để kiểm tra kỹ thuật nhiều loại prop; template mới là file copy/paste cho Illustrator.</p>
     </div>
 
     <div class="card">
@@ -984,10 +1005,10 @@
 <footer class="footer">
   <span class="footer-cats" aria-hidden="true">🐾 🐱 🐾</span>
   <p>Sổ tay này dành cho họa sĩ của dự án <strong>Tứ Phương Vô Lộ</strong>.</p>
-  <p>Pipeline phiên bản <strong>v0.7.6 (007G)</strong> · Branch <code>workflow/maya-first-artist-pipeline</code></p>
+  <p>Pipeline phiên bản <strong>v0.7.7 (007I)</strong> · Branch <code>workflow/maya-first-artist-pipeline</code></p>
   <p style="margin-top:0.5rem;">📄 Tài liệu chi tiết: <code>docs/desktop_app_mvp_vi.md</code> · <code>docs/artist_handoff_desktop_app_vi.md</code></p>
   <p>🛡️ File <code>.ma</code> là nguồn editable cuối cùng. AI chỉ tham khảo. Dry-run trước, chạy thật sau.</p>
-  <p style="margin-top:0.8rem; opacity:0.6; font-size:0.75rem;">Phase 007H · Tài liệu tĩnh, chỉ đọc trong trình duyệt. Không phụ thuộc CDN hay mạng.</p>
+  <p style="margin-top:0.8rem; opacity:0.6; font-size:0.75rem;">Phase 007I · Tài liệu tĩnh, chỉ đọc trong trình duyệt. Không phụ thuộc CDN hay mạng.</p>
 </footer>
 
 <!-- Back to top -->
