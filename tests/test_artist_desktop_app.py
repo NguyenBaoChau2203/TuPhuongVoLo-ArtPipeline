@@ -1,4 +1,4 @@
-"""Tests for the Phase 007G artist desktop app helpers.
+"""Tests for the Phase 007J artist desktop app helpers.
 
 These tests intentionally avoid creating a Tkinter window.
 """
@@ -23,11 +23,38 @@ def _fake_repo(root: Path) -> Path:
 
 
 def test_app_version_metadata_is_display_ready() -> None:
-    assert app.APP_VERSION == "0.7.7"
-    assert app.APP_PHASE == "007I"
+    assert app.APP_VERSION == "0.7.8"
+    assert app.APP_PHASE == "007J"
     assert f"v{app.APP_VERSION}" in app.APP_TITLE
     assert app.APP_PHASE in app.APP_TITLE
     assert app.APP_VERSION in app.app_version_display()
+
+
+def test_theme_palette_constants_are_importable() -> None:
+    """Verify theme colour and font constants exist and are non-empty."""
+    assert app.THEME_BG and app.THEME_BG.startswith("#")
+    assert app.THEME_CARD and app.THEME_CARD.startswith("#")
+    assert app.THEME_ACCENT and app.THEME_ACCENT.startswith("#")
+    assert app.THEME_TEXT and app.THEME_TEXT.startswith("#")
+    assert app.THEME_HINT and app.THEME_HINT.startswith("#")
+    assert isinstance(app.THEME_FONT_HEADER, tuple)
+    assert isinstance(app.THEME_FONT_HINT, tuple)
+
+
+def test_style_name_constants_are_importable() -> None:
+    """Verify style name constants are non-empty strings."""
+    assert isinstance(app.STYLE_PRIMARY_BUTTON, str) and app.STYLE_PRIMARY_BUTTON
+    assert isinstance(app.STYLE_ACCENT_BUTTON, str) and app.STYLE_ACCENT_BUTTON
+    assert isinstance(app.STYLE_SECONDARY_BUTTON, str) and app.STYLE_SECONDARY_BUTTON
+    # Names must be valid ttk style name format (contains ".")
+    assert "." in app.STYLE_PRIMARY_BUTTON
+    assert "." in app.STYLE_ACCENT_BUTTON
+    assert "." in app.STYLE_SECONDARY_BUTTON
+
+
+def test_configure_artist_theme_is_callable() -> None:
+    """Verify configure_artist_theme is importable as a callable without opening a window."""
+    assert callable(app.configure_artist_theme)
 
 
 def test_app_version_cli_exits_before_opening_tkinter(capsys) -> None:

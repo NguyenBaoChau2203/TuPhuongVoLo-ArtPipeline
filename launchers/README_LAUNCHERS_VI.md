@@ -67,8 +67,9 @@ thị repo root, lệnh chuẩn bị chạy, trạng thái chạy, exit code cu�
 nút `Xóa log` / `Copy lệnh`. Hãy dry-run trước. Chạy thật cần `mayapy.exe` hợp
 lệ, ví dụ `C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe`.
 
-Từ phase 007I, app hiển thị phiên bản `v0.7.7 (007I)` trong title/UI. Developer
-có thể kiểm tra nhanh bằng:
+Từ phase 007J, app có giao diện mèo thân thiện (bảng màu pastel ấm, header
+mèo 🐱, tiêu đề step thân thiện) và hiển thị phiên bản `v0.7.8 (007J)` trong
+title/UI. Developer có thể kiểm tra nhanh bằng:
 
 ```powershell
 python scripts/python/artist_desktop_app.py --version

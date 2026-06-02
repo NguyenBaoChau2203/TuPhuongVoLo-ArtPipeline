@@ -41,6 +41,7 @@ clean SVG -> Blender MVP isometric draft / batch dry-run
 | 7 | Artist Desktop App MVP | `specs/007-artist-desktop-app-mvp/` | Local Tkinter wrapper with independent optional AI preview controls |
 | 7.8 | Artist Workflow Cat Guide (007H) | `docs/artist_workflow_cat_guide_vi.html` | Static HTML guide; documentation only |
 | 7.9 | Artist App Guide/Template UX (007I) | `scripts/python/artist_desktop_app.py` | App buttons open guide, marker SVG template, and template folder |
+| 7.10 | Cat-Themed Artist App Visual Polish (007J) | `scripts/python/artist_desktop_app.py` | Pastel ttk palette, cat header, friendly section labels, helper text; v0.7.8 |
 
 ## Developer Quickstart
 
@@ -125,6 +126,10 @@ Phase 005.5B-R verification is recorded in
 verification is recorded in
 `docs/verification/005_5C_ai_polish_fal_verified.md`.
 
+Phase 007J polishes the desktop app with a cat-themed pastel UI using ttk.Style
+only (no new dependencies, no external fonts, no binary assets). The app bumps to
+`TuPhuongVoLo Maya Artist App v0.7.8 (007J)`. A warm cream/terracotta palette is
+applied, a friendly 🐱 cat header is added, and section labels become friendlier.
 Phase 007I keeps the optional desktop app AI polish preview separate and bumps
 the app to `TuPhuongVoLo Maya Artist App v0.7.7 (007I)` in the app title/UI. The
 packaging helper prints the same app version during dry-run. See

@@ -18,10 +18,31 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-APP_VERSION = "0.7.7"
-APP_PHASE = "007I"
-APP_TITLE_BASE = "TuPhuongVoLo - Maya Artist App MVP"
+APP_VERSION = "0.7.8"
+APP_PHASE = "007J"
+APP_TITLE_BASE = "TuPhuongVoLo - Maya Artist App"
 APP_TITLE = f"{APP_TITLE_BASE} v{APP_VERSION} ({APP_PHASE})"
+
+# ── Artist theme palette ─────────────────────────────────────────────────────
+THEME_BG = "#FFF8F0"          # warm cream / very light peach
+THEME_CARD = "#FFFCF8"        # soft off-white section background
+THEME_ACCENT = "#E8845A"      # warm terracotta-orange accent
+THEME_ACCENT_DARK = "#C0623A" # pressed accent
+THEME_SECONDARY = "#D4A0C0"   # soft dusty rose for secondary buttons
+THEME_SECONDARY_DARK = "#B5809E"
+THEME_TEXT = "#3D2B1F"        # dark warm brown
+THEME_HINT = "#7A8C6A"        # muted sage green for helper labels
+THEME_BORDER = "#D9C4B5"      # warm border
+THEME_FONT_BODY = ("Segoe UI", 9)
+THEME_FONT_LABEL = ("Segoe UI", 9)
+THEME_FONT_HINT = ("Segoe UI", 8)
+THEME_FONT_HEADER = ("Segoe UI", 14, "bold")
+THEME_FONT_SUBTITLE = ("Segoe UI", 9)
+THEME_FONT_TIP = ("Segoe UI", 8, "italic")
+# ── Style name constants (importable for tests) ──────────────────────────────
+STYLE_PRIMARY_BUTTON = "Primary.TButton"
+STYLE_ACCENT_BUTTON = "Accent.TButton"
+STYLE_SECONDARY_BUTTON = "Secondary.TButton"
 DEFAULT_ROOM_NAME = "phong_kho"
 DEFAULT_OUTPUT_DIR = "outputs"
 DEFAULT_AI_OUTPUT_DIR = Path("outputs") / "ai_preview"
@@ -321,6 +342,113 @@ def pipeline_python_command_prefix(
     return None
 
 
+def configure_artist_theme(style) -> None:
+    """Apply the cat-themed pastel ttk.Style to the desktop app.
+
+    Uses only built-in Tkinter/ttk; no external assets, fonts, or CDN.
+    Must be called after the Tk root and ttk.Style are initialised.
+    """
+    style.theme_use("clam")
+
+    # Base widget colours
+    style.configure(
+        ".",
+        background=THEME_BG,
+        foreground=THEME_TEXT,
+        font=THEME_FONT_BODY,
+        fieldbackground=THEME_CARD,
+        bordercolor=THEME_BORDER,
+        troughcolor=THEME_BORDER,
+    )
+
+    # Frames
+    style.configure("TFrame", background=THEME_BG)
+    style.configure("TLabelframe", background=THEME_BG, bordercolor=THEME_BORDER)
+    style.configure(
+        "TLabelframe.Label",
+        background=THEME_BG,
+        foreground=THEME_ACCENT,
+        font=("Segoe UI", 9, "bold"),
+    )
+
+    # Labels
+    style.configure("TLabel", background=THEME_BG, foreground=THEME_TEXT)
+    style.configure(
+        "Hint.TLabel",
+        background=THEME_BG,
+        foreground=THEME_HINT,
+        font=THEME_FONT_HINT,
+    )
+    style.configure(
+        "Header.TLabel",
+        background=THEME_BG,
+        foreground=THEME_TEXT,
+        font=THEME_FONT_HEADER,
+    )
+    style.configure(
+        "Subtitle.TLabel",
+        background=THEME_BG,
+        foreground=THEME_TEXT,
+        font=THEME_FONT_SUBTITLE,
+    )
+    style.configure(
+        "Tip.TLabel",
+        background=THEME_BG,
+        foreground=THEME_HINT,
+        font=THEME_FONT_TIP,
+    )
+
+    # Checkbutton / Combobox
+    style.configure("TCheckbutton", background=THEME_BG, foreground=THEME_TEXT)
+    style.configure("TCombobox", fieldbackground=THEME_CARD, foreground=THEME_TEXT)
+
+    # Entry
+    style.configure("TEntry", fieldbackground=THEME_CARD, foreground=THEME_TEXT)
+
+    # Primary button — Chạy pipeline
+    style.configure(
+        STYLE_PRIMARY_BUTTON,
+        background=THEME_ACCENT,
+        foreground="#FFFFFF",
+        font=("Segoe UI", 9, "bold"),
+        padding=(10, 4),
+        relief="flat",
+    )
+    style.map(
+        STYLE_PRIMARY_BUTTON,
+        background=[("active", THEME_ACCENT_DARK), ("disabled", THEME_BORDER)],
+        foreground=[("disabled", "#AAAAAA")],
+    )
+
+    # Accent button — Mở hướng dẫn / Mở SVG mẫu marker
+    style.configure(
+        STYLE_ACCENT_BUTTON,
+        background=THEME_SECONDARY,
+        foreground=THEME_TEXT,
+        font=("Segoe UI", 9, "bold"),
+        padding=(8, 4),
+        relief="flat",
+    )
+    style.map(
+        STYLE_ACCENT_BUTTON,
+        background=[("active", THEME_SECONDARY_DARK)],
+    )
+
+    # Secondary button — utility buttons (less dominant)
+    style.configure(
+        STYLE_SECONDARY_BUTTON,
+        background=THEME_CARD,
+        foreground=THEME_TEXT,
+        font=THEME_FONT_BODY,
+        padding=(6, 3),
+        relief="flat",
+    )
+    style.map(
+        STYLE_SECONDARY_BUTTON,
+        background=[("active", THEME_BORDER)],
+    )
+
+
 def configure_stdio() -> None:
     """Prefer UTF-8 console output for Vietnamese messages on Windows."""
 
@@ -611,8 +739,13 @@ class ArtistDesktopApp:
         self.ttk = ttk
         self.root = tk.Tk()
         self.root.title(APP_TITLE)
-        self.root.geometry("980x820")
-        self.root.minsize(840, 680)
+        self.root.configure(bg=THEME_BG)
+        self.root.geometry("980x860")
+        self.root.minsize(860, 700)
+
+        # Apply cat-themed artist style
+        style = ttk.Style(self.root)
+        configure_artist_theme(style)
         self.log_queue: queue.Queue[str] = queue.Queue()
         self.worker: threading.Thread | None = None
         self.ai_worker: threading.Thread | None = None
@@ -641,75 +774,104 @@ class ArtistDesktopApp:
         self._build_ui(scrolledtext)
         self.root.after(100, self._drain_log_queue)
 
-    def _build_ui(self, scrolledtext_module) -> None:
+    def _build_ui(self, scrolledtext_module) -> None:  # noqa: PLR0915
         tk = self.tk
         ttk = self.ttk
 
         outer = ttk.Frame(self.root, padding=12)
         outer.pack(fill=tk.BOTH, expand=True)
         outer.columnconfigure(0, weight=1)
-        outer.rowconfigure(5, weight=1)
+        outer.rowconfigure(6, weight=1)
 
-        ttk.Label(outer, text=app_version_display()).grid(
-            row=0,
-            column=0,
-            columnspan=3,
-            sticky=tk.W,
-            pady=(0, 8),
+        # ── Cat-themed header ────────────────────────────────────────────────
+        header_frame = ttk.Frame(outer)
+        header_frame.grid(row=0, column=0, sticky=tk.EW, pady=(0, 6))
+        ttk.Label(
+            header_frame,
+            text="🐱 Tứ Phương Vô Lộ — Maya Artist App",
+            style="Header.TLabel",
+        ).pack(anchor=tk.W)
+        ttk.Label(
+            header_frame,
+            text="Vẽ SVG trong Illustrator → kiểm tra dry-run → dựng blockout Maya",
+            style="Subtitle.TLabel",
+        ).pack(anchor=tk.W, pady=(1, 0))
+        ttk.Label(
+            header_frame,
+            text=(
+                "🐾 Gợi ý: Chọn SVG → Dry-run → Chạy Maya → Mở .ma trong Maya"
+                "   |   Không sửa/xóa file gốc của artist."
+            ),
+            style="Tip.TLabel",
+        ).pack(anchor=tk.W, pady=(2, 0))
+        ttk.Label(
+            header_frame,
+            text=app_version_display(),
+            style="Hint.TLabel",
+        ).pack(anchor=tk.W, pady=(2, 0))
+
+        # ── Step 1: Chọn bản vẽ SVG ─────────────────────────────────────────
+        svg_section = ttk.LabelFrame(
+            outer, text="🐾 Step 1: Chọn bản vẽ SVG", padding=8
         )
-
-        svg_section = ttk.LabelFrame(outer, text="Step 1: Chọn SVG và phòng", padding=8)
-        svg_section.grid(row=1, column=0, sticky=tk.EW, pady=(0, 8))
+        svg_section.grid(row=1, column=0, sticky=tk.EW, pady=(0, 6))
         svg_section.columnconfigure(1, weight=1)
 
-        maya_section = ttk.LabelFrame(outer, text="Step 2: Maya output / render preview", padding=8)
-        maya_section.grid(row=2, column=0, sticky=tk.EW, pady=(0, 8))
+        ttk.Label(svg_section, text="File SVG sạch").grid(row=0, column=0, sticky=tk.W, pady=3)
+        ttk.Entry(svg_section, textvariable=self.svg_var).grid(
+            row=0, column=1, sticky=tk.EW, pady=3
+        )
+        ttk.Button(
+            svg_section, text="Chọn SVG", command=self._choose_svg, style=STYLE_SECONDARY_BUTTON
+        ).grid(row=0, column=2, padx=(8, 0), pady=3)
+
+        ttk.Label(svg_section, text="Tên phòng/layer").grid(row=1, column=0, sticky=tk.W, pady=3)
+        ttk.Entry(svg_section, textvariable=self.room_var).grid(
+            row=1, column=1, columnspan=2, sticky=tk.EW, pady=3
+        )
+
+        ttk.Label(svg_section, text="Repo root").grid(row=2, column=0, sticky=tk.W, pady=3)
+        ttk.Entry(svg_section, textvariable=self.repo_root_var, state="readonly").grid(
+            row=2, column=1, columnspan=2, sticky=tk.EW, pady=3
+        )
+
+        ttk.Label(
+            svg_section,
+            text="💡 Chọn file SVG sạch đã xuất từ Illustrator (không phải .ai gốc).",
+            style="Hint.TLabel",
+        ).grid(row=3, column=0, columnspan=3, sticky=tk.W, pady=(0, 2))
+
+        # ── Step 2: Dựng Maya blockout ───────────────────────────────────────
+        maya_section = ttk.LabelFrame(
+            outer, text="🏠 Step 2: Dựng Maya blockout", padding=8
+        )
+        maya_section.grid(row=2, column=0, sticky=tk.EW, pady=(0, 6))
         maya_section.columnconfigure(1, weight=1)
 
-        guide_section = ttk.LabelFrame(outer, text="Step 3: Hướng dẫn & template", padding=8)
-        guide_section.grid(row=3, column=0, sticky=tk.EW, pady=(0, 8))
-
-        status_section = ttk.LabelFrame(outer, text="Log / trạng thái", padding=8)
-        status_section.grid(row=5, column=0, sticky=tk.NSEW)
-        status_section.columnconfigure(1, weight=1)
-        status_section.rowconfigure(4, weight=1)
-
-        ttk.Label(svg_section, text="File SVG sạch").grid(row=0, column=0, sticky=tk.W, pady=4)
-        ttk.Entry(svg_section, textvariable=self.svg_var).grid(
-            row=0, column=1, sticky=tk.EW, pady=4
-        )
-        ttk.Button(svg_section, text="Chọn SVG", command=self._choose_svg).grid(
-            row=0, column=2, padx=(8, 0), pady=4
-        )
-
-        ttk.Label(svg_section, text="Tên phòng/layer").grid(row=1, column=0, sticky=tk.W, pady=4)
-        ttk.Entry(svg_section, textvariable=self.room_var).grid(
-            row=1, column=1, columnspan=2, sticky=tk.EW, pady=4
-        )
-
-        ttk.Label(svg_section, text="Repo root").grid(row=2, column=0, sticky=tk.W, pady=4)
-        ttk.Entry(svg_section, textvariable=self.repo_root_var, state="readonly").grid(
-            row=2, column=1, columnspan=2, sticky=tk.EW, pady=4
-        )
-
-        ttk.Label(maya_section, text="Thư mục output").grid(row=0, column=0, sticky=tk.W, pady=4)
+        ttk.Label(maya_section, text="Thư mục output").grid(row=0, column=0, sticky=tk.W, pady=3)
         ttk.Entry(maya_section, textvariable=self.output_var).grid(
-            row=0, column=1, sticky=tk.EW, pady=4
+            row=0, column=1, sticky=tk.EW, pady=3
         )
-        ttk.Button(maya_section, text="Chọn thư mục", command=self._choose_output_dir).grid(
-            row=0, column=2, padx=(8, 0), pady=4
-        )
+        ttk.Button(
+            maya_section,
+            text="Chọn thư mục",
+            command=self._choose_output_dir,
+            style=STYLE_SECONDARY_BUTTON,
+        ).grid(row=0, column=2, padx=(8, 0), pady=3)
 
-        ttk.Label(maya_section, text="mayapy.exe").grid(row=1, column=0, sticky=tk.W, pady=4)
+        ttk.Label(maya_section, text="mayapy.exe").grid(row=1, column=0, sticky=tk.W, pady=3)
         ttk.Entry(maya_section, textvariable=self.mayapy_var).grid(
-            row=1, column=1, sticky=tk.EW, pady=4
+            row=1, column=1, sticky=tk.EW, pady=3
         )
-        ttk.Button(maya_section, text="Chọn mayapy", command=self._choose_mayapy).grid(
-            row=1, column=2, padx=(8, 0), pady=4
-        )
+        ttk.Button(
+            maya_section,
+            text="Chọn mayapy",
+            command=self._choose_mayapy,
+            style=STYLE_SECONDARY_BUTTON,
+        ).grid(row=1, column=2, padx=(8, 0), pady=3)
 
         checks = ttk.Frame(maya_section)
-        checks.grid(row=2, column=0, columnspan=3, sticky=tk.W, pady=(8, 2))
+        checks.grid(row=2, column=0, columnspan=3, sticky=tk.W, pady=(6, 2))
         ttk.Checkbutton(checks, text="Dry-run", variable=self.dry_run_var).pack(
             side=tk.LEFT, padx=(0, 18)
         )
@@ -718,7 +880,7 @@ class ArtistDesktopApp:
         )
 
         render_frame = ttk.Frame(maya_section)
-        render_frame.grid(row=3, column=0, columnspan=3, sticky=tk.W, pady=4)
+        render_frame.grid(row=3, column=0, columnspan=3, sticky=tk.W, pady=3)
         ttk.Label(render_frame, text="Render width").pack(side=tk.LEFT)
         ttk.Entry(render_frame, textvariable=self.width_var, width=8).pack(
             side=tk.LEFT, padx=(6, 16)
@@ -728,125 +890,168 @@ class ArtistDesktopApp:
             side=tk.LEFT, padx=(6, 0)
         )
 
+        ttk.Label(
+            maya_section,
+            text="🐾 Nhớ dry-run trước. Chạy thật cần đường dẫn mayapy.exe hợp lệ.",
+            style="Hint.TLabel",
+        ).grid(row=4, column=0, columnspan=3, sticky=tk.W, pady=(0, 2))
+
         buttons = ttk.Frame(maya_section)
-        buttons.grid(row=4, column=0, columnspan=3, sticky=tk.W, pady=(10, 4))
-        self.run_button = ttk.Button(buttons, text="Chạy pipeline", command=self._run_clicked)
+        buttons.grid(row=5, column=0, columnspan=3, sticky=tk.W, pady=(6, 4))
+        self.run_button = ttk.Button(
+            buttons,
+            text="Chạy pipeline",
+            command=self._run_clicked,
+            style=STYLE_PRIMARY_BUTTON,
+        )
         self.run_button.pack(side=tk.LEFT)
-        ttk.Button(buttons, text="Xóa log", command=self._clear_log).pack(
-            side=tk.LEFT,
-            padx=(8, 0),
-        )
-        ttk.Button(buttons, text="Copy lệnh", command=self._copy_command).pack(
-            side=tk.LEFT,
-            padx=(8, 0),
-        )
+        ttk.Button(
+            buttons, text="Xóa log", command=self._clear_log, style=STYLE_SECONDARY_BUTTON
+        ).pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Button(
+            buttons, text="Copy lệnh", command=self._copy_command, style=STYLE_SECONDARY_BUTTON
+        ).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(
             buttons,
             text="Mở outputs/maya",
             command=lambda: self._open_output("maya"),
+            style=STYLE_SECONDARY_BUTTON,
         ).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(
             buttons,
             text="Mở outputs/preview",
             command=lambda: self._open_output("preview"),
-        ).pack(
-            side=tk.LEFT,
-            padx=(8, 0),
-        )
+            style=STYLE_SECONDARY_BUTTON,
+        ).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(
             buttons,
             text="Mở outputs/reports",
             command=lambda: self._open_output("reports"),
+            style=STYLE_SECONDARY_BUTTON,
         ).pack(side=tk.LEFT, padx=(8, 0))
-        ttk.Button(buttons, text="Mở repo", command=self._open_repo).pack(
-            side=tk.LEFT,
-            padx=(8, 0),
-        )
-
         ttk.Button(
-            guide_section,
+            buttons, text="Mở repo", command=self._open_repo, style=STYLE_SECONDARY_BUTTON
+        ).pack(side=tk.LEFT, padx=(8, 0))
+
+        # ── Step 3: Hướng dẫn & SVG mẫu ────────────────────────────────────
+        guide_section = ttk.LabelFrame(
+            outer, text="📖 Step 3: Hướng dẫn & SVG mẫu", padding=8
+        )
+        guide_section.grid(row=3, column=0, sticky=tk.EW, pady=(0, 6))
+
+        guide_buttons = ttk.Frame(guide_section)
+        guide_buttons.pack(fill=tk.X)
+        ttk.Button(
+            guide_buttons,
             text="Mở hướng dẫn",
             command=self._open_artist_guide,
+            style=STYLE_ACCENT_BUTTON,
         ).pack(side=tk.LEFT)
         ttk.Button(
-            guide_section,
+            guide_buttons,
             text="Mở SVG mẫu marker",
             command=self._open_prop_marker_template,
+            style=STYLE_ACCENT_BUTTON,
         ).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(
-            guide_section,
+            guide_buttons,
             text="Mở thư mục template",
             command=self._open_prop_marker_template_dir,
+            style=STYLE_SECONDARY_BUTTON,
         ).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(
-            guide_section,
+            guide_buttons,
             text="Copy đường dẫn SVG mẫu",
             command=self._copy_template_path,
+            style=STYLE_SECONDARY_BUTTON,
         ).pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Label(
+            guide_section,
+            text=(
+                "💡 Sổ tay mèo HTML là hướng dẫn chính. "
+                "SVG mẫu marker dùng để copy/paste prop vào Illustrator."
+            ),
+            style="Hint.TLabel",
+        ).pack(anchor=tk.W, pady=(4, 0))
 
+        # ── Step 4: AI preview ───────────────────────────────────────────────
         self._build_ai_preview_section(outer, row=4)
+
+        # ── Log / trạng thái ─────────────────────────────────────────────────
+        status_section = ttk.LabelFrame(outer, text="📋 Log / trạng thái", padding=8)
+        status_section.grid(row=6, column=0, sticky=tk.NSEW)
+        status_section.columnconfigure(1, weight=1)
+        status_section.rowconfigure(4, weight=1)
 
         ttk.Label(status_section, text="Trạng thái Maya").grid(
             row=0, column=0, sticky=tk.W, pady=(0, 2)
         )
         ttk.Label(status_section, textvariable=self.status_var).grid(
-            row=0,
-            column=1,
-            sticky=tk.W,
-            pady=(0, 2),
+            row=0, column=1, sticky=tk.W, pady=(0, 2)
         )
 
-        ttk.Label(status_section, text="Lệnh Maya").grid(row=1, column=0, sticky=tk.W, pady=4)
+        ttk.Label(status_section, text="Lệnh Maya").grid(row=1, column=0, sticky=tk.W, pady=3)
         ttk.Entry(status_section, textvariable=self.command_var, state="readonly").grid(
-            row=1,
-            column=1,
-            sticky=tk.EW,
-            pady=4,
+            row=1, column=1, sticky=tk.EW, pady=3
         )
 
-        ttk.Label(status_section, text="Trạng thái AI").grid(row=2, column=0, sticky=tk.W, pady=4)
+        ttk.Label(status_section, text="Trạng thái AI").grid(row=2, column=0, sticky=tk.W, pady=3)
         ttk.Label(status_section, textvariable=self.ai_status_var).grid(
-            row=2,
-            column=1,
-            sticky=tk.W,
-            pady=4,
+            row=2, column=1, sticky=tk.W, pady=3
         )
 
-        ttk.Label(status_section, text="Lệnh AI").grid(row=3, column=0, sticky=tk.W, pady=4)
+        ttk.Label(status_section, text="Lệnh AI").grid(row=3, column=0, sticky=tk.W, pady=3)
         ttk.Entry(status_section, textvariable=self.ai_command_var, state="readonly").grid(
-            row=3,
-            column=1,
-            sticky=tk.EW,
-            pady=4,
+            row=3, column=1, sticky=tk.EW, pady=3
         )
 
-        self.log_text = scrolledtext_module.ScrolledText(status_section, height=14, wrap=tk.WORD)
-        self.log_text.grid(row=4, column=0, columnspan=2, sticky=tk.NSEW, pady=(8, 0))
+        self.log_text = scrolledtext_module.ScrolledText(
+            status_section,
+            height=12,
+            wrap=tk.WORD,
+            bg=THEME_CARD,
+            fg=THEME_TEXT,
+            font=("Consolas", 9),
+            relief="flat",
+            borderwidth=1,
+        )
+        self.log_text.grid(row=4, column=0, columnspan=2, sticky=tk.NSEW, pady=(6, 0))
 
     def _build_ai_preview_section(self, outer, *, row: int) -> None:
         tk = self.tk
         ttk = self.ttk
 
-        section = ttk.LabelFrame(outer, text="Step 4: AI polish preview tùy chọn", padding=8)
-        section.grid(row=row, column=0, sticky=tk.EW, pady=(0, 8))
+        section = ttk.LabelFrame(
+            outer, text="✨ Step 4: AI polish preview tùy chọn", padding=8
+        )
+        section.grid(row=row, column=0, sticky=tk.EW, pady=(0, 6))
         section.columnconfigure(1, weight=1)
 
-        ttk.Label(section, text="PNG preview").grid(row=0, column=0, sticky=tk.W, pady=3)
+        ttk.Label(
+            section,
+            text=(
+                "⭐ Tùy chọn / reference-only — không bắt buộc, "
+                "không ảnh hưởng pipeline Maya."
+            ),
+            style="Hint.TLabel",
+        ).grid(row=0, column=0, columnspan=3, sticky=tk.W, pady=(0, 4))
+
+        ttk.Label(section, text="PNG preview").grid(row=1, column=0, sticky=tk.W, pady=3)
         ttk.Entry(section, textvariable=self.ai_png_var).grid(
-            row=0,
+            row=1,
             column=1,
             sticky=tk.EW,
             pady=3,
         )
-        ttk.Button(section, text="Chọn PNG preview", command=self._choose_ai_png).grid(
-            row=0,
-            column=2,
-            padx=(8, 0),
-            pady=3,
-        )
+        ttk.Button(
+            section,
+            text="Chọn PNG preview",
+            command=self._choose_ai_png,
+            style=STYLE_SECONDARY_BUTTON,
+        ).grid(row=1, column=2, padx=(8, 0), pady=3)
 
         provider_row = ttk.Frame(section)
-        provider_row.grid(row=1, column=0, columnspan=3, sticky=tk.EW, pady=3)
+        provider_row.grid(row=2, column=0, columnspan=3, sticky=tk.EW, pady=3)
         provider_row.columnconfigure(3, weight=1)
 
         ttk.Label(provider_row, text="Provider").grid(row=0, column=0, sticky=tk.W)
@@ -867,7 +1072,7 @@ class ArtistDesktopApp:
         )
 
         prompt_row = ttk.Frame(section)
-        prompt_row.grid(row=2, column=0, columnspan=3, sticky=tk.EW, pady=3)
+        prompt_row.grid(row=3, column=0, columnspan=3, sticky=tk.EW, pady=3)
         prompt_row.columnconfigure(3, weight=1)
 
         ttk.Label(prompt_row, text="Prompt preset").grid(row=0, column=0, sticky=tk.W)
@@ -887,7 +1092,7 @@ class ArtistDesktopApp:
         )
 
         checks = ttk.Frame(section)
-        checks.grid(row=3, column=0, columnspan=3, sticky=tk.W, pady=(4, 2))
+        checks.grid(row=4, column=0, columnspan=3, sticky=tk.W, pady=(4, 2))
         ttk.Checkbutton(
             checks,
             text="Bỏ qua nếu thiếu cấu hình AI",
@@ -898,17 +1103,19 @@ class ArtistDesktopApp:
         )
 
         actions = ttk.Frame(section)
-        actions.grid(row=4, column=0, columnspan=3, sticky=tk.W, pady=(6, 0))
+        actions.grid(row=5, column=0, columnspan=3, sticky=tk.W, pady=(6, 0))
         self.ai_run_button = ttk.Button(
             actions,
             text="Tạo AI polish preview",
             command=self._run_ai_clicked,
+            style=STYLE_PRIMARY_BUTTON,
         )
         self.ai_run_button.pack(side=tk.LEFT)
         ttk.Button(
             actions,
             text="Mở outputs/ai_preview",
             command=self._open_ai_output,
+            style=STYLE_SECONDARY_BUTTON,
         ).pack(side=tk.LEFT, padx=(8, 0))
 
     def run(self) -> None:
