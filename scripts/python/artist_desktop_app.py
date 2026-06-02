@@ -13,12 +13,13 @@ import shutil
 import subprocess
 import sys
 import threading
+import webbrowser
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-APP_VERSION = "0.7.6"
-APP_PHASE = "007G"
+APP_VERSION = "0.7.7"
+APP_PHASE = "007I"
 APP_TITLE_BASE = "TuPhuongVoLo - Maya Artist App MVP"
 APP_TITLE = f"{APP_TITLE_BASE} v{APP_VERSION} ({APP_PHASE})"
 DEFAULT_ROOM_NAME = "phong_kho"
@@ -57,6 +58,11 @@ OUTPUT_SUBDIRS = {
 }
 BUILD_SCRIPT_RELATIVE_PATH = Path("scripts") / "python" / "build_maya_room.py"
 AI_SCRIPT_RELATIVE_PATH = Path("scripts") / "python" / "ai_polish_preview.py"
+ARTIST_GUIDE_RELATIVE_PATH = Path("docs") / "artist_workflow_cat_guide_vi.html"
+PROP_MARKER_TEMPLATE_RELATIVE_PATH = (
+    Path("assets") / "2d" / "templates" / "illustrator_prop_marker_template.svg"
+)
+PROP_MARKER_TEMPLATE_DIR_RELATIVE_PATH = Path("assets") / "2d" / "templates"
 REPO_MARKER_RELATIVE_PATHS = (BUILD_SCRIPT_RELATIVE_PATH, AI_SCRIPT_RELATIVE_PATH)
 REPO_ROOT_ENV_VAR = "TUPHUONGVOLO_REPO_ROOT"
 PIPELINE_PYTHON_ENV_VAR = "TUPHUONGVOLO_PYTHON_EXE"
@@ -68,6 +74,10 @@ PIPELINE_PYTHON_ERROR = (
     "Không tìm thấy Python để chạy pipeline. Hãy cài Python hoặc đặt "
     "TUPHUONGVOLO_PYTHON_EXE."
 )
+GUIDE_MISSING_ERROR = "Không tìm thấy hướng dẫn HTML cho họa sĩ."
+TEMPLATE_MISSING_ERROR = "Không tìm thấy SVG mẫu marker prop."
+TEMPLATE_DIR_MISSING_ERROR = "Không tìm thấy thư mục template SVG."
+OS_OPEN_ERROR = "Hệ điều hành không mở được file hoặc thư mục này."
 
 
 def app_version_display() -> str:
@@ -169,6 +179,82 @@ def ai_script_path(root: Path | None = None) -> Path:
     """Return the optional AI polish preview CLI path."""
 
     return (root or repo_root()) / AI_SCRIPT_RELATIVE_PATH
+
+
+def artist_guide_path(root: Path | None = None) -> Path:
+    """Return the main artist-facing HTML guide path."""
+
+    return (root or repo_root()) / ARTIST_GUIDE_RELATIVE_PATH
+
+
+def prop_marker_template_path(root: Path | None = None) -> Path:
+    """Return the Illustrator prop marker template SVG path."""
+
+    return (root or repo_root()) / PROP_MARKER_TEMPLATE_RELATIVE_PATH
+
+
+def prop_marker_template_dir(root: Path | None = None) -> Path:
+    """Return the Illustrator template folder path."""
+
+    return (root or repo_root()) / PROP_MARKER_TEMPLATE_DIR_RELATIVE_PATH
+
+
+def _open_with_startfile(path: Path) -> None:
+    os.startfile(str(path.resolve()))  # type: ignore[attr-defined]
+
+
+def open_artist_guide(
+    root: Path | None = None,
+    *,
+    opener=None,
+) -> Path:
+    """Open the HTML guide in the default browser and return the target path."""
+
+    path = artist_guide_path(root)
+    if not path.is_file():
+        raise FileNotFoundError(GUIDE_MISSING_ERROR)
+    selected_opener = opener or webbrowser.open
+    try:
+        selected_opener(path.resolve().as_uri())
+    except OSError as exc:
+        raise RuntimeError(f"{OS_OPEN_ERROR} {path}") from exc
+    return path
+
+
+def open_prop_marker_template(
+    root: Path | None = None,
+    *,
+    opener=None,
+) -> Path:
+    """Open the SVG marker template with the OS default app."""
+
+    path = prop_marker_template_path(root)
+    if not path.is_file():
+        raise FileNotFoundError(TEMPLATE_MISSING_ERROR)
+    selected_opener = opener or _open_with_startfile
+    try:
+        selected_opener(path)
+    except OSError as exc:
+        raise RuntimeError(f"{OS_OPEN_ERROR} {path}") from exc
+    return path
+
+
+def open_prop_marker_template_dir(
+    root: Path | None = None,
+    *,
+    opener=None,
+) -> Path:
+    """Open the folder that contains Illustrator SVG marker templates."""
+
+    path = prop_marker_template_dir(root)
+    if not path.is_dir():
+        raise FileNotFoundError(TEMPLATE_DIR_MISSING_ERROR)
+    selected_opener = opener or _open_with_startfile
+    try:
+        selected_opener(path)
+    except OSError as exc:
+        raise RuntimeError(f"{OS_OPEN_ERROR} {path}") from exc
+    return path
 
 
 def default_mayapy_path(candidate: str | Path = DEFAULT_MAYAPY_PATH) -> str:
@@ -561,8 +647,8 @@ class ArtistDesktopApp:
 
         outer = ttk.Frame(self.root, padding=12)
         outer.pack(fill=tk.BOTH, expand=True)
-        outer.columnconfigure(1, weight=1)
-        outer.rowconfigure(16, weight=1)
+        outer.columnconfigure(0, weight=1)
+        outer.rowconfigure(5, weight=1)
 
         ttk.Label(outer, text=app_version_display()).grid(
             row=0,
@@ -572,34 +658,58 @@ class ArtistDesktopApp:
             pady=(0, 8),
         )
 
-        ttk.Label(outer, text="File SVG sạch").grid(row=1, column=0, sticky=tk.W, pady=4)
-        ttk.Entry(outer, textvariable=self.svg_var).grid(row=1, column=1, sticky=tk.EW, pady=4)
-        ttk.Button(outer, text="Chọn SVG", command=self._choose_svg).grid(
+        svg_section = ttk.LabelFrame(outer, text="Step 1: Chọn SVG và phòng", padding=8)
+        svg_section.grid(row=1, column=0, sticky=tk.EW, pady=(0, 8))
+        svg_section.columnconfigure(1, weight=1)
+
+        maya_section = ttk.LabelFrame(outer, text="Step 2: Maya output / render preview", padding=8)
+        maya_section.grid(row=2, column=0, sticky=tk.EW, pady=(0, 8))
+        maya_section.columnconfigure(1, weight=1)
+
+        guide_section = ttk.LabelFrame(outer, text="Step 3: Hướng dẫn & template", padding=8)
+        guide_section.grid(row=3, column=0, sticky=tk.EW, pady=(0, 8))
+
+        status_section = ttk.LabelFrame(outer, text="Log / trạng thái", padding=8)
+        status_section.grid(row=5, column=0, sticky=tk.NSEW)
+        status_section.columnconfigure(1, weight=1)
+        status_section.rowconfigure(4, weight=1)
+
+        ttk.Label(svg_section, text="File SVG sạch").grid(row=0, column=0, sticky=tk.W, pady=4)
+        ttk.Entry(svg_section, textvariable=self.svg_var).grid(
+            row=0, column=1, sticky=tk.EW, pady=4
+        )
+        ttk.Button(svg_section, text="Chọn SVG", command=self._choose_svg).grid(
+            row=0, column=2, padx=(8, 0), pady=4
+        )
+
+        ttk.Label(svg_section, text="Tên phòng/layer").grid(row=1, column=0, sticky=tk.W, pady=4)
+        ttk.Entry(svg_section, textvariable=self.room_var).grid(
+            row=1, column=1, columnspan=2, sticky=tk.EW, pady=4
+        )
+
+        ttk.Label(svg_section, text="Repo root").grid(row=2, column=0, sticky=tk.W, pady=4)
+        ttk.Entry(svg_section, textvariable=self.repo_root_var, state="readonly").grid(
+            row=2, column=1, columnspan=2, sticky=tk.EW, pady=4
+        )
+
+        ttk.Label(maya_section, text="Thư mục output").grid(row=0, column=0, sticky=tk.W, pady=4)
+        ttk.Entry(maya_section, textvariable=self.output_var).grid(
+            row=0, column=1, sticky=tk.EW, pady=4
+        )
+        ttk.Button(maya_section, text="Chọn thư mục", command=self._choose_output_dir).grid(
+            row=0, column=2, padx=(8, 0), pady=4
+        )
+
+        ttk.Label(maya_section, text="mayapy.exe").grid(row=1, column=0, sticky=tk.W, pady=4)
+        ttk.Entry(maya_section, textvariable=self.mayapy_var).grid(
+            row=1, column=1, sticky=tk.EW, pady=4
+        )
+        ttk.Button(maya_section, text="Chọn mayapy", command=self._choose_mayapy).grid(
             row=1, column=2, padx=(8, 0), pady=4
         )
 
-        ttk.Label(outer, text="Tên phòng/layer").grid(row=2, column=0, sticky=tk.W, pady=4)
-        ttk.Entry(outer, textvariable=self.room_var).grid(row=2, column=1, sticky=tk.EW, pady=4)
-
-        ttk.Label(outer, text="Thư mục output").grid(row=3, column=0, sticky=tk.W, pady=4)
-        ttk.Entry(outer, textvariable=self.output_var).grid(row=3, column=1, sticky=tk.EW, pady=4)
-        ttk.Button(outer, text="Chọn thư mục", command=self._choose_output_dir).grid(
-            row=3, column=2, padx=(8, 0), pady=4
-        )
-
-        ttk.Label(outer, text="mayapy.exe").grid(row=4, column=0, sticky=tk.W, pady=4)
-        ttk.Entry(outer, textvariable=self.mayapy_var).grid(row=4, column=1, sticky=tk.EW, pady=4)
-        ttk.Button(outer, text="Chọn mayapy", command=self._choose_mayapy).grid(
-            row=4, column=2, padx=(8, 0), pady=4
-        )
-
-        ttk.Label(outer, text="Repo root").grid(row=5, column=0, sticky=tk.W, pady=4)
-        ttk.Entry(outer, textvariable=self.repo_root_var, state="readonly").grid(
-            row=5, column=1, columnspan=2, sticky=tk.EW, pady=4
-        )
-
-        checks = ttk.Frame(outer)
-        checks.grid(row=6, column=0, columnspan=3, sticky=tk.W, pady=(8, 2))
+        checks = ttk.Frame(maya_section)
+        checks.grid(row=2, column=0, columnspan=3, sticky=tk.W, pady=(8, 2))
         ttk.Checkbutton(checks, text="Dry-run", variable=self.dry_run_var).pack(
             side=tk.LEFT, padx=(0, 18)
         )
@@ -607,8 +717,8 @@ class ArtistDesktopApp:
             side=tk.LEFT
         )
 
-        render_frame = ttk.Frame(outer)
-        render_frame.grid(row=7, column=0, columnspan=3, sticky=tk.W, pady=4)
+        render_frame = ttk.Frame(maya_section)
+        render_frame.grid(row=3, column=0, columnspan=3, sticky=tk.W, pady=4)
         ttk.Label(render_frame, text="Render width").pack(side=tk.LEFT)
         ttk.Entry(render_frame, textvariable=self.width_var, width=8).pack(
             side=tk.LEFT, padx=(6, 16)
@@ -618,8 +728,8 @@ class ArtistDesktopApp:
             side=tk.LEFT, padx=(6, 0)
         )
 
-        buttons = ttk.Frame(outer)
-        buttons.grid(row=8, column=0, columnspan=3, sticky=tk.EW, pady=(10, 4))
+        buttons = ttk.Frame(maya_section)
+        buttons.grid(row=4, column=0, columnspan=3, sticky=tk.W, pady=(10, 4))
         self.run_button = ttk.Button(buttons, text="Chạy pipeline", command=self._run_clicked)
         self.run_button.pack(side=tk.LEFT)
         ttk.Button(buttons, text="Xóa log", command=self._clear_log).pack(
@@ -653,56 +763,72 @@ class ArtistDesktopApp:
             padx=(8, 0),
         )
 
-        self._build_ai_preview_section(outer, row=9)
+        ttk.Button(
+            guide_section,
+            text="Mở hướng dẫn",
+            command=self._open_artist_guide,
+        ).pack(side=tk.LEFT)
+        ttk.Button(
+            guide_section,
+            text="Mở SVG mẫu marker",
+            command=self._open_prop_marker_template,
+        ).pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Button(
+            guide_section,
+            text="Mở thư mục template",
+            command=self._open_prop_marker_template_dir,
+        ).pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Button(
+            guide_section,
+            text="Copy đường dẫn SVG mẫu",
+            command=self._copy_template_path,
+        ).pack(side=tk.LEFT, padx=(8, 0))
 
-        ttk.Label(outer, text="Trạng thái Maya").grid(
-            row=10, column=0, sticky=tk.W, pady=(8, 2)
+        self._build_ai_preview_section(outer, row=4)
+
+        ttk.Label(status_section, text="Trạng thái Maya").grid(
+            row=0, column=0, sticky=tk.W, pady=(0, 2)
         )
-        ttk.Label(outer, textvariable=self.status_var).grid(
-            row=10,
+        ttk.Label(status_section, textvariable=self.status_var).grid(
+            row=0,
             column=1,
-            columnspan=2,
             sticky=tk.W,
-            pady=(8, 2),
+            pady=(0, 2),
         )
 
-        ttk.Label(outer, text="Lệnh Maya").grid(row=11, column=0, sticky=tk.W, pady=4)
-        ttk.Entry(outer, textvariable=self.command_var, state="readonly").grid(
-            row=11,
+        ttk.Label(status_section, text="Lệnh Maya").grid(row=1, column=0, sticky=tk.W, pady=4)
+        ttk.Entry(status_section, textvariable=self.command_var, state="readonly").grid(
+            row=1,
             column=1,
-            columnspan=2,
             sticky=tk.EW,
             pady=4,
         )
 
-        ttk.Label(outer, text="Trạng thái AI").grid(row=12, column=0, sticky=tk.W, pady=4)
-        ttk.Label(outer, textvariable=self.ai_status_var).grid(
-            row=12,
+        ttk.Label(status_section, text="Trạng thái AI").grid(row=2, column=0, sticky=tk.W, pady=4)
+        ttk.Label(status_section, textvariable=self.ai_status_var).grid(
+            row=2,
             column=1,
-            columnspan=2,
             sticky=tk.W,
             pady=4,
         )
 
-        ttk.Label(outer, text="Lệnh AI").grid(row=13, column=0, sticky=tk.W, pady=4)
-        ttk.Entry(outer, textvariable=self.ai_command_var, state="readonly").grid(
-            row=13,
+        ttk.Label(status_section, text="Lệnh AI").grid(row=3, column=0, sticky=tk.W, pady=4)
+        ttk.Entry(status_section, textvariable=self.ai_command_var, state="readonly").grid(
+            row=3,
             column=1,
-            columnspan=2,
             sticky=tk.EW,
             pady=4,
         )
 
-        ttk.Label(outer, text="Log").grid(row=15, column=0, sticky=tk.W, pady=(10, 2))
-        self.log_text = scrolledtext_module.ScrolledText(outer, height=20, wrap=tk.WORD)
-        self.log_text.grid(row=16, column=0, columnspan=3, sticky=tk.NSEW)
+        self.log_text = scrolledtext_module.ScrolledText(status_section, height=14, wrap=tk.WORD)
+        self.log_text.grid(row=4, column=0, columnspan=2, sticky=tk.NSEW, pady=(8, 0))
 
     def _build_ai_preview_section(self, outer, *, row: int) -> None:
         tk = self.tk
         ttk = self.ttk
 
-        section = ttk.LabelFrame(outer, text="AI polish preview tùy chọn", padding=8)
-        section.grid(row=row, column=0, columnspan=3, sticky=tk.EW, pady=(12, 4))
+        section = ttk.LabelFrame(outer, text="Step 4: AI polish preview tùy chọn", padding=8)
+        section.grid(row=row, column=0, sticky=tk.EW, pady=(0, 8))
         section.columnconfigure(1, weight=1)
 
         ttk.Label(section, text="PNG preview").grid(row=0, column=0, sticky=tk.W, pady=3)
@@ -1036,12 +1162,60 @@ class ArtistDesktopApp:
         except RuntimeError as exc:
             self.messagebox.showerror("Cần kiểm tra lại", str(exc))
 
+    def _show_open_problem(self, title: str, exc: Exception) -> None:
+        message = str(exc)
+        self._append_log(f"\n{title}: {message}\n")
+        self.messagebox.showwarning(title, message)
+
+    def _open_artist_guide(self) -> None:
+        try:
+            path = open_artist_guide(repo_root())
+        except (FileNotFoundError, RuntimeError) as exc:
+            self._show_open_problem("Không mở được hướng dẫn", exc)
+            return
+        self._append_log(f"\nĐã mở hướng dẫn: {path}\n")
+
+    def _open_prop_marker_template(self) -> None:
+        try:
+            path = open_prop_marker_template(repo_root())
+        except (FileNotFoundError, RuntimeError) as exc:
+            self._show_open_problem("Không mở được SVG mẫu marker", exc)
+            return
+        self._append_log(f"\nĐã mở SVG mẫu marker: {path}\n")
+
+    def _open_prop_marker_template_dir(self) -> None:
+        try:
+            path = open_prop_marker_template_dir(repo_root())
+        except (FileNotFoundError, RuntimeError) as exc:
+            self._show_open_problem("Không mở được thư mục template", exc)
+            return
+        self._append_log(f"\nĐã mở thư mục template: {path}\n")
+
+    def _copy_template_path(self) -> None:
+        try:
+            path = prop_marker_template_path(repo_root())
+        except RuntimeError as exc:
+            self._show_open_problem("Không copy được đường dẫn template", exc)
+            return
+        if not path.is_file():
+            self._show_open_problem(
+                "Không copy được đường dẫn template",
+                FileNotFoundError(TEMPLATE_MISSING_ERROR),
+            )
+            return
+        self.root.clipboard_clear()
+        self.root.clipboard_append(str(path))
+        self._append_log(f"\nĐã copy đường dẫn SVG mẫu marker: {path}\n")
+
     def _open_folder(self, path: Path) -> None:
         resolved = path.resolve()
         if not resolved.exists():
             self.messagebox.showwarning("Chưa có thư mục", f"Không tìm thấy:\n{resolved}")
             return
-        os.startfile(str(resolved))  # type: ignore[attr-defined]
+        try:
+            os.startfile(str(resolved))  # type: ignore[attr-defined]
+        except OSError as exc:
+            self._show_open_problem("Không mở được thư mục", exc)
 
 
 def build_parser() -> argparse.ArgumentParser:

@@ -66,10 +66,10 @@ chọn cho AI polish preview:
 - `docs/ai_polish_preview_mock_vi.md`
 - `docs/ai_polish_preview_fal_vi.md`
 
-AI polish preview hiện là CLI tùy chọn, chưa có nút AI trong desktop app. API
-thật chỉ chạy khi user tự gọi `scripts/python/ai_polish_preview.py --provider
-fal`, không dùng `--dry-run`, có `FAL_KEY`, và đã cài `fal-client`. Ảnh AI chỉ
-là reference/concept. File `.ma` và clean SVG vẫn là source of truth.
+AI polish preview hiện có khu vực riêng trong desktop app, nhưng vẫn là bước
+tùy chọn/reference-only. API thật chỉ chạy khi user tự chọn provider `fal`, tắt
+dry-run AI, có `FAL_KEY`, và đã cài `fal-client`. Ảnh AI chỉ là
+reference/concept. File `.ma` và clean SVG vẫn là source of truth.
 
 ### Đóng gói desktop app thành .exe
 
@@ -190,30 +190,21 @@ Launcher `07_build_maya_room.bat` dùng cho một SVG/một phòng. Launcher `08
 
 ## Prop marker trong Illustrator
 
-Nếu muốn Maya đặt blockout đồ vật theo bố cục đã vẽ, tạo group/layer con bên trong group phòng và đặt tên theo mẫu:
+Nếu muốn Maya đặt blockout đồ vật theo bố cục đã vẽ, dùng template copy/paste:
 
-- `prop_bed`
-- `prop_table`
-- `prop_chair`
-- `prop_sofa`
-- `prop_fridge`
-- `prop_sink`
-- `prop_kitchen_counter`
-- `prop_cabinet`
-- `prop_locker`
-- `prop_plant`
-- `prop_shelf_unit`
-- `prop_wooden_crate`
+```text
+assets/2d/templates/illustrator_prop_marker_template.svg
+```
 
-Pipeline bỏ prefix `prop_`, `item_`, hoặc `object_` và dùng phần còn lại làm loại prop. Một số alias an toàn cũng được hỗ trợ: `desk` -> `table`, `couch` -> `sofa`, `refrigerator` -> `fridge`, `counter` -> `kitchen_counter`, `cupboard` -> `cabinet`, `potted_plant` -> `plant`, `shelf`/`shelving` -> `shelf_unit`, `crate`/`box` -> `wooden_crate`.
+Hướng dẫn đặt tên, alias, quy tắc marker, và giới hạn hiện nằm trong guide HTML chính:
 
-Trong group prop, giữ marker thật đơn giản: `rect`, `polygon`, `polyline`, hoặc path thẳng. Các prop được hỗ trợ sẽ tạo blockout nhiều khối dễ nhận ra hơn, nhưng vẫn là draft editable để kiểm tra bố cục. Nếu tên prop chưa được hỗ trợ, Maya vẫn tạo cube placeholder đơn giản thay vì dừng pipeline. Họa sĩ vẫn polish/thay model thật trong Maya sau.
+```text
+docs/artist_workflow_cat_guide_vi.html
+```
 
-Checkpoint DCC cho procedural prop blockout đã được ghi lại tại `docs/verification/005_3P_procedural_prop_blockout_verified.md`: file `.ma` mở được trong Maya, `prop_shelf_unit_01` và `prop_wooden_crate_01` là multi-piece, tên child node an toàn cho Maya, và PNG preview đã generate.
-
-Nếu chỉ dùng `tests/in/illustrator_prop_markers.svg`, preview có thể nhìn thưa vì đây là fixture kỹ thuật với rất ít marker. Để kiểm tra nhanh nhiều loại prop blockout trong một cảnh rộng hơn, dùng `tests/in/illustrator_prop_showcase.svg` với room `phong_showcase` và bật `--render-preview`. Camera preview đã tính thêm vùng đặt prop marker, và màu sàn có fallback dễ nhìn hơn nếu preset quá nhạt trên nền trắng.
-
-Checkpoint 005.3P-V1-R nằm tại `docs/verification/005_3P_V1_procedural_prop_preview_verified.md`. Trạng thái hiện tại là chờ kiểm chứng Maya/DCC thật cho fixture showcase; tài liệu đó có sẵn lệnh và checklist để operator chạy trên máy có `mayapy.exe`.
+Trong desktop app phase 007I, bấm `Mở hướng dẫn`, `Mở SVG mẫu marker`, hoặc
+`Mở thư mục template` để mở nhanh các file này. Markdown này chỉ trỏ tới guide
+chính để tránh nhiều bản hướng dẫn artist khác nhau bị lệch nội dung.
 
 ## Không nên commit
 

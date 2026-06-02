@@ -38,7 +38,7 @@ an toàn khi bấm mở; app không tạo hoặc sửa thư mục source asset.
 
 Phase 007E thêm metadata phiên bản nhỏ cho app desktop:
 
-- App title và nhãn trong UI hiển thị `TuPhuongVoLo Maya Artist App v0.7.6 (007G)`.
+- App title và nhãn trong UI hiển thị `TuPhuongVoLo Maya Artist App v0.7.7 (007I)`.
 - CLI hỗ trợ kiểm tra phiên bản:
 
 ```powershell
@@ -111,6 +111,25 @@ Phase 007H thêm hướng dẫn web thân thiện cho họa sĩ (sổ tay mèo c
 docs/artist_workflow_cat_guide_vi.html
 ```
 
+## Cập nhật 007I: nút hướng dẫn và template marker
+
+Phase 007I gom layout desktop app thành các khung rõ bước hơn:
+
+- `Step 1: Chọn SVG và phòng`
+- `Step 2: Maya output / render preview`
+- `Step 3: Hướng dẫn & template`
+- `Step 4: AI polish preview tùy chọn`
+- `Log / trạng thái`
+
+Khu vực `Step 3` có các nút mở nhanh:
+
+- `Mở hướng dẫn` mở `docs/artist_workflow_cat_guide_vi.html`.
+- `Mở SVG mẫu marker` mở `assets/2d/templates/illustrator_prop_marker_template.svg`.
+- `Mở thư mục template` mở `assets/2d/templates/`.
+- `Copy đường dẫn SVG mẫu` copy đường dẫn template vào clipboard.
+
+Guide HTML là nguồn hướng dẫn chính cho prop marker; Markdown chỉ nên link tới guide và template, không lặp lại toàn bộ taxonomy.
+
 ## Cách chạy từ source
 
 ```powershell
@@ -139,6 +158,7 @@ launchers/09_artist_desktop_app.bat
 - `outputs/preview/`
 - `outputs/reports/`
 - `outputs/ai_preview/`
+- `assets/2d/templates/`
 - Thư mục repo
 
 ## Đóng gói .exe cho máy dev

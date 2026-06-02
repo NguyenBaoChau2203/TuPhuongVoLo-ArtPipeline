@@ -472,6 +472,27 @@ def test_output_naming_follows_convention(tmp_path: Path, monkeypatch) -> None:
 
 
 FIXTURE_DIR = Path(__file__).parent / "in"
+PROP_TEMPLATE_SVG = (
+    builder.repo_root()
+    / "assets"
+    / "2d"
+    / "templates"
+    / "illustrator_prop_marker_template.svg"
+)
+CANONICAL_PROP_MARKER_NAMES = [
+    "prop_bed",
+    "prop_table",
+    "prop_chair",
+    "prop_sofa",
+    "prop_fridge",
+    "prop_sink",
+    "prop_kitchen_counter",
+    "prop_cabinet",
+    "prop_locker",
+    "prop_plant",
+    "prop_shelf_unit",
+    "prop_wooden_crate",
+]
 
 
 def test_dry_run_reports_candidate_and_usable_room_counts(tmp_path: Path, monkeypatch) -> None:
@@ -583,6 +604,60 @@ def test_prop_showcase_fixture_dry_run_detects_supported_markers(
         "shelf_unit",
         "wooden_crate",
     ]
+
+
+def test_prop_marker_template_dry_run_detects_all_canonical_markers(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(PROP_TEMPLATE_SVG),
+            "--room",
+            "phong_marker_template",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+
+    plan = builder.build_plan(args)
+
+    assert plan.room.room_name == "phong_marker_template"
+    assert [marker.original_label for marker in plan.room.prop_markers] == (
+        CANONICAL_PROP_MARKER_NAMES
+    )
+    assert [marker.prop_type for marker in plan.room.prop_markers] == [
+        name.removeprefix("prop_") for name in CANONICAL_PROP_MARKER_NAMES
+    ]
+
+
+def test_prop_marker_template_dry_run_does_not_update_manifest(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    manifest_path = isolated_manifest(monkeypatch, tmp_path)
+
+    exit_code = builder.main(
+        [
+            "--input",
+            str(PROP_TEMPLATE_SVG),
+            "--room",
+            "phong_marker_template",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert not manifest_path.exists()
+    assert "Prop marker SVG (12):" in captured.out
+    assert "ghi manifest" in captured.out
 
 
 def test_prop_showcase_dry_run_does_not_update_manifest(

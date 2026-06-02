@@ -101,16 +101,29 @@ Expected:
 - Detected room is `phong_kho`
 - `prop_shelf_unit` becomes `shelf_unit`
 - `prop_wooden_crate` becomes `wooden_crate`
-- Supported marker names such as `prop_bed`, `prop_table`, `prop_chair`,
-  `prop_sofa`, `prop_fridge`, `prop_sink`, `prop_kitchen_counter`,
-  `prop_cabinet`, `prop_locker`, `prop_plant`, `prop_shelf_unit`, and
-  `prop_wooden_crate` create simple procedural blockout props in Maya
-- Aliases such as `desk`, `couch`, `refrigerator`, `counter`, `cupboard`,
-  `potted_plant`, `shelf`, `shelving`, `crate`, and `box` normalize to their
-  supported prop builders
+- The primary artist-facing marker naming guide lives in
+  `docs/artist_workflow_cat_guide_vi.html`
+- The Illustrator copy/paste template lives in
+  `assets/2d/templates/illustrator_prop_marker_template.svg`
 - Unknown prop names still create the simple cube fallback instead of failing
 - Dry-run prints planned `.ma`, geometry JSON, and preview PNG paths
 - Manifest is not updated
+
+Template dry-run for Phase 005.3Q:
+
+```powershell
+python scripts/python/build_maya_room.py `
+  --input assets/2d/templates/illustrator_prop_marker_template.svg `
+  --room phong_marker_template `
+  --output-dir outputs `
+  --dry-run
+```
+
+Expected:
+
+- Dry-run reports 12 prop markers
+- Manifest is not updated
+- No Maya execution is required
 
 `tests/in/illustrator_prop_markers.svg` is a technical fixture with only a few
 markers, so a real PNG render can look sparse. For a clearer visual sanity

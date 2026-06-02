@@ -15,7 +15,7 @@ MVP hiện tại cho phép:
 - Kiểm tra file `.ma` và ảnh PNG preview được tạo ra.
 - Tạo AI polish preview tùy chọn từ một PNG preview đã có, bằng nút riêng trong app.
 - Mở file `.ma` trong Maya để polish thủ công.
-- Xem phiên bản app trong title/UI hoặc bằng `--version`: `v0.7.6 (007G)`.
+- Xem phiên bản app trong title/UI hoặc bằng `--version`: `v0.7.7 (007I)`.
 
 Desktop app chỉ là wrapper local cho pipeline CLI đã kiểm chứng. App không thay
 thế Maya, không tự parse SVG, không sửa SVG gốc. AI `fal` chỉ có thể gọi external
@@ -113,7 +113,7 @@ Dùng checklist này khi bàn giao hoặc xác nhận lại build `.exe`:
 
 - [ ] Repo đang ở branch `workflow/maya-first-artist-pipeline`.
 - [ ] App hoặc `.exe` mở được.
-- [ ] App hiển thị phiên bản `v0.7.6 (007G)`.
+- [ ] App hiển thị phiên bản `v0.7.7 (007I)`.
 - [ ] App hiển thị repo root.
 - [ ] App hiển thị command preview.
 - [ ] SVG input là file SVG sạch.
@@ -240,4 +240,3 @@ Các phần sau chưa thuộc MVP bàn giao này hoặc vẫn là giới hạn a
 - `docs\verification\007C_desktop_app_polish_verified.md`
 - `docs\verification\007G_desktop_app_ai_preview_verified.md`
 - `specs\007-artist-desktop-app-mvp\quickstart.md`
-

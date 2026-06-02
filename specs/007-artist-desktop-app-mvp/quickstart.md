@@ -35,7 +35,7 @@ PyInstaller is optional and dev-only. Generated `build/`, `dist/`, `.spec`, and
 ## Phase 007E Packaging Metadata Polish
 
 The desktop app has a small version constant and shows
-`TuPhuongVoLo Maya Artist App v0.7.6 (007G)` in the app title/UI. The app CLI
+`TuPhuongVoLo Maya Artist App v0.7.7 (007I)` in the app title/UI. The app CLI
 supports `--version`, and the packaging helper prints the same app version
 during dry-run and supports its own `--version`.
 
@@ -69,6 +69,26 @@ outputs/ai_preview/
 The Maya `.ma` scene remains the source of truth. The AI workflow does not
 modify SVG, geometry JSON, Maya scene generation, render logic, manifests,
 source assets, or Feature 006 natural-language control.
+
+## Phase 007I Guide and Template UX Polish
+
+The desktop app groups controls into clearer sections:
+
+- `Step 1: Chọn SVG và phòng`
+- `Step 2: Maya output / render preview`
+- `Step 3: Hướng dẫn & template`
+- `Step 4: AI polish preview tùy chọn`
+- `Log / trạng thái`
+
+The guide/template section opens:
+
+- `docs/artist_workflow_cat_guide_vi.html`
+- `assets/2d/templates/illustrator_prop_marker_template.svg`
+- `assets/2d/templates/`
+
+It can also copy the SVG template path to the clipboard. Missing guide/template
+files should produce friendly Vietnamese status/log messages instead of
+crashing.
 
 ## Package App Verification Checkpoint
 
@@ -115,8 +135,9 @@ local packaging notes, and generated artifacts that must not be committed.
 2. Keep dry-run enabled for the first run.
 3. Enter the room name, for example `phong_kho`.
 4. Enable PNG preview if a preview image is needed.
-5. Review the command and log output in the app.
-6. For actual Maya execution, disable dry-run and provide `mayapy.exe`.
+5. Use `Mở hướng dẫn` or `Mở SVG mẫu marker` if marker naming help is needed.
+6. Review the command and log output in the app.
+7. For actual Maya execution, disable dry-run and provide `mayapy.exe`.
 
 ## Validation
 

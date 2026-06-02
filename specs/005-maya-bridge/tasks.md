@@ -139,3 +139,11 @@ Verified manually on artist/DCC machine with Autodesk Maya 2024 mayapy.exe. .ma 
 - [X] T085 Document preview visual sanity improvements from 005.3P-V1
 - [X] T086 Add next-improvement audit with prioritized future phases
 - [X] T087 Confirm documentation/checkpoint/audit only: no generated outputs, no Feature 006, no AI changes, no Python/Maya/parser/desktop app logic changes, no external APIs, secrets, dependencies, binary assets, build/dist, exe/spec/zip, or reports
+
+## Phase 16: Illustrator Prop Marker Template and Naming Guide (005.3Q)
+
+- [X] T088 Add Illustrator prop marker SVG template
+- [X] T089 Integrate prop marker taxonomy into cat-themed HTML guide
+- [X] T090 Link template/guide from relevant docs
+- [X] T091 Add non-Maya validation that template is readable and detects supported markers
+- [X] T092 Confirm no Maya logic, SVG parser refactor, Feature 006, AI changes, external API, secrets, dependencies, binary assets, or generated outputs
