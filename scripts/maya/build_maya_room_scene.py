@@ -412,6 +412,24 @@ def create_box(
     return node
 
 
+def side_token(sign: int | float) -> str:
+    """Return a Maya-safe left/right token for an x-axis sign."""
+
+    return "left" if sign < 0 else "right"
+
+
+def depth_token(sign: int | float) -> str:
+    """Return a Maya-safe front/back token for a z-axis sign."""
+
+    return "front" if sign < 0 else "back"
+
+
+def corner_token(x_sign: int | float, z_sign: int | float) -> str:
+    """Return a Maya-safe corner suffix from x/z signs."""
+
+    return f"{side_token(x_sign)}_{depth_token(z_sign)}"
+
+
 def build_bed_prop(
     cmds: Any,
     name: str,
@@ -479,7 +497,7 @@ def build_table_prop(
     for x_sign, z_sign in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
         create_box(
             cmds,
-            f"{name}_leg_{x_sign}_{z_sign}",
+            f"{name}_leg_{corner_token(x_sign, z_sign)}",
             (
                 center[0] + x_sign * (width / 2.0 - leg_w),
                 leg_h / 2.0,
@@ -526,7 +544,7 @@ def build_chair_prop(
     for x_sign, z_sign in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
         create_box(
             cmds,
-            f"{name}_leg_{x_sign}_{z_sign}",
+            f"{name}_leg_{corner_token(x_sign, z_sign)}",
             (
                 center[0] + x_sign * (width / 2.0 - leg_w),
                 (seat_y - seat_h / 2.0) / 2.0,
@@ -572,7 +590,7 @@ def build_sofa_prop(
     for x_sign in (-1, 1):
         create_box(
             cmds,
-            f"{name}_arm_{x_sign}",
+            f"{name}_arm_{side_token(x_sign)}",
             (center[0] + x_sign * (width / 2.0 - arm_w / 2.0), seat_h, center[1]),
             (arm_w, seat_h * 2.0, depth),
             detail_material,
@@ -801,7 +819,7 @@ def build_shelf_prop(
     for x_sign in (-1, 1):
         create_box(
             cmds,
-            f"{name}_side_{x_sign}",
+            f"{name}_side_{side_token(x_sign)}",
             (center[0] + x_sign * (width / 2.0 - post_w / 2.0), height / 2.0, center[1]),
             (post_w, height, depth),
             material,
