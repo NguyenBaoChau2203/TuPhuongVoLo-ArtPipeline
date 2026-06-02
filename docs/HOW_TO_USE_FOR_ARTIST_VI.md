@@ -211,6 +211,8 @@ Trong group prop, giữ marker thật đơn giản: `rect`, `polygon`, `polyline
 
 Checkpoint DCC cho procedural prop blockout đã được ghi lại tại `docs/verification/005_3P_procedural_prop_blockout_verified.md`: file `.ma` mở được trong Maya, `prop_shelf_unit_01` và `prop_wooden_crate_01` là multi-piece, tên child node an toàn cho Maya, và PNG preview đã generate.
 
+Nếu chỉ dùng `tests/in/illustrator_prop_markers.svg`, preview có thể nhìn thưa vì đây là fixture kỹ thuật với rất ít marker. Để kiểm tra nhanh nhiều loại prop blockout trong một cảnh rộng hơn, dùng `tests/in/illustrator_prop_showcase.svg` với room `phong_showcase` và bật `--render-preview`. Camera preview đã tính thêm vùng đặt prop marker, và màu sàn có fallback dễ nhìn hơn nếu preset quá nhạt trên nền trắng.
+
 ## Không nên commit
 
 Các file sinh ra sau đây không nên commit trừ khi developer cố ý cần một fixture hoặc report mẫu:

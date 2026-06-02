@@ -85,12 +85,19 @@ prop_wooden_crate_01
 
 Fixture `tests/in/illustrator_prop_markers.svg` dung de kiem tra technical correctness, khong phai final visual quality. Preview co the trong sparse/odd vi fixture chi co hai marker don gian: `prop_shelf_unit` va `prop_wooden_crate`.
 
-Mot phase polish nho sau do nen tap trung vao visual sanity cua preview: camera clarity, floor visibility, framing, va showcase fixture ro hon.
+Phase `005.3P-V1` da xu ly visual sanity polish nho:
 
-Next recommended phase:
+- Camera framing tinh them explicit SVG prop marker centers va footprint uoc luong, nen phong + prop duoc frame on dinh hon.
+- Chieu cao prop procedural duoc tinh vao framing khi can, giup prop cao nhu shelf/fridge/locker an toan hon trong crop doc.
+- San co preview-friendly fallback neu preset floor color qua nhat tren nen render trang.
+- Fixture `tests/in/illustrator_prop_showcase.svg` duoc them de smoke test nhieu prop hon trong mot phong rong.
+
+Dung `tests/in/illustrator_prop_showcase.svg` voi room `phong_showcase` khi can kiem tra visual/DCC prop variety. Procedural props van la blockout, khong phai final model.
+
+Pending DCC follow-up:
 
 ```text
-005.3P-V1 - Maya preview visual sanity polish
+Real Maya/DCC render verification for illustrator_prop_showcase.svg remains pending on a machine with mayapy.exe.
 ```
 
 ## Safety confirmation
@@ -127,4 +134,3 @@ python -m compileall scripts/maya/build_maya_room_scene.py tests/test_build_maya
 python -m pytest tests/test_build_maya_room.py -v: 40 passed
 pytest tests/ -v --ignore=tests/tmp: 197 passed
 ```
-
