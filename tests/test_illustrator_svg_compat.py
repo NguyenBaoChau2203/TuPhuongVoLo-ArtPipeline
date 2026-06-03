@@ -518,6 +518,53 @@ def test_root_svg_room_with_boundary_prefix_variant(tmp_path: Path) -> None:
     assert kho.prop_markers[0].prop_type == "barrel"
 
 
+def test_curved_illustrator_prop_path_uses_marker_bbox_fallback(tmp_path: Path) -> None:
+    """Curved prop marker paths should emit a safe approximate bbox."""
+
+    svg = tmp_path / "curved_barrel.svg"
+    svg.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<svg xmlns="http://www.w3.org/2000/svg" id="phong_kho" width="240" height="460">\n'
+        '  <g id="room_phong_kho"><polygon points="0,0 220,0 220,440 0,440"/></g>\n'
+        '  <g id="prop_barrel_01">\n'
+        '    <path d="M183.44,406.93c-16,0-28.9,2.43-28.9,5.44s12.94,5.45,28.9,5.45"/>\n'
+        "  </g>\n"
+        "</svg>\n",
+        encoding="utf-8",
+    )
+
+    kho = _room(detect_rooms(svg), "phong_kho")
+    barrel = _prop(kho, "barrel")
+
+    assert barrel.original_label == "prop_barrel_01"
+    assert barrel.group_path == ["phong_kho", "prop_barrel_01"]
+    assert barrel.source_kind == "path_bbox_fallback"
+    assert barrel.bbox_svg
+    assert barrel.center_svg
+    assert barrel.bbox_svg[0] < barrel.bbox_svg[2]
+    assert barrel.bbox_svg[1] < barrel.bbox_svg[3]
+    assert any("fallback approximate path bbox" in warning for warning in barrel.warnings)
+
+
+def test_curved_opening_path_uses_marker_bbox_fallback(tmp_path: Path) -> None:
+    """Opening markers share marker-only fallback without loosening room boundaries."""
+
+    svg = write_svg(
+        tmp_path / "curved_window.svg",
+        '<g id="room_kho">'
+        '<path d="M0 0 L120 0 L120 80 L0 80 Z"/>'
+        '<g id="window_round_01"><path d="M20,10 A8,4 0 0,1 36,10"/></g>'
+        "</g>",
+    )
+
+    kho = _room(detect_rooms(svg), "kho")
+    window = _opening(kho, "window", "round_01")
+
+    assert window.center_svg
+    assert window.bbox_svg[0] < window.bbox_svg[2]
+    assert any("fallback approximate path bbox" in warning for warning in window.warnings)
+
+
 def test_root_svg_room_with_room_boundary_label(tmp_path: Path) -> None:
     """Root <svg id="phong_kho"> with generic room_boundary child."""
     svg = tmp_path / "room_boundary.svg"

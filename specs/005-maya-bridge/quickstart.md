@@ -148,6 +148,13 @@ placeholder cubes under an `openings` group, with deterministic names such as
 walls, run booleans, or create real architectural holes; inspect the markers in
 Maya after the build.
 
+Phase 008C keeps room-boundary parsing strict, but prop/opening marker groups
+can use a marker-only approximate bbox fallback when Illustrator exports curved
+paths such as `prop_barrel_01`. Dry-run output lists emitted marker labels and
+prints a clear zero-count diagnostic when the exported SVG contains no
+`door_`/`window_` markers; do not synthesize `door_main` unless it is actually
+present in the SVG export.
+
 Template dry-run for Phase 005.3Q:
 
 ```powershell

@@ -60,6 +60,10 @@ GENERIC_LAYER_RE = re.compile(r"^(?:layer|layer_\d+|layer_\d+_\d+|layer_\d+_copy
 GENERIC_ROOT_SVG_RE = re.compile(
     r"^(?:svg|layer|layer_\d+|layer_\d+_\d+|layer_\d+_copy|artboard|artboard_\d+|untitled)$"
 )
+PATH_FALLBACK_TOKEN_RE = re.compile(
+    r"[MmLlHhVvZzCcSsQqTtAa]|[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?",
+)
+PATH_FALLBACK_COMMAND_RE = re.compile(r"^[A-Za-z]$")
 
 
 @dataclass(frozen=True)
@@ -107,6 +111,7 @@ class OpeningMarker:
     group_path: list[str]
     center_svg: Point2D
     bbox_svg: tuple[float, float, float, float]
+    warnings: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-friendly representation."""
@@ -118,6 +123,7 @@ class OpeningMarker:
             "group_path": list(self.group_path),
             "center_svg": [self.center_svg[0], self.center_svg[1]],
             "bbox_svg": list(self.bbox_svg),
+            "warnings": list(self.warnings),
         }
 
 
@@ -374,6 +380,183 @@ def _shape_points(
     return transform_points(matrix, points), closed, tag, warnings
 
 
+def _is_path_fallback_command(token: str) -> bool:
+    return bool(PATH_FALLBACK_COMMAND_RE.match(token))
+
+
+def _read_path_fallback_number(tokens: list[str], index: int) -> tuple[float | None, int]:
+    if index >= len(tokens) or _is_path_fallback_command(tokens[index]):
+        return None, index
+    return float(tokens[index]), index + 1
+
+
+def _read_path_fallback_numbers(
+    tokens: list[str],
+    index: int,
+    count: int,
+) -> tuple[list[float] | None, int]:
+    values: list[float] = []
+    for _ in range(count):
+        value, index = _read_path_fallback_number(tokens, index)
+        if value is None:
+            return None, index
+        values.append(value)
+    return values, index
+
+
+def _path_point(
+    x_value: float,
+    y_value: float,
+    current: Point2D,
+    relative: bool,
+) -> Point2D:
+    if relative:
+        return current[0] + x_value, current[1] + y_value
+    return x_value, y_value
+
+
+def _approximate_path_bbox_points(path_data: str) -> list[Point2D]:
+    """Return conservative marker-only bbox points from complex path commands.
+
+    Room boundary parsing intentionally stays strict. This fallback is only used
+    for named prop/opening marker groups after normal path parsing produced no
+    points because Illustrator exported curves or arcs.
+    """
+
+    tokens = PATH_FALLBACK_TOKEN_RE.findall(path_data or "")
+    if not tokens:
+        return []
+
+    points: list[Point2D] = []
+    index = 0
+    command = ""
+    current: Point2D = (0.0, 0.0)
+    subpath_start: Point2D | None = None
+
+    while index < len(tokens):
+        token = tokens[index]
+        if _is_path_fallback_command(token):
+            command = token
+            index += 1
+        if not command:
+            break
+
+        relative = command.islower()
+        upper = command.upper()
+
+        if upper in {"M", "L", "T"}:
+            first_pair = True
+            while index < len(tokens) and not _is_path_fallback_command(tokens[index]):
+                values, index = _read_path_fallback_numbers(tokens, index, 2)
+                if values is None:
+                    break
+                current = _path_point(values[0], values[1], current, relative)
+                if upper == "M" and first_pair:
+                    subpath_start = current
+                points.append(current)
+                first_pair = False
+            if upper == "M":
+                command = "l" if relative else "L"
+            continue
+
+        if upper == "H":
+            while index < len(tokens) and not _is_path_fallback_command(tokens[index]):
+                value, index = _read_path_fallback_number(tokens, index)
+                if value is None:
+                    break
+                current = (current[0] + value, current[1]) if relative else (value, current[1])
+                points.append(current)
+            continue
+
+        if upper == "V":
+            while index < len(tokens) and not _is_path_fallback_command(tokens[index]):
+                value, index = _read_path_fallback_number(tokens, index)
+                if value is None:
+                    break
+                current = (current[0], current[1] + value) if relative else (current[0], value)
+                points.append(current)
+            continue
+
+        if upper == "C":
+            while index < len(tokens) and not _is_path_fallback_command(tokens[index]):
+                values, index = _read_path_fallback_numbers(tokens, index, 6)
+                if values is None:
+                    break
+                control_1 = _path_point(values[0], values[1], current, relative)
+                control_2 = _path_point(values[2], values[3], current, relative)
+                endpoint = _path_point(values[4], values[5], current, relative)
+                points.extend([control_1, control_2, endpoint])
+                current = endpoint
+            continue
+
+        if upper in {"S", "Q"}:
+            while index < len(tokens) and not _is_path_fallback_command(tokens[index]):
+                values, index = _read_path_fallback_numbers(tokens, index, 4)
+                if values is None:
+                    break
+                control = _path_point(values[0], values[1], current, relative)
+                endpoint = _path_point(values[2], values[3], current, relative)
+                points.extend([control, endpoint])
+                current = endpoint
+            continue
+
+        if upper == "A":
+            while index < len(tokens) and not _is_path_fallback_command(tokens[index]):
+                values, index = _read_path_fallback_numbers(tokens, index, 7)
+                if values is None:
+                    break
+                radius_x, radius_y = abs(values[0]), abs(values[1])
+                endpoint = _path_point(values[5], values[6], current, relative)
+                points.extend(
+                    [
+                        (current[0] - radius_x, current[1] - radius_y),
+                        (current[0] + radius_x, current[1] + radius_y),
+                        (endpoint[0] - radius_x, endpoint[1] - radius_y),
+                        (endpoint[0] + radius_x, endpoint[1] + radius_y),
+                        endpoint,
+                    ]
+                )
+                current = endpoint
+            continue
+
+        if upper == "Z":
+            if subpath_start is not None:
+                current = subpath_start
+                points.append(current)
+            command = ""
+            continue
+
+        break
+
+    return points
+
+
+def _marker_shape_points(
+    element: object,
+    matrix: Matrix,
+) -> tuple[list[Point2D], bool, str, list[str]]:
+    """Extract marker geometry, allowing marker-only complex path bbox fallback."""
+
+    points, closed, kind, warnings = _shape_points(element, matrix)
+    if points or local_name(element.tag).lower() != "path":  # type: ignore[attr-defined]
+        return points, closed, kind, warnings
+
+    fallback_points = _approximate_path_bbox_points(element.get("d") or "")  # type: ignore[attr-defined]
+    if not fallback_points:
+        return points, closed, kind, warnings
+
+    fallback_warning = (
+        "Dùng fallback approximate path bbox cho marker vì path có curve/arc; "
+        "bbox chỉ là xấp xỉ để đặt prop/opening."
+    )
+    return (
+        transform_points(matrix, fallback_points),
+        False,
+        "path_bbox_fallback",
+        list(dict.fromkeys([*warnings, fallback_warning])),
+    )
+
+
 @dataclass
 class _RoomBucket:
     """Mutable accumulator for one named room (or the top-level fallback)."""
@@ -454,7 +637,7 @@ def _collect_prop_marker_shapes(
             continue
 
         if tag in SUPPORTED_SHAPES:
-            points, closed, kind, warnings = _shape_points(child, child_matrix)
+            points, closed, kind, warnings = _marker_shape_points(child, child_matrix)
             if not is_identity(child_matrix):
                 marker.transform_applied = True
             marker.candidates.append(
@@ -507,7 +690,7 @@ def _collect_opening_marker_shapes(
             continue
 
         if tag in SUPPORTED_SHAPES:
-            points, closed, kind, warnings = _shape_points(child, child_matrix)
+            points, closed, kind, warnings = _marker_shape_points(child, child_matrix)
             if not is_identity(child_matrix):
                 marker.transform_applied = True
             marker.candidates.append(
@@ -619,6 +802,7 @@ def _make_opening_marker(
             group_path=list(marker.group_path),
             center_svg=((min_x + max_x) / 2.0, (min_y + max_y) / 2.0),
             bbox_svg=bbox,
+            warnings=list(dict.fromkeys(warnings)),
         ),
         [],
     )

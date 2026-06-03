@@ -603,6 +603,47 @@ def test_geometry_json_payload_contains_opening_markers(
     assert [marker["prop_type"] for marker in payload["prop_markers"]] == ["shelf_unit"]
 
 
+def test_geometry_json_payload_contains_curved_barrel_marker(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg = tmp_path / "curved_barrel.svg"
+    svg.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<svg xmlns="http://www.w3.org/2000/svg" id="phong_kho" width="240" height="460">\n'
+        '  <g id="room_phong_kho"><polygon points="0,0 220,0 220,440 0,440"/></g>\n'
+        '  <g id="prop_barrel_01">\n'
+        '    <path d="M183.44,406.93c-16,0-28.9,2.43-28.9,5.44s12.94,5.45,28.9,5.45"/>\n'
+        "  </g>\n"
+        "</svg>\n",
+        encoding="utf-8",
+    )
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "phong_kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+    plan = builder.build_plan(args)
+
+    builder.write_geometry_json(plan)
+    payload = json.loads(plan.geometry_json.read_text(encoding="utf-8"))
+
+    markers = payload["prop_markers"]
+    assert [marker["original_label"] for marker in markers] == ["prop_barrel_01"]
+    assert markers[0]["prop_type"] == "barrel"
+    assert markers[0]["bbox_svg"]
+    assert markers[0]["center_svg"]
+    assert markers[0]["center_maya"]
+    assert any("fallback approximate path bbox" in warning for warning in markers[0]["warnings"])
+
+
 def test_geometry_json_payload_contains_real_illustrator_sibling_props(
     tmp_path: Path,
     monkeypatch,
@@ -764,6 +805,80 @@ def test_dry_run_reports_svg_prop_markers(tmp_path: Path, monkeypatch) -> None:
         "shelf_unit",
         "wooden_crate",
     ]
+
+
+def test_dry_run_lists_prop_labels_and_zero_opening_diagnostic(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg = tmp_path / "curved_barrel.svg"
+    svg.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<svg xmlns="http://www.w3.org/2000/svg" id="phong_kho" width="240" height="460">\n'
+        '  <g id="room_phong_kho"><polygon points="0,0 220,0 220,440 0,440"/></g>\n'
+        '  <g id="prop_barrel_01">\n'
+        '    <path d="M183.44,406.93c-16,0-28.9,2.43-28.9,5.44s12.94,5.45,28.9,5.45"/>\n'
+        "  </g>\n"
+        "</svg>\n",
+        encoding="utf-8",
+    )
+
+    exit_code = builder.main(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "phong_kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "prop_barrel_01 (barrel)" in captured.out
+    assert "Opening marker SVG (0)" in captured.out
+    assert "không tìm thấy door_/window_ marker" in captured.out
+    assert "fallback approximate path bbox" in captured.out
+
+
+def test_build_plan_warns_when_preflight_marker_count_exceeds_geometry(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg = write_svg(tmp_path / "empty_marker.svg")
+    svg.write_text(
+        """<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120">
+  <g id="room_kho">
+    <path d="M0 0 L100 0 L100 100 L0 100 Z"/>
+    <g id="prop_empty_01"></g>
+  </g>
+</svg>
+""",
+        encoding="utf-8",
+    )
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+
+    plan = builder.build_plan(args)
+
+    assert plan.preflight_prop_marker_candidates == 1
+    assert plan.room.prop_markers == []
+    assert any("geometry chỉ emit 0" in warning for warning in plan.warnings)
 
 
 def test_prop_showcase_fixture_dry_run_detects_supported_markers(

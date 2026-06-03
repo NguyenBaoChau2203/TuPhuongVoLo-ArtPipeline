@@ -58,6 +58,8 @@ class MayaBuildPlan:
     render_width: int = DEFAULT_RENDER_WIDTH
     render_height: int = DEFAULT_RENDER_HEIGHT
     render_command: list[str] = field(default_factory=list)
+    preflight_prop_marker_candidates: int = 0
+    preflight_opening_marker_candidates: int = 0
 
 
 def repo_root() -> Path:
@@ -361,7 +363,33 @@ def build_plan(args: argparse.Namespace) -> MayaBuildPlan:
     style_preset = dict(style_presets[args.style])
 
     reports = detect_rooms(input_path)
+    preflight_prop_marker_candidates = 0
+    preflight_opening_marker_candidates = 0
+    try:
+        from svg_preflight_check import check_svg
+
+        preflight_report = check_svg(input_path)
+        preflight_prop_marker_candidates = preflight_report.counts.get(
+            "prop_marker_candidates",
+            0,
+        )
+        preflight_opening_marker_candidates = preflight_report.counts.get(
+            "door_window_marker_candidates",
+            0,
+        )
+    except Exception:
+        preflight_report = None
     room, warnings = select_room(reports, args.room)
+
+    emitted_prop_markers = sum(len(report.prop_markers) for report in reports)
+    if preflight_prop_marker_candidates > emitted_prop_markers:
+        skipped = preflight_prop_marker_candidates - emitted_prop_markers
+        warnings.append(
+            "Preflight thấy "
+            f"{preflight_prop_marker_candidates} prop/item/object marker trong SVG, "
+            f"nhưng geometry chỉ emit {emitted_prop_markers}; "
+            f"có thể {skipped} marker group bị bỏ qua do ẩn, rỗng, hoặc geometry không đọc được."
+        )
 
     explicit_room_preset = args.room_preset is not None
     room_preset_name = normalize_room_name(args.room_preset) if args.room_preset else room.room_name
@@ -442,6 +470,8 @@ def build_plan(args: argparse.Namespace) -> MayaBuildPlan:
         render_width=render_width,
         render_height=render_height,
         render_command=render_command,
+        preflight_prop_marker_candidates=preflight_prop_marker_candidates,
+        preflight_opening_marker_candidates=preflight_opening_marker_candidates,
     )
 
 
@@ -475,13 +505,38 @@ def print_plan(plan: MayaBuildPlan) -> None:
         )
         print(f"Loại hình trong phòng: {kinds}")
     if plan.room.prop_markers:
-        props = ", ".join(marker.prop_type for marker in plan.room.prop_markers)
+        props = ", ".join(
+            f"{marker.original_label} ({marker.prop_type})"
+            for marker in plan.room.prop_markers
+        )
         print(f"Prop marker SVG ({len(plan.room.prop_markers)}): {props}")
+    elif plan.preflight_prop_marker_candidates:
+        print(
+            "Prop marker SVG (0): preflight thấy marker trong SVG, "
+            "nhưng phòng đã chọn không emit marker nào."
+        )
     if plan.room.opening_markers:
         openings = ", ".join(
-            f"{marker.marker_type}:{marker.marker_name}" for marker in plan.room.opening_markers
+            f"{marker.source_name} ({marker.marker_type}:{marker.marker_name})"
+            for marker in plan.room.opening_markers
         )
         print(f"Opening marker SVG ({len(plan.room.opening_markers)}): {openings}")
+    elif plan.preflight_opening_marker_candidates == 0:
+        print(
+            "Opening marker SVG (0): không tìm thấy door_/window_ marker trong SVG export. "
+            "Nếu file .ai có door_main/window_*, hãy kiểm tra bước export SVG."
+        )
+    else:
+        print(
+            "Opening marker SVG (0): SVG có door_/window_ marker, "
+            "nhưng phòng đã chọn không emit opening marker nào."
+        )
+    for marker in plan.room.prop_markers:
+        for warning in marker.warnings:
+            print(f"Cảnh báo prop {marker.original_label}: {warning}")
+    for marker in plan.room.opening_markers:
+        for warning in marker.warnings:
+            print(f"Cảnh báo opening {marker.source_name}: {warning}")
     print(
         "Transform: "
         + ("đã áp dụng vào tọa độ phòng." if plan.transform_applied else "không có/không cần.")
