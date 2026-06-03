@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "maya-sandbox": {
+      "command": "python",
+      "args": [
+        "D:/path/to/external/MayaMCP/server.py"
+      ],
+      "env": {
+        "MAYA_MCP_HOST": "127.0.0.1",
+        "MAYA_MCP_PORT": "50007"
+      }
+    }
+  }
+}
