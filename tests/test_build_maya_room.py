@@ -19,7 +19,7 @@ class _FakeProcess:
 
 
 class _FakeMayaCmds:
-    """Small maya.cmds stand-in for prop builder tests."""
+    """Small maya.cmds stand-in for prop builder and build_scene tests."""
 
     def __init__(self) -> None:
         self.cubes: list[dict[str, object]] = []
@@ -31,6 +31,17 @@ class _FakeMayaCmds:
         self.attrs: list[tuple[str, tuple[object, ...], dict[str, object]]] = []
         self.connections: list[tuple[str, str]] = []
         self.assignments: list[tuple[str, str]] = []
+        self.display_layers: list[str] = []
+        self.display_layer_members: list[tuple[str, str]] = []
+        self.locators: list[str] = []
+        self.annotations: list[dict[str, str]] = []
+        self.renames: list[tuple[str, str]] = []
+        self.cameras: list[str] = []
+        self.lights: list[str] = []
+        self.facets: list[str] = []
+        self.files: list[dict[str, object]] = []
+        self.deleted: list[str] = []
+        self.constraints: list[str] = []
 
     def polyCube(self, name: str, width: float, height: float, depth: float):
         self.cubes.append(
@@ -39,6 +50,10 @@ class _FakeMayaCmds:
                 "size": (width, height, depth),
             }
         )
+        return [name]
+
+    def polyCreateFacet(self, point: list, name: str):
+        self.facets.append(name)
         return [name]
 
     def group(self, empty: bool, name: str):
@@ -71,6 +86,55 @@ class _FakeMayaCmds:
 
     def parent(self, node: str, parent: str) -> None:
         self.parents.append((node, parent))
+
+    def createDisplayLayer(self, name: str, empty: bool = True):
+        self.display_layers.append(name)
+        return name
+
+    def editDisplayLayerMembers(self, layer: str, obj: str, **_kwargs) -> None:
+        self.display_layer_members.append((layer, obj))
+
+    def spaceLocator(self, name: str):
+        self.locators.append(name)
+        return [name]
+
+    def annotate(self, node: str, text: str):
+        shape_name = f"{node}_annotationShape"
+        self.annotations.append({"node": node, "text": text, "shape": shape_name})
+        return shape_name
+
+    def listRelatives(self, node: str, parent: bool = False, **_kwargs):
+        # Return a fake parent transform for annotation shapes and lights.
+        return [f"{node}_transform"]
+
+    def rename(self, old_name: str, new_name: str):
+        self.renames.append((old_name, new_name))
+        return new_name
+
+    def camera(self, name: str):
+        self.cameras.append(name)
+        return [name, f"{name}Shape"]
+
+    def directionalLight(self, name: str):
+        self.lights.append(name)
+        return name
+
+    def ambientLight(self, name: str, intensity: float = 1.0):
+        self.lights.append(name)
+        return name
+
+    def aimConstraint(self, *args, **kwargs):
+        self.constraints.append("aimConstraint")
+        return ["aimConstraint1"]
+
+    def delete(self, *args) -> None:
+        self.deleted.extend(args)
+
+    def file(self, *args, **kwargs) -> None:
+        self.files.append(kwargs)
+
+    def currentUnit(self, **kwargs) -> None:
+        pass
 
 
 def write_svg(path: Path) -> Path:
@@ -840,9 +904,11 @@ def test_dry_run_lists_prop_labels_and_zero_opening_diagnostic(
 
     assert exit_code == 0
     assert "prop_barrel_01 (barrel)" in captured.out
+    assert "Loại prop: barrel=1" in captured.out
     assert "Opening marker SVG (0)" in captured.out
-    assert "không tìm thấy door_/window_ marker" in captured.out
-    assert "fallback approximate path bbox" in captured.out
+    assert "Không tìm thấy door_/window_ marker" in captured.out
+    assert "Cảnh báo bbox xấp xỉ:" in captured.out
+    assert "prop_barrel_01: dùng approximate path bbox cho 1 curved path shape(s)" in captured.out
 
 
 def test_build_plan_warns_when_preflight_marker_count_exceeds_geometry(
@@ -1780,3 +1846,273 @@ def test_geometry_json_payload_contains_root_level_room_props(
     assert opening_markers[0]["marker_type"] == "door"
     assert opening_markers[0]["marker_name"] == "main"
 
+
+# --- Feature 008D Phase 2: Maya scene layout polish ---
+
+
+def _minimal_geometry_data(
+    room_name: str = "phong_kho",
+    prop_markers: list | None = None,
+    opening_markers: list | None = None,
+) -> dict:
+    """Return a minimal geometry JSON dict for build_scene tests."""
+    return {
+        "room_name": room_name,
+        "style_preset": {
+            "floor_color": "#A2B296",
+            "wall_color": "#D0D0D0",
+        },
+        "room_preset": {},
+        "units": {"scale": 0.01},
+        "boundary_points": [[0, 0], [2.2, 0], [2.2, 4.4], [0, 4.4]],
+        "wall_segments": [
+            {"start": [0, 0], "end": [2.2, 0]},
+            {"start": [2.2, 0], "end": [2.2, 4.4]},
+            {"start": [2.2, 4.4], "end": [0, 4.4]},
+            {"start": [0, 4.4], "end": [0, 0]},
+        ],
+        "prop_markers": prop_markers or [],
+        "opening_markers": opening_markers or [],
+    }
+
+
+def test_build_scene_creates_display_layers(tmp_path: Path) -> None:
+    """build_scene must create LYR_walls, LYR_props, LYR_floor, LYR_lights."""
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+    data = _minimal_geometry_data()
+    output = tmp_path / "test.ma"
+
+    scene_builder.build_scene(cmds, data, output)
+
+    assert "LYR_walls" in cmds.display_layers
+    assert "LYR_props" in cmds.display_layers
+    assert "LYR_floor" in cmds.display_layers
+    assert "LYR_lights" in cmds.display_layers
+
+
+def test_build_scene_assigns_objects_to_display_layers(tmp_path: Path) -> None:
+    """Groups must be assigned to correct display layers."""
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+    data = _minimal_geometry_data()
+    output = tmp_path / "test.ma"
+
+    scene_builder.build_scene(cmds, data, output)
+
+    layer_map = {obj: layer for layer, obj in cmds.display_layer_members}
+    assert layer_map.get("walls") == "LYR_walls"
+    assert layer_map.get("props") == "LYR_props"
+    assert layer_map.get("lights") == "LYR_lights"
+    assert layer_map.get("floor_blockout") == "LYR_floor"
+
+
+def test_build_scene_wall_material_has_transparency(tmp_path: Path) -> None:
+    """Wall material must have transparency set for blockout readability."""
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+    data = _minimal_geometry_data()
+    output = tmp_path / "test.ma"
+
+    scene_builder.build_scene(cmds, data, output)
+
+    # Find the transparency setAttr call for MAT_wall
+    wall_transparency_set = [
+        (attr, args, kwargs)
+        for attr, args, kwargs in cmds.attrs
+        if "MAT_wall" in attr and "transparency" in attr
+    ]
+    assert len(wall_transparency_set) > 0, "Wall material must have transparency"
+    # Transparency values must be > 0
+    transparency_args = wall_transparency_set[0][1]
+    assert all(v > 0.0 for v in transparency_args)
+
+
+def test_build_scene_uses_reduced_wall_height(tmp_path: Path) -> None:
+    """Walls must use blockout height (<=1.8m) instead of full 3m default."""
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+    data = _minimal_geometry_data()
+    output = tmp_path / "test.ma"
+
+    scene_builder.build_scene(cmds, data, output)
+
+    wall_cubes = [c for c in cmds.cubes if str(c["name"]).startswith("wall_")]
+    assert len(wall_cubes) >= 4
+    for wall in wall_cubes:
+        # height is the second element of size tuple
+        assert wall["size"][1] <= scene_builder.BLOCKOUT_WALL_HEIGHT
+
+
+def test_build_scene_creates_prop_type_materials(tmp_path: Path) -> None:
+    """Different prop types must get distinct materials."""
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+    data = _minimal_geometry_data(
+        prop_markers=[
+            {"prop_type": "wooden_crate", "center_maya": [0.5, 1.0]},
+            {"prop_type": "barrel", "center_maya": [1.0, 1.0]},
+            {"prop_type": "shelf_unit", "center_maya": [1.5, 1.0]},
+        ]
+    )
+    output = tmp_path / "test.ma"
+
+    scene_builder.build_scene(cmds, data, output)
+
+    # Check that type-specific materials were created
+    assert "MAT_prop_wooden_crate" in cmds.materials
+    assert "MAT_prop_barrel" in cmds.materials
+    assert "MAT_prop_shelf_unit" in cmds.materials
+
+
+def test_build_scene_material_hint_overrides_prop_type(tmp_path: Path) -> None:
+    """material_hint=metal must produce a metal material regardless of prop type."""
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+    data = _minimal_geometry_data(
+        prop_markers=[
+            {
+                "prop_type": "electrical_cabinet",
+                "center_maya": [0.5, 1.0],
+                "material_hint": "metal",
+            },
+        ]
+    )
+    output = tmp_path / "test.ma"
+
+    scene_builder.build_scene(cmds, data, output)
+
+    assert "MAT_prop_metal" in cmds.materials
+
+
+def test_build_scene_creates_scene_notes(tmp_path: Path) -> None:
+    """build_scene must create ARTIST_NOTES group with annotation."""
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+    data = _minimal_geometry_data(
+        prop_markers=[
+            {"prop_type": "barrel", "center_maya": [0.5, 1.0]},
+        ]
+    )
+    output = tmp_path / "test.ma"
+
+    scene_builder.build_scene(cmds, data, output)
+
+    assert "ARTIST_NOTES" in cmds.groups
+    assert any("NOTE_phong_kho_info" in loc for loc in cmds.locators)
+    assert len(cmds.annotations) > 0
+    annotation_text = cmds.annotations[0]["text"]
+    assert "phong_kho" in annotation_text
+    assert "Props: 1" in annotation_text
+    assert "Openings: 0" in annotation_text
+
+
+def test_build_scene_notes_include_approx_bbox_warning(tmp_path: Path) -> None:
+    """Scene notes must mention approximate bbox when fallback warnings exist."""
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+    data = _minimal_geometry_data(
+        prop_markers=[
+            {
+                "prop_type": "barrel",
+                "center_maya": [0.5, 1.0],
+                "warnings": ["fallback approximate path bbox used"],
+            },
+        ]
+    )
+    output = tmp_path / "test.ma"
+
+    scene_builder.build_scene(cmds, data, output)
+
+    assert len(cmds.annotations) > 0
+    annotation_text = cmds.annotations[0]["text"]
+    assert "approximate" in annotation_text.lower()
+
+
+def test_build_scene_camera_naming_is_deterministic(tmp_path: Path) -> None:
+    """Camera must follow cam_{room}_iso naming convention."""
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+    data = _minimal_geometry_data(room_name="phong_kho")
+    output = tmp_path / "test.ma"
+
+    scene_builder.build_scene(cmds, data, output)
+
+    assert "cam_phong_kho_iso" in cmds.cameras
+
+
+def test_build_scene_group_hierarchy(tmp_path: Path) -> None:
+    """Scene must have correct group hierarchy under GRP_{room}_blockout."""
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+    data = _minimal_geometry_data()
+    output = tmp_path / "test.ma"
+
+    scene_builder.build_scene(cmds, data, output)
+
+    assert "GRP_phong_kho_blockout" in cmds.groups
+    assert "walls" in cmds.groups
+    assert "props" in cmds.groups
+    assert "lights" in cmds.groups
+    assert "ARTIST_NOTES" in cmds.groups
+
+    parent_map = {child: parent for child, parent in cmds.parents}
+    assert parent_map.get("walls") == "GRP_phong_kho_blockout"
+    assert parent_map.get("props") == "GRP_phong_kho_blockout"
+    assert parent_map.get("lights") == "GRP_phong_kho_blockout"
+    assert parent_map.get("ARTIST_NOTES") == "GRP_phong_kho_blockout"
+
+
+def test_build_scene_display_layer_constants_are_correct() -> None:
+    """Display layer constant names must match expectations."""
+    scene_builder = load_maya_scene_builder()
+    assert scene_builder.DISPLAY_LAYER_WALLS == "LYR_walls"
+    assert scene_builder.DISPLAY_LAYER_PROPS == "LYR_props"
+    assert scene_builder.DISPLAY_LAYER_FLOOR == "LYR_floor"
+    assert scene_builder.DISPLAY_LAYER_LIGHTS == "LYR_lights"
+
+
+def test_build_scene_blockout_wall_height_constant() -> None:
+    """BLOCKOUT_WALL_HEIGHT must be less than DEFAULT_WALL_HEIGHT."""
+    scene_builder = load_maya_scene_builder()
+    assert scene_builder.BLOCKOUT_WALL_HEIGHT < scene_builder.DEFAULT_WALL_HEIGHT
+    assert scene_builder.BLOCKOUT_WALL_HEIGHT == 1.8
+
+
+def test_resolve_prop_material_returns_distinct_materials() -> None:
+    """resolve_prop_material must return different materials for different types."""
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+    cache: dict[str, str] = {}
+
+    crate_mat = scene_builder.resolve_prop_material(cmds, "wooden_crate", None, cache)
+    barrel_mat = scene_builder.resolve_prop_material(cmds, "barrel", None, cache)
+    unknown_mat = scene_builder.resolve_prop_material(cmds, "unknown_thing", None, cache)
+
+    assert crate_mat is not None
+    assert barrel_mat is not None
+    assert crate_mat != barrel_mat
+    assert unknown_mat is None  # Unknown types get default
+
+
+def test_resolve_prop_material_metal_hint_priority() -> None:
+    """material_hint=metal must override prop type."""
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+    cache: dict[str, str] = {}
+
+    metal_mat = scene_builder.resolve_prop_material(cmds, "barrel", "metal", cache)
+    assert metal_mat is not None
+    assert "MAT_prop_metal" in cmds.materials
+
+
+def test_build_scene_prop_type_material_colors_exist() -> None:
+    """PROP_TYPE_MATERIAL_COLORS must have entries for common prop types."""
+    scene_builder = load_maya_scene_builder()
+    required_types = [
+        "wooden_crate", "barrel", "shelf_unit", "electrical_cabinet", "floor_grate",
+    ]
+    for prop_type in required_types:
+        assert prop_type in scene_builder.PROP_TYPE_MATERIAL_COLORS, (
+            f"Missing material color for {prop_type}"
+        )

@@ -11,8 +11,10 @@ from pathlib import Path
 from typing import Any
 
 DEFAULT_WALL_HEIGHT = 3.0
+BLOCKOUT_WALL_HEIGHT = 1.8
 DEFAULT_WALL_THICKNESS = 0.12
 DEFAULT_PROP_COLOR = "#8A7F72"
+WALL_TRANSPARENCY = 0.45
 PREVIEW_FLOOR_COLOR_FALLBACK = (0.64, 0.70, 0.58)
 DEFAULT_PREVIEW_ASPECT_RATIO = 16.0 / 9.0
 ISO_CAMERA_DISTANCE_FACTOR = 3.5
@@ -31,6 +33,39 @@ OPENING_MARKER_CENTER_Y = {
     "window": 1.35,
 }
 OPENING_NUMBER_SUFFIX_RE = re.compile(r"_\d{2,}$")
+
+# Display layer names for artist workflow.
+DISPLAY_LAYER_WALLS = "LYR_walls"
+DISPLAY_LAYER_PROPS = "LYR_props"
+DISPLAY_LAYER_FLOOR = "LYR_floor"
+DISPLAY_LAYER_LIGHTS = "LYR_lights"
+
+# Prop-type viewport material colors.
+PROP_TYPE_MATERIAL_COLORS: dict[str, tuple[float, float, float]] = {
+    "wooden_crate": (0.55, 0.38, 0.20),
+    "shelf_unit": (0.50, 0.35, 0.18),
+    "shelf": (0.50, 0.35, 0.18),
+    "barrel": (0.42, 0.28, 0.14),
+    "box": (0.48, 0.40, 0.28),
+    "bed": (0.50, 0.36, 0.22),
+    "table": (0.52, 0.38, 0.22),
+    "chair": (0.50, 0.36, 0.20),
+    "sofa": (0.42, 0.38, 0.50),
+    "cabinet": (0.50, 0.36, 0.22),
+    "locker": (0.48, 0.50, 0.52),
+    "fridge": (0.82, 0.82, 0.80),
+    "sink": (0.72, 0.72, 0.70),
+    "kitchen_counter": (0.58, 0.42, 0.24),
+    "plant": (0.28, 0.45, 0.22),
+    "electrical_cabinet": (0.46, 0.48, 0.50),
+    "floor_grate": (0.42, 0.44, 0.46),
+}
+# Material hint overrides take priority over prop type.
+MATERIAL_HINT_TYPE_COLORS: dict[str, tuple[float, float, float]] = {
+    "metal": (0.48, 0.50, 0.52),
+    "wood": (0.52, 0.36, 0.20),
+    "stone": (0.42, 0.42, 0.40),
+}
 PROP_DEFINITION_SIZES = {
     # Maya scene units. These are intentionally rough blockout proportions,
     # centralized so marker names map to deterministic editable placeholders.
@@ -186,12 +221,23 @@ def hex_to_rgb(value: str, fallback: tuple[float, float, float]) -> tuple[float,
         return fallback
 
 
-def create_material(cmds: Any, name: str, color: tuple[float, float, float]) -> str:
+def create_material(
+    cmds: Any,
+    name: str,
+    color: tuple[float, float, float],
+    transparency: float = 0.0,
+) -> str:
     """Create a simple Lambert material and return its shading group."""
 
     material = cmds.shadingNode("lambert", asShader=True, name=name)
     shading_group = cmds.sets(renderable=True, noSurfaceShader=True, empty=True, name=f"{name}SG")
     cmds.setAttr(f"{material}.color", color[0], color[1], color[2], type="double3")
+    if transparency > 0.0:
+        cmds.setAttr(
+            f"{material}.transparency",
+            transparency, transparency, transparency,
+            type="double3",
+        )
     cmds.connectAttr(f"{material}.outColor", f"{shading_group}.surfaceShader", force=True)
     return shading_group
 
@@ -1260,12 +1306,115 @@ def create_camera_and_lights(
 
     key_light = cmds.directionalLight(name="key_light")
     key_transform = cmds.listRelatives(key_light, parent=True)[0]
+    key_light = cmds.directionalLight(name="key_light")
+    key_transform = cmds.listRelatives(key_light, parent=True)[0]
     cmds.xform(key_transform, rotation=(-45.0, 35.0, 0.0))
     cmds.parent(key_transform, parent)
 
     ambient = cmds.ambientLight(name="ambient_light", intensity=0.35)
     ambient_transform = cmds.listRelatives(ambient, parent=True)[0]
     cmds.parent(ambient_transform, parent)
+
+
+def create_display_layers(cmds: Any) -> dict[str, str]:
+    """Create artist-friendly display layers and return name->layer mapping."""
+
+    layers: dict[str, str] = {}
+    for layer_name in (
+        DISPLAY_LAYER_WALLS,
+        DISPLAY_LAYER_PROPS,
+        DISPLAY_LAYER_FLOOR,
+        DISPLAY_LAYER_LIGHTS,
+    ):
+        layer = cmds.createDisplayLayer(name=layer_name, empty=True)
+        layers[layer_name] = layer
+    return layers
+
+
+def add_objects_to_display_layer(cmds: Any, objects: list[str], layer: str) -> None:
+    """Add Maya objects to a display layer."""
+
+    for obj in objects:
+        try:
+            cmds.editDisplayLayerMembers(layer, obj, noRecurse=True)
+        except Exception:
+            pass
+
+
+def resolve_prop_material(
+    cmds: Any,
+    prop_type: str,
+    material_hint: Any,
+    cache: dict[str, str],
+) -> str | None:
+    """Return a prop-type-specific material, or None to use the default."""
+
+    # Material hint takes priority over prop type.
+    hint_token = safe_maya_name(material_hint, fallback="") if material_hint else ""
+    if hint_token in MATERIAL_HINT_TYPE_COLORS:
+        key = f"propmat_{hint_token}"
+        if key not in cache:
+            cache[key] = create_material(cmds, f"MAT_prop_{hint_token}", MATERIAL_HINT_TYPE_COLORS[hint_token])
+        return cache[key]
+
+    canonical = normalize_prop_type(prop_type)
+    if canonical in PROP_TYPE_MATERIAL_COLORS:
+        key = f"propmat_{canonical}"
+        if key not in cache:
+            cache[key] = create_material(cmds, f"MAT_prop_{canonical}", PROP_TYPE_MATERIAL_COLORS[canonical])
+        return cache[key]
+
+    return None
+
+
+def create_scene_notes(
+    cmds: Any,
+    data: dict[str, Any],
+    parent: str,
+) -> str:
+    """Create an annotation locator with scene metadata for the artist."""
+
+    room_name = str(data.get("room_name") or "room")
+    prop_markers = data.get("prop_markers", [])
+    prop_count = len(prop_markers) if isinstance(prop_markers, list) else 0
+    opening_markers = data.get("opening_markers", [])
+    opening_count = len(opening_markers) if isinstance(opening_markers, list) else 0
+
+    # Check for approximate bbox warnings.
+    has_approx_bbox = False
+    if isinstance(prop_markers, list):
+        for marker in prop_markers:
+            if isinstance(marker, dict):
+                for w in marker.get("warnings", []):
+                    if "fallback approximate path bbox" in str(w):
+                        has_approx_bbox = True
+                        break
+            if has_approx_bbox:
+                break
+
+    lines = [
+        f"Room: {room_name}",
+        f"Props: {prop_count}",
+        f"Openings: {opening_count}",
+    ]
+    if has_approx_bbox:
+        lines.append("Note: Some bbox values are approximate (curved path fallback)")
+
+    notes_group = cmds.group(empty=True, name="ARTIST_NOTES")
+    locator = cmds.spaceLocator(name=f"NOTE_{room_name}_info")[0]
+    cmds.xform(locator, translation=(0.0, 0.0, 0.0))
+    cmds.parent(locator, notes_group)
+
+    # Add annotation as a Maya annotation node.
+    annotation_text = "\\n".join(lines)
+    annotation = cmds.annotate(locator, text=annotation_text)
+    annotation_transform = cmds.listRelatives(annotation, parent=True)[0]
+    annotation_transform = cmds.rename(annotation_transform, f"annotation_{room_name}")
+    cmds.xform(annotation_transform, translation=(0.5, 1.0, 0.0))
+    cmds.parent(annotation_transform, notes_group)
+
+    cmds.parent(notes_group, parent)
+    return notes_group
 
 
 def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
@@ -1305,16 +1454,22 @@ def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
         openings_group = cmds.group(empty=True, name="openings")
         cmds.parent(openings_group, root)
 
+    # --- Display layers ---
+    display_layers = create_display_layers(cmds)
+
+    # --- Materials ---
     material_overrides: dict[str, str] = {}
     default_floor_mat = create_material(
         cmds,
         "MAT_floor",
         preview_floor_color(style.get("floor_color")),
     )
+    # Walls: semi-transparent material for blockout readability.
     default_wall_mat = create_material(
         cmds,
         "MAT_wall",
-        hex_to_rgb(str(style.get("wall_color", "")), (0.95, 0.95, 0.9)),
+        hex_to_rgb(str(style.get("wall_color", "")), (0.82, 0.84, 0.86)),
+        transparency=WALL_TRANSPARENCY,
     )
     floor_mat = (
         material_from_hints(
@@ -1342,16 +1497,24 @@ def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
     )
 
     bounds = room_bounds(points)
-    wall_height = float(room_preset.get("wall_height", DEFAULT_WALL_HEIGHT))
+    # Use reduced blockout wall height for preview visibility.
+    configured_wall_height = float(room_preset.get("wall_height", DEFAULT_WALL_HEIGHT))
+    wall_height = min(configured_wall_height, BLOCKOUT_WALL_HEIGHT)
     camera_bounds, max_prop_height = scene_bounds_with_props(
         bounds,
         prop_markers,
         units_scale=units_scale,
     )
     framing_height = max(wall_height, max_prop_height)
-    create_floor(cmds, points, floor_mat, root)
+
+    # --- Floor ---
+    floor_node = create_floor(cmds, points, floor_mat, root)
+    add_objects_to_display_layer(cmds, [floor_node], display_layers[DISPLAY_LAYER_FLOOR])
+
+    # --- Walls ---
+    wall_nodes: list[str] = []
     for index, (start, end) in enumerate(wall_segments, start=1):
-        create_wall_block(
+        wall_node = create_wall_block(
             cmds,
             start,
             end,
@@ -1361,23 +1524,67 @@ def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
             parent=walls_group,
             index=index,
         )
+        wall_nodes.append(wall_node)
+    add_objects_to_display_layer(cmds, [walls_group], display_layers[DISPLAY_LAYER_WALLS])
+
+    # --- Props with per-type materials ---
+    prop_material_cache: dict[str, str] = {}
     if prop_markers:
-        # Explicit SVG markers are artist-authored placement, so they replace
-        # room-preset auto props to avoid duplicate blockout placeholders.
-        create_svg_prop_markers(
-            cmds,
-            prop_markers,
-            prop_mat,
-            prop_detail_mat,
-            props_group,
-            units_scale=units_scale,
-            material_overrides=material_overrides,
-        )
+        # Assign per-type materials: iterate markers and create type-specific
+        # materials so that different prop types are visually distinguishable.
+        type_counts: dict[str, int] = {}
+        for raw_marker in prop_markers:
+            if not isinstance(raw_marker, dict):
+                continue
+            center = marker_center_maya(raw_marker)
+            if center is None:
+                continue
+            raw_prop_type = marker_prop_type(raw_marker)
+            canonical_type = normalize_prop_type(raw_prop_type)
+
+            # Resolve prop-specific material.
+            type_specific_mat = resolve_prop_material(
+                cmds,
+                raw_prop_type,
+                raw_marker.get("material_hint"),
+                prop_material_cache,
+            )
+            effective_prop_mat = type_specific_mat or prop_mat
+
+            name_type = (
+                canonical_type
+                if has_procedural_prop(canonical_type) or has_prop_definition(canonical_type)
+                else raw_prop_type
+            )
+            type_counts[name_type] = type_counts.get(name_type, 0) + 1
+
+            create_procedural_prop(
+                cmds,
+                f"prop_{name_type}_{type_counts[name_type]:02d}",
+                raw_prop_type,
+                center,
+                raw_marker,
+                effective_prop_mat,
+                prop_detail_mat,
+                props_group,
+                units_scale=units_scale,
+                rotation_y_degrees=marker_rotation_y_degrees(raw_marker),
+                material_overrides=material_overrides,
+            )
     else:
         create_placeholder_props(cmds, room_preset, bounds, prop_mat, prop_detail_mat, props_group)
+    add_objects_to_display_layer(cmds, [props_group], display_layers[DISPLAY_LAYER_PROPS])
+
+    # --- Openings ---
     if openings_group is not None:
         create_svg_opening_markers(cmds, opening_markers, openings_group)
+
+    # --- Camera and lights ---
     create_camera_and_lights(cmds, room_name, camera_bounds, framing_height, lights_group)
+    add_objects_to_display_layer(cmds, [lights_group], display_layers[DISPLAY_LAYER_LIGHTS])
+
+    # --- Scene notes / metadata ---
+    create_scene_notes(cmds, data, root)
 
     maya_output.parent.mkdir(parents=True, exist_ok=True)
     cmds.file(rename=str(maya_output))
