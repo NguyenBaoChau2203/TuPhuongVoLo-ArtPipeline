@@ -1626,3 +1626,42 @@ def test_render_preview_still_rejects_maya_or_mayabatch(
 
         assert exit_code == 1
         assert "Feature 005 MVP chỉ hỗ trợ mayapy.exe cho actual run" in captured.err
+
+
+# --- Feature 008B: Root-level Illustrator SVG room fixture in Maya build ---
+
+
+def test_geometry_json_payload_contains_root_level_room_props(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """build_maya_room geometry JSON must include props from root svg id phong_kho."""
+    isolated_manifest(monkeypatch, tmp_path)
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(FIXTURE_DIR / "illustrator_root_level_room.svg"),
+            "--room",
+            "phong_kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+    plan = builder.build_plan(args)
+
+    builder.write_geometry_json(plan)
+    payload = json.loads(plan.geometry_json.read_text(encoding="utf-8"))
+
+    assert payload["room_name"] == "phong_kho"
+    markers = payload["prop_markers"]
+    assert len(markers) == 2
+    prop_types = [marker["prop_type"] for marker in markers]
+    assert "shelf_unit" in prop_types
+    assert "wooden_crate" in prop_types
+
+    opening_markers = payload["opening_markers"]
+    assert len(opening_markers) == 1
+    assert opening_markers[0]["marker_type"] == "door"
+    assert opening_markers[0]["marker_name"] == "main"
+
