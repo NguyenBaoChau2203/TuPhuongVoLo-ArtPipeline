@@ -9,7 +9,7 @@ The pipeline exists to reduce the artist's repetitive manual work, not to replac
 No script or tool may overwrite, delete, or modify the artist's original source files (`.ai`, raw `.svg`, reference images). All generated outputs go to `outputs/` or designated output directories. Every output file includes a version number in its name.
 
 ### III. Rebuildable Outputs
-Any generated output (PNG preview, Blender scene, cleaned SVG) must be fully reproducible from the clean SVG source + config + presets. If the source and config are intact, the output can be regenerated. No "magic" one-time transforms.
+Any generated output (PNG preview, Maya scene, cleaned SVG) must be fully reproducible from the clean SVG source + config + presets. If the source and config are intact, the output can be regenerated. No "magic" one-time transforms.
 
 ### IV. SVG as Clean Source of Truth
 The clean, validated SVG is the canonical intermediate format between Illustrator and 3D tools. All downstream tools (Blender, Maya, renderers) consume clean SVG. The SVG cleaning pipeline (vpype + svgpathtools validation) is the quality gate.
@@ -37,22 +37,20 @@ Automation must use scripting APIs, not fragile UI macro recording:
 ### VII. Illustrator as 2D Authoring Tool
 Adobe Illustrator remains the artist's primary 2D authoring tool. The pipeline does not replace Illustrator — it automates export, cleanup, and downstream processing. Illustrator JSX scripts assist but do not alter the artist's creative workflow.
 
-### VIII. Blender as Default Isometric Draft Bridge
-Blender is the default tool for SVG → 3D isometric draft generation because:
-- Free and scriptable
-- Native SVG import to curves (`import_curve.svg`)
-- Curve → mesh → extrude workflow (set `dimensions='2D'`, `fill_mode='BOTH'`, assign `extrude`)
-- Orthographic isometric camera setup (pitch 54.736°, yaw 45°)
-- Headless batch rendering (`blender -b -P script.py`)
-- USD export for optional Maya handoff
+### VIII. Maya as Primary Production DCC Backend
+Maya is the primary production DCC backend for SVG → 3D blockout generation. The verified production workflow is:
+- Python SVG parser extracts geometry JSON from clean SVG (Python owns all SVG parsing)
+- `mayapy` consumes geometry JSON to build editable `.ma` blockout scenes
+- Artist polishes the `.ma` scene directly in Maya
+- Optional PNG preview rendering via `mayapy`
+- `mayapy.exe` path is user-configurable
 
-Maya is an advanced alternative, not the default path.
-Research confirmed that Blender's SVG→curve→mesh pipeline is the lowest-risk 3D entry point for this project.
+Maya scripts live in `scripts/maya/` and `specs/005-maya-bridge/`.
 
-### IX. Maya as Advanced/Studio Branch
-Maya support is an optional advanced branch. It must not block the primary Blender-based pipeline. Maya integration may use mayapy, Maya Python/MEL, USD interchange, or a custom SVG parser. Maya scripts live in `scripts/maya/` and `specs/005-maya-bridge/`.
+> **Research finding**: No first-party SVG import for Maya was confirmed in official Autodesk product help. The production path uses a custom Python parser (`svgpathtools` + `room_geometry.py`) → geometry JSON → `mayapy` scene builder.
 
-> **Research finding**: No first-party SVG import for Maya was confirmed in official Autodesk product help. The safe paths into Maya are: (a) custom Python parser using `svgpathtools` → `cmds.polyCreateFacet`, or (b) Blender → USD → Maya via the official `Autodesk/maya-usd` plugin (supports Maya 2023–2027).
+### IX. Blender as Legacy/Fallback Draft Bridge
+Blender is retained as a legacy/fallback isometric draft bridge. It is not required for the primary production workflow but must not be removed or broken. Blender integration uses `bpy` Python API in headless batch mode. Blender scripts live in `scripts/blender/` and related launchers remain functional.
 
 ### X. Natural-Language Control is Future Layer
 MCP-based or agent-based natural language control of the pipeline is a roadmap feature (Feature 006), not a v1 requirement. It must depend on Features 001–004 being functional first. Do not implement NLC before the core pipeline works.
@@ -94,8 +92,8 @@ Research recommends locking specific versions for production stability.
 | Vectorization (Color) | Vectorizer.AI | Web/API (current) | Color/transparency-aware tracing |
 | SVG Cleanup | vpype | **1.15.0** (Python ≥3.11,<3.14) | CLI batch path optimization |
 | SVG Validation | svgpathtools | **1.7.2** (Python ≥3.8) | Rule-based QA and geometry analysis |
-| 3D Draft (Default) | Blender + bpy | **LTS 4.x** | SVG → isometric room draft |
-| 3D Advanced | Maya + mayapy | **2024+** / USD bridge | Optional studio-grade 3D |
+| 3D Production (Primary) | Maya + mayapy | **2024+** | Primary DCC: geometry JSON → editable .ma blockout |
+| 3D Draft (Legacy/Fallback) | Blender + bpy | **LTS 4.x** | Retained legacy isometric draft bridge |
 | CLI & Glue | Python | **3.11+** | Asset management, naming, manifest |
 | Config | YAML | — | Pipeline, room presets, style presets |
 | Launchers | Windows .bat | — | Artist-facing one-click operations |
@@ -133,8 +131,8 @@ This constitution has been updated with findings from two research documents:
 Key research conclusions encoded in this constitution:
 1. Version-lock the toolchain rather than chasing "latest" (see Technology Stack table).
 2. Potrace for B&W line art; Vectorizer.AI for color/transparency — never a single tracing path for all inputs.
-3. Maya has no confirmed first-party SVG import — use Python parser or Blender/USD bridge.
+3. Maya has no confirmed first-party SVG import — the production path uses Python parser → geometry JSON → `mayapy`.
 4. SVG must meet explicit quality-gate criteria before entering DCC tools (see Principle IV).
 5. Recommended production tier is **Semi-Automated** (Tier B) — not full agentic.
 
-**Version**: 1.1.0 | **Ratified**: 2026-05-29 | **Last Amended**: 2026-05-29
+**Version**: 1.2.0 | **Ratified**: 2026-05-29 | **Last Amended**: 2026-06-03
