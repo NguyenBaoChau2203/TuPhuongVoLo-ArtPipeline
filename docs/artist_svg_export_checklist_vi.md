@@ -70,6 +70,18 @@ python scripts/python/build_maya_room.py --input drops/phong_cua_ban.svg --room 
 
 ## Đánh dấu prop blockout trong SVG
 
+- [ ] Bạn chỉ cần group các đồ vật lớn/có ý nghĩa gameplay hoặc bố cục, **không cần đặt tên từng chi tiết nhỏ** bên trong đồ vật.
+- [ ] Cấu trúc Illustrator đang được hỗ trợ:
+
+```text
+phong_kho
+├── room_boundary
+├── prop_*
+├── door_*
+└── window_*
+```
+
+- [ ] `room_boundary`, `room_<ten_phong>`, hoặc `boundary_<ten_phong>` có thể là group chứa path/rect/polygon boundary. Các group `prop_*`, `item_*`, `object_*`, `door_*`, `window_*` cùng cấp sẽ được gắn vào đúng phòng.
 - [ ] Nếu muốn Maya tạo blockout đồ vật theo vị trí bạn đặt trong Illustrator, hãy mở template:
       `assets/2d/templates/illustrator_prop_marker_template.svg`.
 - [ ] Copy group marker từ template, paste vào group phòng thật, rồi di chuyển/scale marker.
@@ -97,6 +109,7 @@ python scripts/python/build_maya_room.py --input drops/phong_cua_ban.svg --room 
       Ví dụ: `prop_shelf_unit_rot90`, `prop_wooden_crate_rot180`, `item_box_rotation_90`.
       Hãy chạy dry-run trước để kiểm tra tên prop và kế hoạch dựng Maya trước khi chạy thật.
 - [ ] Đây chỉ là blockout để kiểm tra bố cục, **không phải model 3D cuối cùng**. Họa sĩ vẫn polish và thay asset thật trong Maya sau.
+- [ ] Khi export SVG từ Illustrator, chọn **Object IDs = Layer Names**, **Minify = OFF**, **Responsive = OFF** để pipeline giữ được tên group/layer.
 
 ## Gợi ý material và màu trong tên group/layer
 
