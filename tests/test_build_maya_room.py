@@ -816,6 +816,26 @@ def test_maya_scene_builder_has_marker_placeholder_helpers() -> None:
     assert scene_builder.opening_marker_size("door") == (0.7, 2.0, 0.06)
 
 
+def test_maya_scene_builder_uses_known_prop_definition_dimensions() -> None:
+    scene_builder = load_maya_scene_builder()
+
+    expected_sizes = {
+        "shelf_unit": (0.8, 1.8, 0.35),
+        "wooden_crate": (0.45, 0.45, 0.45),
+        "table": (1.0, 0.75, 0.65),
+        "chair": (0.45, 0.85, 0.45),
+        "bed": (0.9, 0.55, 1.6),
+        "cabinet": (0.8, 1.3, 0.45),
+        "barrel": (0.45, 0.7, 0.45),
+        "box": (0.35, 0.35, 0.35),
+    }
+
+    assert scene_builder.PROP_DEFINITION_SIZES == expected_sizes
+    for prop_type, size in expected_sizes.items():
+        assert scene_builder.has_prop_definition(prop_type)
+        assert scene_builder.prop_placeholder_size(prop_type) == size
+
+
 def test_maya_scene_builder_maps_supported_prop_types_to_procedural_builders() -> None:
     scene_builder = load_maya_scene_builder()
 
@@ -847,7 +867,9 @@ def test_maya_scene_builder_normalizes_required_prop_aliases() -> None:
         "shelf": "shelf_unit",
         "shelving": "shelf_unit",
         "crate": "wooden_crate",
-        "box": "wooden_crate",
+        "box": "box",
+        "cardboard_box": "box",
+        "wooden_barrel": "barrel",
         "single_bed": "bed",
         "desk": "table",
         "couch": "sofa",
@@ -859,7 +881,7 @@ def test_maya_scene_builder_normalizes_required_prop_aliases() -> None:
 
     for alias, canonical in aliases.items():
         assert scene_builder.normalize_prop_type(alias) == canonical
-        assert scene_builder.has_procedural_prop(alias)
+        assert scene_builder.has_procedural_prop(alias) or scene_builder.has_prop_definition(alias)
 
 
 def test_maya_scene_builder_uses_maya_safe_part_suffix_helpers() -> None:
@@ -995,6 +1017,53 @@ def test_maya_scene_builder_uses_procedural_group_and_generic_fallback() -> None
     fallback = next(cube for cube in cmds.cubes if cube["name"] == "prop_unknown_totem_01")
     assert fallback["size"] == scene_builder.GENERIC_PROP_SIZE
     assert ("prop_unknown_totem_01", "props") in cmds.parents
+
+
+def test_maya_scene_builder_uses_known_cube_dimensions_for_simple_props() -> None:
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+
+    created = scene_builder.create_svg_prop_markers(
+        cmds,
+        [
+            {"prop_type": "barrel", "center_maya": [1.0, -2.0]},
+            {"name": "box", "center_maya": [2.0, -3.0]},
+            {"prop_type": "unknown_totem", "center_maya": [3.0, -4.0]},
+        ],
+        "MAT_props",
+        "MAT_prop_details",
+        "props",
+    )
+
+    assert created == 3
+    cubes_by_name = {cube["name"]: cube for cube in cmds.cubes}
+    assert cubes_by_name["prop_barrel_01"]["size"] == scene_builder.prop_placeholder_size("barrel")
+    assert cubes_by_name["prop_box_01"]["size"] == scene_builder.prop_placeholder_size("box")
+    assert cubes_by_name["prop_unknown_totem_01"]["size"] == scene_builder.GENERIC_PROP_SIZE
+
+
+def test_maya_scene_builder_prop_marker_output_is_deterministic() -> None:
+    scene_builder = load_maya_scene_builder()
+    markers = [
+        {"prop_type": "shelf_unit", "center_maya": [1.0, -2.0]},
+        {"prop_type": "wooden_crate", "center_maya": [2.0, -3.0]},
+        {"prop_type": "table", "center_maya": [3.0, -4.0]},
+        {"prop_type": "chair", "center_maya": [4.0, -5.0]},
+        {"prop_type": "unknown_totem", "center_maya": [5.0, -6.0]},
+    ]
+
+    def snapshot() -> tuple[object, ...]:
+        cmds = _FakeMayaCmds()
+        created = scene_builder.create_svg_prop_markers(
+            cmds,
+            markers,
+            "MAT_props",
+            "MAT_prop_details",
+            "props",
+        )
+        return created, cmds.groups, cmds.cubes, cmds.parents, cmds.transforms
+
+    assert snapshot() == snapshot()
 
 
 def test_maya_scene_builder_applies_marker_y_rotation_to_props() -> None:

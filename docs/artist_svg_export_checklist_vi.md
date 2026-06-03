@@ -75,6 +75,22 @@ python scripts/python/build_maya_room.py --input drops/phong_cua_ban.svg --room 
 - [ ] Copy group marker từ template, paste vào group phòng thật, rồi di chuyển/scale marker.
 - [ ] Đọc hướng dẫn đặt tên/alias đầy đủ trong guide chính:
       `docs/artist_workflow_cat_guide_vi.html`.
+- [ ] Prop blockout hiện hỗ trợ bảng keyword nhỏ dưới đây. Nếu tên prop không
+      nằm trong bảng, Maya vẫn tạo khối cube generic để bạn không bị mất marker.
+
+| Keyword | Blockout Maya |
+|---------|---------------|
+| `shelf_unit` | Kệ cao đơn giản |
+| `wooden_crate` | Thùng gỗ placeholder |
+| `table` | Bàn |
+| `chair` | Ghế |
+| `bed` | Giường |
+| `cabinet` | Tủ |
+| `barrel` | Thùng tròn placeholder dạng khối |
+| `box` | Hộp nhỏ |
+
+> Các prop này chỉ là kích thước placeholder, **chưa có model 3D thật, texture,
+> hay material riêng**.
 - [ ] Trong group prop, dùng hình marker đơn giản như `rect`, `polygon`, `polyline`, hoặc path thẳng đơn giản. Maya lấy tâm marker để đặt blockout.
 - [ ] Nếu muốn xoay prop quanh trục đứng trong Maya, thêm hậu tố vào cuối tên marker:
       `_rot90`, `_rot180`, `_rot270`, `_rotation_90`, `_rotation_180`, hoặc `_rotation_270`.

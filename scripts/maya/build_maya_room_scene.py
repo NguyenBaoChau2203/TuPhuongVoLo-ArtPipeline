@@ -31,19 +31,29 @@ OPENING_MARKER_CENTER_Y = {
     "window": 1.35,
 }
 OPENING_NUMBER_SUFFIX_RE = re.compile(r"_\d{2,}$")
-PROCEDURAL_PROP_SIZES = {
+PROP_DEFINITION_SIZES = {
+    # Maya scene units. These are intentionally rough blockout proportions,
+    # centralized so marker names map to deterministic editable placeholders.
     "bed": (0.9, 0.55, 1.6),
     "table": (1.0, 0.75, 0.65),
     "chair": (0.45, 0.85, 0.45),
+    "cabinet": (0.8, 1.3, 0.45),
+    "shelf_unit": (0.8, 1.8, 0.35),
+    "wooden_crate": (0.45, 0.45, 0.45),
+    "barrel": (0.45, 0.7, 0.45),
+    "box": (0.35, 0.35, 0.35),
+}
+LEGACY_PROCEDURAL_PROP_SIZES = {
     "sofa": (1.25, 0.85, 0.65),
     "fridge": (0.55, 1.7, 0.55),
     "sink": (0.8, 0.9, 0.55),
     "kitchen_counter": (1.4, 0.9, 0.55),
-    "cabinet": (0.8, 1.3, 0.45),
     "locker": (0.55, 1.8, 0.5),
     "plant": (0.45, 0.9, 0.45),
-    "shelf_unit": (0.8, 1.8, 0.35),
-    "wooden_crate": (0.45, 0.45, 0.45),
+}
+PROCEDURAL_PROP_SIZES = {
+    **PROP_DEFINITION_SIZES,
+    **LEGACY_PROCEDURAL_PROP_SIZES,
 }
 PROP_TYPE_ALIASES = {
     "bed": "bed",
@@ -82,12 +92,13 @@ PROP_TYPE_ALIASES = {
     "metal_shelf": "shelf_unit",
     "wooden_crate": "wooden_crate",
     "crate": "wooden_crate",
-    "box": "wooden_crate",
-    "cardboard_box": "wooden_crate",
+    "barrel": "barrel",
+    "wooden_barrel": "barrel",
+    "box": "box",
+    "cardboard_box": "box",
 }
 PROP_PLACEHOLDER_SIZES = {
     **PROCEDURAL_PROP_SIZES,
-    "cardboard_box": (0.35, 0.35, 0.35),
     "console_desk": PROCEDURAL_PROP_SIZES["table"],
     "office_chair": PROCEDURAL_PROP_SIZES["chair"],
 }
@@ -256,7 +267,7 @@ def scene_bounds_with_props(
         center = marker_center_maya(raw_marker)
         if center is None:
             continue
-        raw_prop_type = safe_maya_name(raw_marker.get("prop_type"), fallback="generic")
+        raw_prop_type = marker_prop_type(raw_marker)
         width, height, depth = prop_blockout_size(
             normalize_prop_type(raw_prop_type),
             marker=raw_marker,
@@ -450,6 +461,19 @@ def normalize_prop_type(value: Any) -> str:
             token = token[len(prefix) :]
             break
     return PROP_TYPE_ALIASES.get(token, token)
+
+
+def marker_prop_type(marker: dict[str, Any]) -> str:
+    """Return the prop keyword from geometry JSON, accepting prop_type or name."""
+
+    return safe_maya_name(marker.get("prop_type") or marker.get("name"), fallback="generic")
+
+
+def has_prop_definition(prop_type: Any) -> bool:
+    """Return whether a prop type has deterministic placeholder dimensions."""
+
+    safe_type = safe_maya_name(prop_type, fallback="generic")
+    return safe_type in PROP_PLACEHOLDER_SIZES or normalize_prop_type(safe_type) in PROP_PLACEHOLDER_SIZES
 
 
 def has_procedural_prop(prop_type: Any) -> bool:
@@ -1023,11 +1047,16 @@ def create_procedural_prop(
     canonical_type = normalize_prop_type(prop_type)
     builder = PROP_BLOCKOUT_BUILDERS.get(canonical_type)
     if builder is None:
+        size = (
+            prop_blockout_size(canonical_type, marker=marker, units_scale=units_scale)
+            if has_prop_definition(canonical_type)
+            else GENERIC_PROP_SIZE
+        )
         return create_prop_cube(
             cmds,
             name,
             center,
-            GENERIC_PROP_SIZE,
+            size,
             material,
             parent,
             rotation_y_degrees=rotation_y_degrees,
@@ -1064,9 +1093,13 @@ def create_svg_prop_markers(
         center = marker_center_maya(raw_marker)
         if center is None:
             continue
-        raw_prop_type = safe_maya_name(raw_marker.get("prop_type"), fallback="generic")
+        raw_prop_type = marker_prop_type(raw_marker)
         canonical_type = normalize_prop_type(raw_prop_type)
-        name_type = canonical_type if has_procedural_prop(canonical_type) else raw_prop_type
+        name_type = (
+            canonical_type
+            if has_procedural_prop(canonical_type) or has_prop_definition(canonical_type)
+            else raw_prop_type
+        )
         type_counts[name_type] = type_counts.get(name_type, 0) + 1
         create_procedural_prop(
             cmds,
