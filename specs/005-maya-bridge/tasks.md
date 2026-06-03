@@ -170,3 +170,12 @@ Verified manually on artist/DCC machine with Autodesk Maya 2024 mayapy.exe. .ma 
 - [X] T104 Add non-Maya tests for door/window detection, JSON handoff, Maya placeholder names, no-marker compatibility, and unchanged prop markers
 - [X] T105 Update Vietnamese artist docs and quickstart with marker naming and marker-only guidance
 - [X] T106 Confirm no AI API, web UI, Feature 006, new dependencies, generated output commits, wall cutting, boolean operations, material changes, prop library changes, or unrelated parser/Maya refactor are added
+
+## Phase 19: Prop Library v2 MVP (005.3T)
+
+- [X] T107 Add a small internal prop definition table for deterministic placeholder dimensions
+- [X] T108 Support `shelf_unit`, `wooden_crate`, `table`, `chair`, `bed`, `cabinet`, `barrel`, and `box` keyword dimensions without external asset files
+- [X] T109 Keep existing prop marker compatibility and generic cube fallback for unknown props
+- [X] T110 Add non-Maya tests for known dimensions, `prop_type`/`name` lookup, unknown fallback, existing fixtures, and deterministic Maya placeholder output
+- [X] T111 Update Vietnamese artist docs and quickstart with supported keywords, fallback behavior, and no-real-assets guidance
+- [X] T112 Confirm no AI API, web UI, Feature 006, new dependencies, generated output commits, textures, materials, real 3D assets, new marker types, or SVG parsing rule changes are added

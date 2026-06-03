@@ -101,6 +101,11 @@ Expected:
 - Detected room is `phong_kho`
 - `prop_shelf_unit` becomes `shelf_unit`
 - `prop_wooden_crate` becomes `wooden_crate`
+- Known placeholder keywords use deterministic dimensions from the internal prop
+  definition table: `shelf_unit`, `wooden_crate`, `table`, `chair`, `bed`,
+  `cabinet`, `barrel`, and `box`.
+- Unknown prop names still create the simple generic cube fallback instead of
+  failing. No external 3D asset, texture, or new material file is required.
 - Prop marker rotation suffixes are optional. Supported suffixes are `_rot90`,
   `_rot180`, `_rot270`, `_rotation_90`, `_rotation_180`, and `_rotation_270`.
   For example, `prop_shelf_unit_rot90` becomes `shelf_unit` with
@@ -110,7 +115,6 @@ Expected:
   `docs/artist_workflow_cat_guide_vi.html`
 - The Illustrator copy/paste template lives in
   `assets/2d/templates/illustrator_prop_marker_template.svg`
-- Unknown prop names still create the simple cube fallback instead of failing
 - Dry-run prints planned `.ma`, geometry JSON, and preview PNG paths
 - Manifest is not updated
 
