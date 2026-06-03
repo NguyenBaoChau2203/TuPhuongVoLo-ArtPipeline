@@ -76,6 +76,50 @@ def test_warning_svg_still_exits_zero_and_reports_markers(tmp_path: Path) -> Non
     assert report.counts["material_color_candidates"] == 1
 
 
+def test_console_summary_lists_marker_names_and_missing_openings(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    svg_path = write_svg(
+        tmp_path / "props_only.svg",
+        """
+<g id="room_kho">
+  <path id="room_boundary" d="M0 0 L100 0 L100 80 L0 80 Z"/>
+  <g id="prop_barrel_01"><path d="M20,20 c10,0 20,5 30,0"/></g>
+</g>
+""",
+    )
+
+    exit_code = preflight.main(["--input", str(svg_path)])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "Danh sách prop marker: prop_barrel_01" in captured.out
+    assert "Door/window marker: 0" in captured.out
+    assert "Không tìm thấy door_/window_ marker trong SVG export" in captured.out
+
+
+def test_console_summary_lists_door_window_marker_names(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    svg_path = write_svg(
+        tmp_path / "openings.svg",
+        """
+<g id="room_kho">
+  <path id="room_boundary" d="M0 0 L100 0 L100 80 L0 80 Z"/>
+  <g id="door_main"><rect width="10" height="4"/></g>
+</g>
+""",
+    )
+
+    exit_code = preflight.main(["--input", str(svg_path)])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "Danh sách door/window marker: door_main" in captured.out
+
+
 def test_hidden_shapes_are_reported_and_not_counted_visible(tmp_path: Path) -> None:
     svg_path = write_svg(
         tmp_path / "hidden.svg",

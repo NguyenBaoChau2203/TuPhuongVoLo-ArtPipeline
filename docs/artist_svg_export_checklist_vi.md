@@ -104,6 +104,7 @@ phong_kho
 > Các prop này chỉ là kích thước placeholder, **chưa có model 3D thật, texture,
 > hay material riêng**.
 - [ ] Trong group prop, dùng hình marker đơn giản như `rect`, `polygon`, `polyline`, hoặc path thẳng đơn giản. Maya lấy tâm marker để đặt blockout.
+- [ ] Với prop tròn/cong như `prop_barrel_01`, bạn có thể giữ path cong Illustrator trong group `prop_*`; pipeline sẽ dùng bbox xấp xỉ để đặt placeholder và dry-run sẽ báo cảnh báo fallback. Không cần vẽ lại thùng bằng hình chữ nhật, miễn là group prop có tên đúng và có path đang hiển thị.
 - [ ] Nếu muốn xoay prop quanh trục đứng trong Maya, thêm hậu tố vào cuối tên marker:
       `_rot90`, `_rot180`, `_rot270`, `_rotation_90`, `_rotation_180`, hoặc `_rotation_270`.
       Ví dụ: `prop_shelf_unit_rot90`, `prop_wooden_crate_rot180`, `item_box_rotation_90`.
@@ -129,6 +130,7 @@ phong_kho
 
 - [ ] Để Maya tạo marker vị trí cửa/cửa sổ, đặt tên group/layer bắt đầu bằng `door_` hoặc `window_`.
       Ví dụ: `door_main`, `door_left`, `window_small`, `window_back_01`.
+- [ ] Nếu dry-run hoặc preflight báo `Door/window marker: 0`, nghĩa là SVG export hiện tại không có group `door_`/`window_`. Hãy kiểm tra lại export SVG từ Illustrator, nhất là tùy chọn giữ tên layer/group; pipeline sẽ không tự tạo `door_main` nếu marker không có trong SVG.
 - [ ] Phase 005.3S chỉ tạo khối marker đơn giản trong Maya để nhìn vị trí. Pipeline **chưa khoét tường**,
       chưa boolean, và chưa tạo lỗ cửa/cửa sổ thật.
 - [ ] Sau khi build `.ma`, mở scene trong Maya và kiểm tra group `openings` để xem marker có đúng vị trí không.

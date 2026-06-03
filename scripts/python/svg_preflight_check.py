@@ -310,8 +310,21 @@ def print_console_summary(report: PreflightReport) -> None:
         print(f"  Element rủi ro: {report.risky_elements or {}}")
         print(f"  Element ẩn phát hiện được: {len(report.hidden_elements)}")
         print(f"  Prop/item/object marker: {len(report.prop_marker_candidates)}")
+        if report.prop_marker_candidates:
+            props = ", ".join(candidate.value for candidate in report.prop_marker_candidates)
+            print(f"    Danh sách prop marker: {props}")
         print(f"  Rotation marker: {len(report.orientation_marker_candidates)}")
         print(f"  Door/window marker: {len(report.door_window_marker_candidates)}")
+        if report.door_window_marker_candidates:
+            openings = ", ".join(
+                candidate.value for candidate in report.door_window_marker_candidates
+            )
+            print(f"    Danh sách door/window marker: {openings}")
+        else:
+            print(
+                "    Không tìm thấy door_/window_ marker trong SVG export; "
+                "nếu .ai có door_main/window_*, hãy kiểm tra export SVG."
+            )
         print(f"  Material/color tag: {len(report.material_color_candidates)}")
 
     for warning in report.warnings:

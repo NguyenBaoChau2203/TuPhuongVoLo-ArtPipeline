@@ -64,7 +64,9 @@ phong_kho
 
 - Boundary có thể đặt tên `room_boundary`, `room_<ten_phong>`, hoặc `boundary_<ten_phong>`.
 - Các group `prop_*`, `item_*`, `object_*`, `door_*`, `window_*` cùng cấp với boundary sẽ được gắn vào phòng đó.
+- Prop cong như `prop_barrel_01` có thể giữ path cong Illustrator; geometry sẽ dùng bbox xấp xỉ cho marker và dry-run sẽ in cảnh báo fallback.
 - Khi export SVG từ Illustrator, chọn **Object IDs = Layer Names**, **Minify = OFF**, **Responsive = OFF**.
+- Nếu preflight hoặc dry-run báo không có `door_`/`window_`, hãy kiểm tra SVG export trước: pipeline không tự tạo `door_main` nếu group đó chỉ còn trong file `.ai` nhưng không xuất hiện trong SVG.
 - Maya output tạo placeholder blockout có thể chỉnh sửa để polish tiếp, không phải final art/model cuối cùng.
 
 ## Tag material và màu
