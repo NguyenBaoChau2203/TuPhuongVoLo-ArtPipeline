@@ -120,6 +120,35 @@ def test_console_summary_lists_door_window_marker_names(
     assert "Danh sách door/window marker: door_main" in captured.out
 
 
+@pytest.mark.parametrize(
+    "marker_markup",
+    [
+        '<g id="some_exported_id" data-name="door_main"><rect width="10" height="4"/></g>',
+        '<g id="some_exported_id" aria-label="door_main"><rect width="10" height="4"/></g>',
+        '<g id="some_exported_id" title="door_main"><rect width="10" height="4"/></g>',
+        '<g id="some_exported_id"><title>window_back</title><rect width="10" height="4"/></g>',
+    ],
+)
+def test_preflight_detects_opening_marker_from_preserved_metadata_names(
+    tmp_path: Path,
+    marker_markup: str,
+) -> None:
+    svg_path = write_svg(
+        tmp_path / "metadata_opening.svg",
+        f"""
+<g id="room_kho">
+  <path id="room_boundary" d="M0 0 L100 0 L100 80 L0 80 Z"/>
+  {marker_markup}
+</g>
+""",
+    )
+
+    report = preflight.check_svg(svg_path)
+
+    assert report.counts["door_window_marker_candidates"] == 1
+    assert report.door_window_marker_candidates[0].value in {"door_main", "window_back"}
+
+
 def test_hidden_shapes_are_reported_and_not_counted_visible(tmp_path: Path) -> None:
     svg_path = write_svg(
         tmp_path / "hidden.svg",

@@ -340,6 +340,93 @@ def test_detect_door_and_window_opening_markers(tmp_path: Path) -> None:
     assert window.center_svg == (90.0, 2.0)
 
 
+def test_opening_marker_detected_from_data_name_when_id_is_generic(tmp_path: Path) -> None:
+    svg = write_svg(
+        tmp_path / "data_name_opening.svg",
+        '<g id="room_kho">'
+        '<polygon points="0,0 120,0 120,80 0,80"/>'
+        '<g id="some_exported_id" data-name="door_main"><rect x="8" y="72" width="16" height="4"/></g>'
+        "</g>",
+    )
+
+    kho = _room(detect_rooms(svg), "kho")
+    door = _opening(kho, "door", "main")
+
+    assert door.source_name == "door_main"
+    assert door.group_path == ["room_kho", "door_main"]
+
+
+@pytest.mark.parametrize(
+    "label_source",
+    [
+        'id="some_exported_id" aria-label="door_main"',
+        'id="some_exported_id" title="door_main"',
+    ],
+)
+def test_opening_marker_detected_from_aria_or_title_attribute(
+    tmp_path: Path,
+    label_source: str,
+) -> None:
+    svg = write_svg(
+        tmp_path / "metadata_attr_opening.svg",
+        '<g id="room_kho">'
+        '<polygon points="0,0 120,0 120,80 0,80"/>'
+        f'<g {label_source}><rect x="8" y="72" width="16" height="4"/></g>'
+        "</g>",
+    )
+
+    kho = _room(detect_rooms(svg), "kho")
+    door = _opening(kho, "door", "main")
+
+    assert door.source_name == "door_main"
+
+
+def test_opening_marker_detected_from_title_child(tmp_path: Path) -> None:
+    svg = write_svg(
+        tmp_path / "title_child_opening.svg",
+        '<g id="room_kho">'
+        '<polygon points="0,0 120,0 120,80 0,80"/>'
+        '<g id="some_exported_id"><title>window_back</title><rect x="80" y="0" width="20" height="4"/></g>'
+        "</g>",
+    )
+
+    kho = _room(detect_rooms(svg), "kho")
+    window = _opening(kho, "window", "back")
+
+    assert window.source_name == "window_back"
+    assert window.group_path == ["room_kho", "window_back"]
+    assert not window.warnings
+
+
+def test_unlabeled_door_like_rectangle_is_not_emitted_as_opening(tmp_path: Path) -> None:
+    svg = write_svg(
+        tmp_path / "visual_door_only.svg",
+        '<g id="room_kho">'
+        '<polygon points="0,0 120,0 120,80 0,80"/>'
+        '<g id="opening_shape"><rect x="8" y="72" width="16" height="4"/></g>'
+        "</g>",
+    )
+
+    kho = _room(detect_rooms(svg), "kho")
+
+    assert kho.opening_markers == []
+
+
+def test_room_id_remains_primary_when_group_has_title_metadata(tmp_path: Path) -> None:
+    svg = write_svg(
+        tmp_path / "room_title.svg",
+        '<g id="room_kho"><title>Kho display title</title>'
+        '<polygon points="0,0 120,0 120,80 0,80"/>'
+        '<g id="door_main"><rect x="8" y="72" width="16" height="4"/></g>'
+        "</g>",
+    )
+
+    kho = _room(detect_rooms(svg), "kho")
+
+    assert kho.original_label == "room_kho"
+    assert len(kho.opening_markers) == 1
+
+
 def test_nested_prop_markers_fixture_detects_room_markers() -> None:
     reports = detect_rooms(FIXTURE_DIR / "illustrator_prop_markers.svg")
     kho = _room(reports, "phong_kho")

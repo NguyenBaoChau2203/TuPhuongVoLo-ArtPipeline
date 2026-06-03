@@ -49,6 +49,17 @@ from svg_shapes import (
 INKSCAPE_LABEL_ATTR = "{http://www.inkscape.org/namespaces/inkscape}label"
 PROP_MARKER_PREFIXES = ("prop_", "item_", "object_")
 OPENING_MARKER_PREFIXES = ("door_", "window_")
+SVG_METADATA_TAGS = {"title", "desc", "metadata"}
+LABEL_ATTRIBUTE_PRIORITY = (
+    INKSCAPE_LABEL_ATTR,
+    "inkscape:label",
+    "data-name",
+    "id",
+    "aria-label",
+    "title",
+    "label",
+    "name",
+)
 PROP_ROTATION_SUFFIX_RE = re.compile(
     r"_(?:rot(?P<short>90|180|270)|rotation_(?P<long>90|180|270))$"
 )
@@ -326,15 +337,67 @@ def _is_boundary_container_label(label: str, current: "_RoomBucket") -> bool:
     return False
 
 
-def _element_label(element: object) -> str:
+def _append_label_candidate(candidates: list[str], value: object | None) -> None:
+    if value is None:
+        return
+    label = str(value).strip()
+    if label and label not in candidates:
+        candidates.append(label)
+
+
+def _element_title_texts(element: object) -> list[str]:
+    titles: list[str] = []
+    for child in list(element):  # type: ignore[call-overload]
+        tag_raw = getattr(child, "tag", None)
+        if isinstance(tag_raw, str) and local_name(tag_raw).lower() == "title":
+            if hasattr(child, "itertext"):
+                title = "".join(child.itertext()).strip()
+            else:
+                title = str(getattr(child, "text", "") or "").strip()
+            if title:
+                titles.append(title)
+    return titles
+
+
+def _element_label_candidates(element: object) -> list[str]:
+    """Return explicit exported labels preserved on an SVG element."""
+
+    candidates: list[str] = []
     get = element.get  # type: ignore[attr-defined]
-    return (
-        get(INKSCAPE_LABEL_ATTR)
-        or get("inkscape:label")
-        or get("data-name")
-        or get("id")
-        or ""
-    ).strip()
+    for attr_name in LABEL_ATTRIBUTE_PRIORITY:
+        _append_label_candidate(candidates, get(attr_name))
+
+    for raw_key, raw_value in getattr(element, "attrib", {}).items():
+        key = local_name(str(raw_key)).lower()
+        if key.startswith("data-") and key != "data-name":
+            _append_label_candidate(candidates, raw_value)
+
+    for title in _element_title_texts(element):
+        _append_label_candidate(candidates, title)
+    return candidates
+
+
+def _element_label(element: object) -> str:
+    candidates = _element_label_candidates(element)
+    return candidates[0] if candidates else ""
+
+
+def _first_opening_marker_label(labels: list[str]) -> tuple[str | None, str | None, str | None]:
+    for label in labels:
+        marker_type, marker_name = normalize_opening_marker_label(label)
+        if marker_type and marker_name:
+            return marker_type, marker_name, label
+    return None, None, None
+
+
+def _first_prop_marker_label(
+    labels: list[str],
+) -> tuple[str | None, int, str | None, str | None, str | None]:
+    for label in labels:
+        prop_type, rotation, material_hint, color_hint = normalize_prop_marker_label_with_hints(label)
+        if prop_type:
+            return prop_type, rotation, material_hint, color_hint, label
+    return None, 0, None, None, None
 
 
 def _element_classes(element: object) -> list[str]:
@@ -620,7 +683,7 @@ def _collect_prop_marker_shapes(
         if not isinstance(tag_raw, str):
             continue
         tag = local_name(tag_raw).lower()
-        if tag in SKIP_SUBTREE_TAGS:
+        if tag in SKIP_SUBTREE_TAGS or tag in SVG_METADATA_TAGS:
             continue
         if _element_hidden(child, css_rules):
             continue
@@ -673,7 +736,7 @@ def _collect_opening_marker_shapes(
         if not isinstance(tag_raw, str):
             continue
         tag = local_name(tag_raw).lower()
-        if tag in SKIP_SUBTREE_TAGS:
+        if tag in SKIP_SUBTREE_TAGS or tag in SVG_METADATA_TAGS:
             continue
         if _element_hidden(child, css_rules):
             continue
@@ -823,7 +886,7 @@ def _collect_shapes(
         if not isinstance(tag_raw, str):
             continue
         tag = local_name(tag_raw).lower()
-        if tag in SKIP_SUBTREE_TAGS:
+        if tag in SKIP_SUBTREE_TAGS or tag in SVG_METADATA_TAGS:
             continue
         if _element_hidden(child, css_rules):
             continue
@@ -835,7 +898,8 @@ def _collect_shapes(
             child_matrix = matrix_multiply(matrix, own_matrix)
 
         if tag in CONTAINER_TAGS:
-            label = _element_label(child)
+            label_candidates = _element_label_candidates(child)
+            label = label_candidates[0] if label_candidates else ""
             if label:
                 if _is_boundary_container_label(label, current):
                     current.transform_warnings.extend(transform_warnings)
@@ -854,13 +918,15 @@ def _collect_shapes(
                     _collect_shapes(child, child_matrix, css_rules, current, buckets, group_path)
                     continue
 
-                marker_type, marker_name = normalize_opening_marker_label(label)
-                if marker_type and marker_name:
+                marker_type, marker_name, opening_label = _first_opening_marker_label(
+                    label_candidates
+                )
+                if marker_type and marker_name and opening_label:
                     marker_bucket = _OpeningMarkerBucket(
                         marker_type=marker_type,
                         marker_name=marker_name,
-                        source_name=label,
-                        group_path=[*group_path, label],
+                        source_name=opening_label,
+                        group_path=[*group_path, opening_label],
                         warnings=list(transform_warnings),
                     )
                     _collect_opening_marker_shapes(
@@ -882,13 +948,14 @@ def _collect_shapes(
                     rotation_y_degrees,
                     material_hint,
                     color_hint,
-                ) = normalize_prop_marker_label_with_hints(label)
-                if prop_type:
+                    prop_label,
+                ) = _first_prop_marker_label(label_candidates)
+                if prop_type and prop_label:
                     marker_bucket = _PropMarkerBucket(
                         prop_type=prop_type,
                         rotation_y_degrees=rotation_y_degrees,
-                        original_label=label,
-                        group_path=[*group_path, label],
+                        original_label=prop_label,
+                        group_path=[*group_path, prop_label],
                         material_hint=material_hint,
                         color_hint=color_hint,
                         warnings=list(transform_warnings),
