@@ -57,6 +57,9 @@ MATERIAL_COLOR_SUFFIX_RE = re.compile(
 )
 NUMBER_SUFFIX_RE = re.compile(r"_\d{2,}$")
 GENERIC_LAYER_RE = re.compile(r"^(?:layer|layer_\d+|layer_\d+_\d+|layer_\d+_copy)$")
+GENERIC_ROOT_SVG_RE = re.compile(
+    r"^(?:svg|layer|layer_\d+|layer_\d+_\d+|layer_\d+_copy|artboard|artboard_\d+|untitled)$"
+)
 
 
 @dataclass(frozen=True)
@@ -272,6 +275,27 @@ def _is_generic_layer_label(label: str) -> bool:
     """Return whether a label looks like Illustrator's generic Layer N wrapper."""
 
     return bool(GENERIC_LAYER_RE.match(_normalized_label(label)))
+
+
+def _is_meaningful_root_svg_label(label: str) -> bool:
+    """Return whether a root <svg> id/data-name looks like a real room label.
+
+    Illustrator sometimes exports the top-level room name as the root ``<svg
+    id="phong_kho">`` instead of wrapping it in a ``<g>``. This function
+    identifies labels that are meaningful content names rather than generic
+    editor-assigned names ("svg", "Layer_1", "Artboard_1", etc.).
+    """
+
+    if not label:
+        return False
+    normalized = _normalized_label(label)
+    if not normalized:
+        return False
+    if GENERIC_ROOT_SVG_RE.match(normalized):
+        return False
+    if _is_generic_layer_label(label):
+        return False
+    return True
 
 
 def _is_boundary_container_label(label: str, current: "_RoomBucket") -> bool:
@@ -827,16 +851,36 @@ def detect_rooms(svg_path: Path) -> list[RoomReport]:
 
     css_rules = _collect_css_rules(root)
     root_matrix, _ = parse_transform(root.get("transform"))  # type: ignore[attr-defined]
-    top_level = _RoomBucket(label=svg_path.stem, group_path=[])
+
+    # Illustrator sometimes exports <svg id="phong_kho"> with the room name
+    # as the root element id instead of wrapping it in a <g>.  When the root
+    # SVG carries a meaningful label, initialize the top-level bucket with
+    # that label so the existing boundary/prop/opening machinery works.
+    root_label = _element_label(root)
+    if _is_meaningful_root_svg_label(root_label):
+        top_level = _RoomBucket(label=root_label, group_path=[root_label])
+        group_path: list[str] = [root_label]
+    else:
+        top_level = _RoomBucket(label=svg_path.stem, group_path=[])
+        group_path = []
+
     buckets: list[_RoomBucket] = []
-    _collect_shapes(root, root_matrix, css_rules, top_level, buckets, [])
+    _collect_shapes(root, root_matrix, css_rules, top_level, buckets, group_path)
 
     named_with_shapes = [bucket for bucket in buckets if bucket.candidates]
     reports = [
         _make_room_report_from_bucket(bucket.label, bucket) for bucket in named_with_shapes
     ]
 
-    if not reports and top_level.candidates:
+    # When the root SVG acts as the room container, its candidates and/or
+    # markers belong to that room even if named child buckets also exist.
+    if top_level.group_path and (
+        top_level.candidates
+        or top_level.prop_markers
+        or top_level.opening_markers
+    ):
+        reports.insert(0, _make_room_report_from_bucket(top_level.label, top_level))
+    elif not reports and top_level.candidates:
         reports.append(_make_room_report_from_bucket(svg_path.stem, top_level))
 
     return reports

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" id="phong_kho" width="220" height="160" viewBox="0 0 220 160">
+  <g id="room_phong_kho">
+    <path d="M20 20 L190 20 L190 140 L20 140 Z"/>
+  </g>
+  <g id="prop_shelf_unit_01">
+    <rect x="120" y="38" width="42" height="12"/>
+  </g>
+  <g id="prop_wooden_crate_01">
+    <rect x="36" y="96" width="18" height="16"/>
+  </g>
+  <g id="door_main">
+    <rect x="96" y="132" width="28" height="6"/>
+  </g>
+</svg>

@@ -445,3 +445,134 @@ def test_opening_markers_do_not_change_prop_marker_detection(tmp_path: Path) -> 
     assert [(marker.marker_type, marker.marker_name) for marker in kho.opening_markers] == [
         ("door", "main")
     ]
+
+
+# --- Feature 008B: Root-level Illustrator SVG room wrappers ---
+
+
+def test_root_svg_room_fixture_detects_room_props_and_openings() -> None:
+    """Fixture <svg id="phong_kho"> should detect room with props and openings."""
+    reports = detect_rooms(FIXTURE_DIR / "illustrator_root_level_room.svg")
+    kho = _room(reports, "phong_kho")
+
+    assert kho.has_usable_boundary
+    assert kho.original_label == "phong_kho"
+    assert "phong_kho" in kho.group_path
+    assert kho.boundary is not None
+    assert kho.boundary.bbox == (20.0, 20.0, 190.0, 140.0)
+
+    prop_types = [marker.prop_type for marker in kho.prop_markers]
+    assert "shelf_unit" in prop_types
+    assert "wooden_crate" in prop_types
+    assert len(kho.prop_markers) == 2
+
+    assert [(m.marker_type, m.marker_name) for m in kho.opening_markers] == [
+        ("door", "main")
+    ]
+
+
+def test_root_svg_room_inline_detects_room_with_boundary(tmp_path: Path) -> None:
+    """Inline <svg id="phong_kho"> with room_phong_kho child boundary."""
+    svg = tmp_path / "root_room.svg"
+    svg.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<svg xmlns="http://www.w3.org/2000/svg" id="phong_kho" width="100" height="100">\n'
+        '  <g id="room_phong_kho"><path d="M0 0 L100 0 L100 80 L0 80 Z"/></g>\n'
+        '  <g id="prop_shelf_unit_01"><rect x="20" y="20" width="20" height="8"/></g>\n'
+        '  <g id="prop_wooden_crate_01"><rect x="60" y="50" width="15" height="12"/></g>\n'
+        '  <g id="door_main"><rect x="40" y="72" width="20" height="4"/></g>\n'
+        "</svg>\n",
+        encoding="utf-8",
+    )
+
+    kho = _room(detect_rooms(svg), "phong_kho")
+
+    assert kho.has_usable_boundary
+    assert kho.original_label == "phong_kho"
+    assert "phong_kho" in kho.group_path
+    assert len(kho.prop_markers) == 2
+    prop_types = {marker.prop_type for marker in kho.prop_markers}
+    assert {"shelf_unit", "wooden_crate"} <= prop_types
+    assert len(kho.opening_markers) == 1
+    assert kho.opening_markers[0].marker_type == "door"
+    assert kho.opening_markers[0].marker_name == "main"
+
+
+def test_root_svg_room_with_boundary_prefix_variant(tmp_path: Path) -> None:
+    """Root <svg id="phong_kho"> with boundary_phong_kho child."""
+    svg = tmp_path / "boundary_variant.svg"
+    svg.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<svg xmlns="http://www.w3.org/2000/svg" id="phong_kho" width="100" height="100">\n'
+        '  <g id="boundary_phong_kho"><polygon points="0,0 100,0 100,80 0,80"/></g>\n'
+        '  <g id="prop_barrel_01"><rect x="30" y="30" width="12" height="14"/></g>\n'
+        "</svg>\n",
+        encoding="utf-8",
+    )
+
+    kho = _room(detect_rooms(svg), "phong_kho")
+
+    assert kho.has_usable_boundary
+    assert kho.original_label == "phong_kho"
+    assert len(kho.prop_markers) == 1
+    assert kho.prop_markers[0].prop_type == "barrel"
+
+
+def test_root_svg_room_with_room_boundary_label(tmp_path: Path) -> None:
+    """Root <svg id="phong_kho"> with generic room_boundary child."""
+    svg = tmp_path / "room_boundary.svg"
+    svg.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<svg xmlns="http://www.w3.org/2000/svg" id="phong_kho" width="100" height="100">\n'
+        '  <g id="room_boundary"><path d="M5 5 L95 5 L95 75 L5 75 Z"/></g>\n'
+        '  <g id="prop_shelf_unit_01"><rect x="20" y="20" width="20" height="8"/></g>\n'
+        '  <g id="window_back"><rect x="70" y="5" width="16" height="4"/></g>\n'
+        "</svg>\n",
+        encoding="utf-8",
+    )
+
+    kho = _room(detect_rooms(svg), "phong_kho")
+
+    assert kho.has_usable_boundary
+    assert len(kho.prop_markers) == 1
+    assert len(kho.opening_markers) == 1
+    assert kho.opening_markers[0].marker_type == "window"
+
+
+def test_root_svg_generic_id_does_not_become_room(tmp_path: Path) -> None:
+    """Generic <svg id="Layer_1"> should NOT be treated as a room name."""
+    svg = write_svg(
+        tmp_path / "generic_root.svg",
+        '<g id="room_kho"><path d="M0 0 L100 0 L100 80 L0 80 Z"/></g>',
+        root_attrs='id="Layer_1" width="100" height="100"',
+    )
+
+    reports = detect_rooms(svg)
+
+    kho = _room(reports, "kho")
+    assert kho.has_usable_boundary
+    assert kho.original_label == "room_kho"
+
+
+def test_root_svg_no_id_uses_stem_fallback(tmp_path: Path) -> None:
+    """SVG without root id should use file stem as before."""
+    svg = write_svg(
+        tmp_path / "my_room.svg",
+        '<g id="room_kho"><path d="M0 0 L100 0 L100 80 L0 80 Z"/></g>',
+    )
+
+    reports = detect_rooms(svg)
+
+    kho = _room(reports, "kho")
+    assert kho.has_usable_boundary
+
+
+def test_existing_nested_group_room_detection_unaffected_by_root_fix() -> None:
+    """Existing <g id="phong_kho"> inside a Layer_1 wrapper still works."""
+    reports = detect_rooms(FIXTURE_DIR / "illustrator_real_grouped_room_props.svg")
+    kho = _room(reports, "phong_kho")
+
+    assert kho.has_usable_boundary
+    assert kho.original_label == "phong_kho"
+    assert len(kho.prop_markers) == 5
+    assert len(kho.opening_markers) == 1
