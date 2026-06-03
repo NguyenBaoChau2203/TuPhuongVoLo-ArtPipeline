@@ -102,6 +102,22 @@ PROP_PLACEHOLDER_SIZES = {
     "console_desk": PROCEDURAL_PROP_SIZES["table"],
     "office_chair": PROCEDURAL_PROP_SIZES["chair"],
 }
+SUPPORTED_MATERIAL_HINT_COLORS = {
+    "wood": (0.52, 0.32, 0.16),
+    "metal": (0.55, 0.58, 0.60),
+    "stone": (0.42, 0.42, 0.40),
+    "fabric": (0.38, 0.34, 0.48),
+    "paper": (0.88, 0.86, 0.78),
+}
+SUPPORTED_COLOR_HINT_COLORS = {
+    "red": (0.78, 0.18, 0.14),
+    "blue": (0.16, 0.32, 0.74),
+    "green": (0.22, 0.50, 0.24),
+    "yellow": (0.86, 0.72, 0.18),
+    "white": (0.92, 0.92, 0.88),
+    "black": (0.06, 0.06, 0.06),
+    "gray": (0.46, 0.46, 0.46),
+}
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -178,6 +194,34 @@ def create_material(cmds: Any, name: str, color: tuple[float, float, float]) -> 
     cmds.setAttr(f"{material}.color", color[0], color[1], color[2], type="double3")
     cmds.connectAttr(f"{material}.outColor", f"{shading_group}.surfaceShader", force=True)
     return shading_group
+
+
+def _hint_token(value: Any) -> str:
+    return safe_maya_name(value, fallback="")
+
+
+def material_from_hints(
+    cmds: Any,
+    material_hint: Any,
+    color_hint: Any,
+    cache: dict[str, str],
+) -> str | None:
+    """Return a deterministic material override for supported material/color hints."""
+
+    color_token = _hint_token(color_hint)
+    material_token = _hint_token(material_hint)
+    if color_token in SUPPORTED_COLOR_HINT_COLORS:
+        key = color_token
+        color = SUPPORTED_COLOR_HINT_COLORS[color_token]
+    elif material_token in SUPPORTED_MATERIAL_HINT_COLORS:
+        key = material_token
+        color = SUPPORTED_MATERIAL_HINT_COLORS[material_token]
+    else:
+        return None
+
+    if key not in cache:
+        cache[key] = create_material(cmds, f"mat_tpv_{key}", color)
+    return cache[key]
 
 
 def preview_floor_color(value: Any) -> tuple[float, float, float]:
@@ -1041,11 +1085,23 @@ def create_procedural_prop(
     parent: str,
     units_scale: float = MARKER_BBOX_DEFAULT_SCALE,
     rotation_y_degrees: float = 0.0,
+    material_overrides: dict[str, str] | None = None,
 ) -> str:
     """Create a procedural prop when known, or the generic cube fallback."""
 
     canonical_type = normalize_prop_type(prop_type)
     builder = PROP_BLOCKOUT_BUILDERS.get(canonical_type)
+    prop_material = material
+    if marker is not None and material_overrides is not None:
+        prop_material = (
+            material_from_hints(
+                cmds,
+                marker.get("material_hint"),
+                marker.get("color_hint"),
+                material_overrides,
+            )
+            or material
+        )
     if builder is None:
         size = (
             prop_blockout_size(canonical_type, marker=marker, units_scale=units_scale)
@@ -1057,7 +1113,7 @@ def create_procedural_prop(
             name,
             center,
             size,
-            material,
+            prop_material,
             parent,
             rotation_y_degrees=rotation_y_degrees,
         )
@@ -1065,7 +1121,7 @@ def create_procedural_prop(
     group = cmds.group(empty=True, name=name)
     cmds.parent(group, parent)
     size = prop_blockout_size(canonical_type, marker=marker, units_scale=units_scale)
-    builder(cmds, name, center, size, material, detail_material, group)
+    builder(cmds, name, center, size, prop_material, detail_material, group)
     cmds.xform(
         group,
         pivots=(center[0], 0.0, center[1]),
@@ -1082,6 +1138,7 @@ def create_svg_prop_markers(
     detail_material: str,
     parent: str,
     units_scale: float = MARKER_BBOX_DEFAULT_SCALE,
+    material_overrides: dict[str, str] | None = None,
 ) -> int:
     """Create blockout props from explicit artist-authored SVG markers."""
 
@@ -1112,6 +1169,7 @@ def create_svg_prop_markers(
             parent,
             units_scale=units_scale,
             rotation_y_degrees=marker_rotation_y_degrees(raw_marker),
+            material_overrides=material_overrides,
         )
         created += 1
     return created
@@ -1247,15 +1305,34 @@ def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
         openings_group = cmds.group(empty=True, name="openings")
         cmds.parent(openings_group, root)
 
-    floor_mat = create_material(
+    material_overrides: dict[str, str] = {}
+    default_floor_mat = create_material(
         cmds,
         "MAT_floor",
         preview_floor_color(style.get("floor_color")),
     )
-    wall_mat = create_material(
+    default_wall_mat = create_material(
         cmds,
         "MAT_wall",
         hex_to_rgb(str(style.get("wall_color", "")), (0.95, 0.95, 0.9)),
+    )
+    floor_mat = (
+        material_from_hints(
+            cmds,
+            data.get("floor_material_hint"),
+            data.get("floor_color_hint"),
+            material_overrides,
+        )
+        or default_floor_mat
+    )
+    wall_mat = (
+        material_from_hints(
+            cmds,
+            data.get("wall_material_hint"),
+            data.get("wall_color_hint"),
+            material_overrides,
+        )
+        or default_wall_mat
     )
     prop_mat = create_material(cmds, "MAT_props", hex_to_rgb(DEFAULT_PROP_COLOR, (0.54, 0.5, 0.45)))
     prop_detail_mat = create_material(
@@ -1294,6 +1371,7 @@ def build_scene(cmds: Any, data: dict[str, Any], maya_output: Path) -> None:
             prop_detail_mat,
             props_group,
             units_scale=units_scale,
+            material_overrides=material_overrides,
         )
     else:
         create_placeholder_props(cmds, room_preset, bounds, prop_mat, prop_detail_mat, props_group)

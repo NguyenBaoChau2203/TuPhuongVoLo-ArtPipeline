@@ -49,6 +49,16 @@ python scripts/python/build_maya_room.py --input drops/ten_file.svg --room ten_p
   tường, chưa boolean, và chưa tạo lỗ thật.
 - Sau khi build `.ma`, mở Maya và kiểm tra marker trong `openings` trước khi polish thủ công.
 
+## Tag material và màu
+
+- Có thể thêm hậu tố `_mat_<tên>`, `_material_<tên>`, hoặc `_color_<tên>` vào tên group/layer.
+- Material hỗ trợ: `wood`, `metal`, `stone`, `fabric`, `paper`.
+- Màu hỗ trợ: `red`, `blue`, `green`, `yellow`, `white`, `black`, `gray`.
+- Ví dụ hợp lệ: `prop_wooden_crate_01_mat_wood`, `prop_table_material_metal`,
+  `prop_box_color_red`, `wall_mat_stone`, `floor_material_wood`.
+- Tag lạ vẫn an toàn, nhưng Maya có thể dùng material mặc định cho blockout.
+- Phase này chưa hỗ trợ texture, material asset thật, hay thay đổi renderer.
+
 ## Ghi lại vấn đề thật
 
 Khi test SVG thật, hãy ghi lại:

@@ -106,6 +106,16 @@ Expected:
   `cabinet`, `barrel`, and `box`.
 - Unknown prop names still create the simple generic cube fallback instead of
   failing. No external 3D asset, texture, or new material file is required.
+- Optional material/color tag suffixes can be added to prop, wall, or floor
+  group names: `_mat_<name>`, `_material_<name>`, and `_color_<name>`.
+  Supported material names are `wood`, `metal`, `stone`, `fabric`, and `paper`.
+  Supported color names are `red`, `blue`, `green`, `yellow`, `white`, `black`,
+  and `gray`. Examples: `prop_wooden_crate_01_mat_wood`,
+  `prop_table_material_metal`, `prop_box_color_red`, `wall_mat_stone`,
+  and `floor_material_wood`.
+- Unknown material/color hints are safe and may fall back to default blockout
+  materials. This phase does not add texture files, real asset materials, or
+  renderer changes.
 - Prop marker rotation suffixes are optional. Supported suffixes are `_rot90`,
   `_rot180`, `_rot270`, `_rotation_90`, `_rotation_180`, and `_rotation_270`.
   For example, `prop_shelf_unit_rot90` becomes `shelf_unit` with

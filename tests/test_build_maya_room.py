@@ -26,6 +26,11 @@ class _FakeMayaCmds:
         self.groups: list[str] = []
         self.parents: list[tuple[str, str]] = []
         self.transforms: dict[str, object] = {}
+        self.materials: list[str] = []
+        self.shading_groups: list[str] = []
+        self.attrs: list[tuple[str, tuple[object, ...], dict[str, object]]] = []
+        self.connections: list[tuple[str, str]] = []
+        self.assignments: list[tuple[str, str]] = []
 
     def polyCube(self, name: str, width: float, height: float, depth: float):
         self.cubes.append(
@@ -44,8 +49,25 @@ class _FakeMayaCmds:
     def xform(self, node: str, **kwargs) -> None:
         self.transforms[node] = kwargs
 
-    def sets(self, *args, **kwargs) -> None:
+    def shadingNode(self, _node_type: str, asShader: bool, name: str):
+        assert asShader is True
+        self.materials.append(name)
+        return name
+
+    def sets(self, *args, **kwargs):
+        if kwargs.get("renderable") and kwargs.get("empty"):
+            name = kwargs["name"]
+            self.shading_groups.append(name)
+            return name
+        if kwargs.get("edit") and "forceElement" in kwargs:
+            self.assignments.append((str(args[0]), str(kwargs["forceElement"])))
         return None
+
+    def setAttr(self, attr: str, *args, **kwargs) -> None:
+        self.attrs.append((attr, args, kwargs))
+
+    def connectAttr(self, source: str, target: str, **_kwargs) -> None:
+        self.connections.append((source, target))
 
     def parent(self, node: str, parent: str) -> None:
         self.parents.append((node, parent))
@@ -434,6 +456,8 @@ def test_geometry_json_payload_contains_boundary_and_walls(tmp_path: Path, monke
     assert len(payload["wall_segments"]) == 4
     assert payload["units"]["maya_linear"] == "meter"
     assert payload["opening_markers"] == []
+    assert "floor_material_hint" not in payload
+    assert "wall_material_hint" not in payload
 
 
 def test_geometry_json_payload_contains_svg_prop_markers(
@@ -494,6 +518,52 @@ def test_geometry_json_payload_contains_prop_rotation_metadata(
     markers = payload["prop_markers"]
     assert [marker["prop_type"] for marker in markers] == ["shelf_unit", "table"]
     assert [marker["rotation_y_degrees"] for marker in markers] == [0, 90]
+
+
+def test_geometry_json_payload_contains_material_color_hints(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg = tmp_path / "material_tags.svg"
+    svg.write_text(
+        """<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120">
+  <g id="room_kho">
+    <g id="floor_material_wood"><path d="M0 0 L100 0 L100 100 L0 100 Z"/></g>
+    <g id="wall_mat_stone"></g>
+    <g id="prop_wooden_crate_01_mat_wood"><rect x="20" y="30" width="10" height="8"/></g>
+    <g id="prop_table_material_metal"><rect x="40" y="30" width="10" height="8"/></g>
+    <g id="prop_box_color_red"><rect x="60" y="30" width="10" height="8"/></g>
+    <g id="prop_chair_mat_mystery"><rect x="80" y="30" width="10" height="8"/></g>
+  </g>
+</svg>
+""",
+        encoding="utf-8",
+    )
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+    plan = builder.build_plan(args)
+
+    builder.write_geometry_json(plan)
+    payload = json.loads(plan.geometry_json.read_text(encoding="utf-8"))
+
+    assert payload["floor_material_hint"] == "wood"
+    assert payload["wall_material_hint"] == "stone"
+    markers = {marker["prop_type"]: marker for marker in payload["prop_markers"]}
+    assert markers["wooden_crate"]["material_hint"] == "wood"
+    assert markers["table"]["material_hint"] == "metal"
+    assert markers["box"]["color_hint"] == "red"
+    assert markers["chair"]["material_hint"] == "mystery"
 
 
 def test_geometry_json_payload_contains_opening_markers(
@@ -1040,6 +1110,46 @@ def test_maya_scene_builder_uses_known_cube_dimensions_for_simple_props() -> Non
     assert cubes_by_name["prop_barrel_01"]["size"] == scene_builder.prop_placeholder_size("barrel")
     assert cubes_by_name["prop_box_01"]["size"] == scene_builder.prop_placeholder_size("box")
     assert cubes_by_name["prop_unknown_totem_01"]["size"] == scene_builder.GENERIC_PROP_SIZE
+
+
+def test_maya_scene_builder_creates_deterministic_material_for_supported_prop_hint() -> None:
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+
+    created = scene_builder.create_svg_prop_markers(
+        cmds,
+        [
+            {"prop_type": "table", "center_maya": [1.0, -2.0], "material_hint": "metal"},
+            {"prop_type": "box", "center_maya": [2.0, -3.0], "color_hint": "red"},
+            {"prop_type": "chair", "center_maya": [3.0, -4.0], "material_hint": "mystery"},
+        ],
+        "MAT_props",
+        "MAT_prop_details",
+        "props",
+        material_overrides={},
+    )
+
+    assert created == 3
+    assert "mat_tpv_metal" in cmds.materials
+    assert "mat_tpv_red" in cmds.materials
+    assert "mat_tpv_mystery" not in cmds.materials
+    assert ("mat_tpv_metal.outColor", "mat_tpv_metalSG.surfaceShader") in cmds.connections
+    assert ("mat_tpv_red.outColor", "mat_tpv_redSG.surfaceShader") in cmds.connections
+    assert ("prop_box_01", "mat_tpv_redSG") in cmds.assignments
+    assert any(node.startswith("prop_table_01_") and sg == "mat_tpv_metalSG" for node, sg in cmds.assignments)
+
+
+def test_maya_scene_builder_reuses_material_hint_nodes() -> None:
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+    cache: dict[str, str] = {}
+
+    first = scene_builder.material_from_hints(cmds, "wood", None, cache)
+    second = scene_builder.material_from_hints(cmds, "wood", None, cache)
+
+    assert first == "mat_tpv_woodSG"
+    assert second == "mat_tpv_woodSG"
+    assert cmds.materials.count("mat_tpv_wood") == 1
 
 
 def test_maya_scene_builder_prop_marker_output_is_deterministic() -> None:

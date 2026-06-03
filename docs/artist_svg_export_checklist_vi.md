@@ -98,6 +98,20 @@ python scripts/python/build_maya_room.py --input drops/phong_cua_ban.svg --room 
       Hãy chạy dry-run trước để kiểm tra tên prop và kế hoạch dựng Maya trước khi chạy thật.
 - [ ] Đây chỉ là blockout để kiểm tra bố cục, **không phải model 3D cuối cùng**. Họa sĩ vẫn polish và thay asset thật trong Maya sau.
 
+## Gợi ý material và màu trong tên group/layer
+
+- [ ] Có thể thêm hậu tố đơn giản vào tên group/layer: `_mat_<tên>`,
+      `_material_<tên>`, hoặc `_color_<tên>`.
+- [ ] Material hỗ trợ: `wood`, `metal`, `stone`, `fabric`, `paper`.
+- [ ] Màu hỗ trợ: `red`, `blue`, `green`, `yellow`, `white`, `black`, `gray`.
+- [ ] Ví dụ: `prop_wooden_crate_01_mat_wood`, `prop_table_material_metal`,
+      `prop_box_color_red`, `wall_mat_stone`, `floor_material_wood`.
+- [ ] Tag chưa hỗ trợ vẫn an toàn: pipeline không lỗi, nhưng Maya có thể dùng
+      material mặc định.
+
+> Phase 005.3U chỉ tạo material màu phẳng để phân biệt blockout. Pipeline
+> **chưa hỗ trợ texture**, chưa có material asset thật, và chưa thay đổi renderer.
+
 ## Đánh dấu cửa và cửa sổ trong SVG
 
 - [ ] Để Maya tạo marker vị trí cửa/cửa sổ, đặt tên group/layer bắt đầu bằng `door_` hoặc `window_`.

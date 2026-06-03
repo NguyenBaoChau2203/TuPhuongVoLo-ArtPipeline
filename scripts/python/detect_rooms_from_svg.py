@@ -52,6 +52,10 @@ OPENING_MARKER_PREFIXES = ("door_", "window_")
 PROP_ROTATION_SUFFIX_RE = re.compile(
     r"_(?:rot(?P<short>90|180|270)|rotation_(?P<long>90|180|270))$"
 )
+MATERIAL_COLOR_SUFFIX_RE = re.compile(
+    r"_(?P<kind>mat|material|color)_(?P<name>[a-z0-9_]+)$"
+)
+NUMBER_SUFFIX_RE = re.compile(r"_\d{2,}$")
 
 
 @dataclass(frozen=True)
@@ -65,12 +69,14 @@ class PropMarker:
     bbox_svg: tuple[float, float, float, float]
     source_kind: str
     rotation_y_degrees: int = 0
+    material_hint: str | None = None
+    color_hint: str | None = None
     warnings: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-friendly representation."""
 
-        return {
+        data = {
             "prop_type": self.prop_type,
             "original_label": self.original_label,
             "group_path": list(self.group_path),
@@ -80,6 +86,11 @@ class PropMarker:
             "rotation_y_degrees": self.rotation_y_degrees,
             "warnings": list(self.warnings),
         }
+        if self.material_hint:
+            data["material_hint"] = self.material_hint
+        if self.color_hint:
+            data["color_hint"] = self.color_hint
+        return data
 
 
 @dataclass(frozen=True)
@@ -123,6 +134,10 @@ class RoomReport:
     group_path: list[str] = field(default_factory=list)
     prop_markers: list[PropMarker] = field(default_factory=list)
     opening_markers: list[OpeningMarker] = field(default_factory=list)
+    floor_material_hint: str | None = None
+    floor_color_hint: str | None = None
+    wall_material_hint: str | None = None
+    wall_color_hint: str | None = None
 
     @property
     def has_usable_boundary(self) -> bool:
@@ -137,6 +152,14 @@ class RoomReport:
         data["bbox"] = list(self.bbox) if self.bbox else None
         data["prop_markers"] = [marker.to_dict() for marker in self.prop_markers]
         data["opening_markers"] = [marker.to_dict() for marker in self.opening_markers]
+        for key in (
+            "floor_material_hint",
+            "floor_color_hint",
+            "wall_material_hint",
+            "wall_color_hint",
+        ):
+            if data.get(key) is None:
+                data.pop(key, None)
         if include_boundary and self.boundary is not None:
             data["boundary"] = self.boundary.to_dict()
         else:
@@ -174,17 +197,58 @@ def normalize_prop_marker_type(label: str) -> str | None:
 def normalize_prop_marker_label(label: str) -> tuple[str | None, int]:
     """Return normalized prop type and optional Y-axis rotation for a marker label."""
 
+    prop_type, rotation, _material_hint, _color_hint = normalize_prop_marker_label_with_hints(label)
+    return prop_type, rotation
+
+
+def _strip_rotation_suffix(value: str) -> tuple[str, int]:
+    suffix_match = PROP_ROTATION_SUFFIX_RE.search(value)
+    if not suffix_match:
+        return value, 0
+    rotation = int(suffix_match.group("short") or suffix_match.group("long"))
+    return value[: suffix_match.start()], rotation
+
+
+def _strip_material_color_suffix(value: str) -> tuple[str, str | None, str | None]:
+    suffix_match = MATERIAL_COLOR_SUFFIX_RE.search(value)
+    if not suffix_match:
+        return value, None, None
+    hint = suffix_match.group("name")
+    base = value[: suffix_match.start()]
+    if suffix_match.group("kind") == "color":
+        return base, None, hint
+    return base, hint, None
+
+
+def normalize_prop_marker_label_with_hints(
+    label: str,
+) -> tuple[str | None, int, str | None, str | None]:
+    """Return prop type, rotation, and optional material/color hints."""
+
     normalized = normalize_asset_name(label.strip())
+    normalized, rotation = _strip_rotation_suffix(normalized)
+    normalized, material_hint, color_hint = _strip_material_color_suffix(normalized)
+    normalized, later_rotation = _strip_rotation_suffix(normalized)
+    rotation = rotation or later_rotation
     for prefix in PROP_MARKER_PREFIXES:
         if normalized.startswith(prefix) and len(normalized) > len(prefix):
             prop_type = normalized[len(prefix) :]
-            rotation = 0
-            suffix_match = PROP_ROTATION_SUFFIX_RE.search(prop_type)
-            if suffix_match:
-                rotation = int(suffix_match.group("short") or suffix_match.group("long"))
-                prop_type = prop_type[: suffix_match.start()]
-            return prop_type, rotation
-    return None, 0
+            prop_type = NUMBER_SUFFIX_RE.sub("", prop_type)
+            return prop_type, rotation, material_hint, color_hint
+    return None, 0, material_hint, color_hint
+
+
+def normalize_surface_material_label(
+    label: str,
+) -> tuple[str | None, str | None, str | None]:
+    """Return floor/wall target plus optional material/color hint."""
+
+    base, material_hint, color_hint = _strip_material_color_suffix(
+        normalize_asset_name(label.strip())
+    )
+    if base in {"floor", "wall"} and (material_hint or color_hint):
+        return base, material_hint, color_hint
+    return None, material_hint, color_hint
 
 
 def normalize_opening_marker_label(label: str) -> tuple[str | None, str | None]:
@@ -265,6 +329,10 @@ class _RoomBucket:
     prop_markers: list[PropMarker] = field(default_factory=list)
     opening_markers: list[OpeningMarker] = field(default_factory=list)
     transform_applied: bool = False
+    floor_material_hint: str | None = None
+    floor_color_hint: str | None = None
+    wall_material_hint: str | None = None
+    wall_color_hint: str | None = None
 
 
 @dataclass
@@ -275,6 +343,8 @@ class _PropMarkerBucket:
     rotation_y_degrees: int
     original_label: str
     group_path: list[str]
+    material_hint: str | None = None
+    color_hint: str | None = None
     candidates: list[ShapeCandidate] = field(default_factory=list)
     unsupported: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
@@ -443,6 +513,8 @@ def _make_prop_marker(marker: _PropMarkerBucket) -> tuple[PropMarker | None, lis
             bbox_svg=bbox,
             source_kind=source_kind,
             rotation_y_degrees=marker.rotation_y_degrees,
+            material_hint=marker.material_hint,
+            color_hint=marker.color_hint,
             warnings=list(dict.fromkeys(warnings)),
         ),
         [],
@@ -522,6 +594,18 @@ def _collect_shapes(
         if tag in CONTAINER_TAGS:
             label = _element_label(child)
             if label:
+                surface_target, material_hint, color_hint = normalize_surface_material_label(label)
+                if surface_target:
+                    if surface_target == "floor":
+                        current.floor_material_hint = material_hint or current.floor_material_hint
+                        current.floor_color_hint = color_hint or current.floor_color_hint
+                    else:
+                        current.wall_material_hint = material_hint or current.wall_material_hint
+                        current.wall_color_hint = color_hint or current.wall_color_hint
+                    current.transform_warnings.extend(transform_warnings)
+                    _collect_shapes(child, child_matrix, css_rules, current, buckets, group_path)
+                    continue
+
                 marker_type, marker_name = normalize_opening_marker_label(label)
                 if marker_type and marker_name:
                     marker_bucket = _OpeningMarkerBucket(
@@ -545,13 +629,20 @@ def _collect_shapes(
                         current.transform_applied = True
                     continue
 
-                prop_type, rotation_y_degrees = normalize_prop_marker_label(label)
+                (
+                    prop_type,
+                    rotation_y_degrees,
+                    material_hint,
+                    color_hint,
+                ) = normalize_prop_marker_label_with_hints(label)
                 if prop_type:
                     marker_bucket = _PropMarkerBucket(
                         prop_type=prop_type,
                         rotation_y_degrees=rotation_y_degrees,
                         original_label=label,
                         group_path=[*group_path, label],
+                        material_hint=material_hint,
+                        color_hint=color_hint,
                         warnings=list(transform_warnings),
                     )
                     _collect_prop_marker_shapes(child, child_matrix, css_rules, marker_bucket)
@@ -652,6 +743,10 @@ def _make_room_report_from_bucket(label: str, bucket: _RoomBucket) -> RoomReport
         group_path=list(bucket.group_path),
         prop_markers=list(bucket.prop_markers),
         opening_markers=list(bucket.opening_markers),
+        floor_material_hint=bucket.floor_material_hint,
+        floor_color_hint=bucket.floor_color_hint,
+        wall_material_hint=bucket.wall_material_hint,
+        wall_color_hint=bucket.wall_color_hint,
     )
 
 
