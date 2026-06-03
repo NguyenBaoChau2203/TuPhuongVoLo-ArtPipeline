@@ -603,6 +603,49 @@ def test_geometry_json_payload_contains_opening_markers(
     assert [marker["prop_type"] for marker in payload["prop_markers"]] == ["shelf_unit"]
 
 
+def test_geometry_json_payload_contains_real_illustrator_sibling_props(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(FIXTURE_DIR / "illustrator_real_grouped_room_props.svg"),
+            "--room",
+            "phong_kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+    plan = builder.build_plan(args)
+
+    builder.write_geometry_json(plan)
+    payload = json.loads(plan.geometry_json.read_text(encoding="utf-8"))
+
+    assert payload["room_name"] == "phong_kho"
+    markers = payload["prop_markers"]
+    assert len(markers) == 5
+    assert [marker["original_label"] for marker in markers] == [
+        "prop_wooden_crate_01",
+        "prop_shelf_unit_01",
+        "prop_barrel_01",
+        "prop_electrical_cabinet_01_mat_metal",
+        "prop_floor_grate_01_mat_metal",
+    ]
+    assert [marker["prop_type"] for marker in markers] == [
+        "wooden_crate",
+        "shelf_unit",
+        "barrel",
+        "electrical_cabinet",
+        "floor_grate",
+    ]
+    assert payload["opening_markers"][0]["source_name"] == "door_main"
+    assert markers[3]["material_hint"] == "metal"
+    assert markers[4]["material_hint"] == "metal"
+
+
 def test_output_naming_follows_convention(tmp_path: Path, monkeypatch) -> None:
     isolated_manifest(monkeypatch, tmp_path)
     svg = write_svg(tmp_path / "floorplan.svg")
@@ -1110,6 +1153,44 @@ def test_maya_scene_builder_uses_known_cube_dimensions_for_simple_props() -> Non
     assert cubes_by_name["prop_barrel_01"]["size"] == scene_builder.prop_placeholder_size("barrel")
     assert cubes_by_name["prop_box_01"]["size"] == scene_builder.prop_placeholder_size("box")
     assert cubes_by_name["prop_unknown_totem_01"]["size"] == scene_builder.GENERIC_PROP_SIZE
+
+
+def test_maya_scene_builder_creates_real_illustrator_props_under_props_group() -> None:
+    scene_builder = load_maya_scene_builder()
+    cmds = _FakeMayaCmds()
+
+    created = scene_builder.create_svg_prop_markers(
+        cmds,
+        [
+            {"prop_type": "wooden_crate", "center_maya": [0.25, -0.84]},
+            {"prop_type": "shelf_unit", "center_maya": [1.21, -0.36]},
+            {"prop_type": "barrel", "center_maya": [0.66, -0.64]},
+            {
+                "prop_type": "electrical_cabinet",
+                "center_maya": [0.15, -0.32],
+                "material_hint": "metal",
+            },
+            {
+                "prop_type": "floor_grate",
+                "center_maya": [1.38, -0.93],
+                "material_hint": "metal",
+            },
+        ],
+        "MAT_props",
+        "MAT_prop_details",
+        "props",
+        material_overrides={},
+    )
+
+    assert created == 5
+    assert ("prop_wooden_crate_01", "props") in cmds.parents
+    assert ("prop_shelf_unit_01", "props") in cmds.parents
+    assert ("prop_barrel_01", "props") in cmds.parents
+    assert ("prop_electrical_cabinet_01", "props") in cmds.parents
+    assert ("prop_floor_grate_01", "props") in cmds.parents
+    cubes_by_name = {cube["name"]: cube for cube in cmds.cubes}
+    assert cubes_by_name["prop_electrical_cabinet_01"]["size"] == scene_builder.GENERIC_PROP_SIZE
+    assert cubes_by_name["prop_floor_grate_01"]["size"] == scene_builder.GENERIC_PROP_SIZE
 
 
 def test_maya_scene_builder_creates_deterministic_material_for_supported_prop_hint() -> None:

@@ -356,6 +356,64 @@ def test_nested_prop_markers_fixture_detects_room_markers() -> None:
     assert kho.group_path == ["Layer 1", "Phòng Kho"]
 
 
+def test_real_illustrator_sibling_prop_groups_attach_to_parent_room() -> None:
+    reports = detect_rooms(FIXTURE_DIR / "illustrator_real_grouped_room_props.svg")
+    kho = _room(reports, "phong_kho")
+
+    assert kho.has_usable_boundary
+    assert kho.original_label == "phong_kho"
+    assert kho.group_path == ["Layer_1", "phong_kho"]
+    assert kho.boundary is not None
+    assert kho.boundary.bbox == (20.0, 20.0, 190.0, 140.0)
+
+    original_labels = {marker.original_label for marker in kho.prop_markers}
+    assert {
+        "prop_shelf_unit_01",
+        "prop_wooden_crate_01",
+        "prop_barrel_01",
+        "prop_electrical_cabinet_01_mat_metal",
+        "prop_floor_grate_01_mat_metal",
+    } <= original_labels
+    assert len(kho.prop_markers) == 5
+    assert [(marker.marker_type, marker.marker_name) for marker in kho.opening_markers] == [
+        ("door", "main")
+    ]
+
+
+def test_real_illustrator_sibling_prop_groups_keep_material_suffixes() -> None:
+    reports = detect_rooms(FIXTURE_DIR / "illustrator_real_grouped_room_props.svg")
+    kho = _room(reports, "phong_kho")
+    markers = {marker.original_label: marker for marker in kho.prop_markers}
+
+    assert markers["prop_electrical_cabinet_01_mat_metal"].prop_type == "electrical_cabinet"
+    assert markers["prop_electrical_cabinet_01_mat_metal"].material_hint == "metal"
+    assert markers["prop_floor_grate_01_mat_metal"].prop_type == "floor_grate"
+    assert markers["prop_floor_grate_01_mat_metal"].material_hint == "metal"
+
+
+@pytest.mark.parametrize(
+    "boundary_label",
+    ["room_boundary", "room_phong_kho", "boundary_phong_kho"],
+)
+def test_supported_boundary_group_names_use_parent_room_name(
+    tmp_path: Path,
+    boundary_label: str,
+) -> None:
+    svg = write_svg(
+        tmp_path / f"{boundary_label}.svg",
+        '<g id="phong_kho">'
+        f'<g id="{boundary_label}"><path d="M0 0 L100 0 L100 80 L0 80 Z"/></g>'
+        '<g id="prop_shelf_unit_01"><rect x="20" y="20" width="20" height="8"/></g>'
+        "</g>",
+    )
+
+    kho = _room(detect_rooms(svg), "phong_kho")
+
+    assert kho.original_label == "phong_kho"
+    assert kho.has_usable_boundary
+    assert [marker.original_label for marker in kho.prop_markers] == ["prop_shelf_unit_01"]
+
+
 def test_prop_markers_preserve_group_path_and_transform_centers() -> None:
     reports = detect_rooms(FIXTURE_DIR / "illustrator_prop_markers.svg")
     kho = _room(reports, "phong_kho")

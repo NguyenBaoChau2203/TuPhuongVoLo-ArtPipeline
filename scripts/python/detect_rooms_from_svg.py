@@ -56,6 +56,7 @@ MATERIAL_COLOR_SUFFIX_RE = re.compile(
     r"_(?P<kind>mat|material|color)_(?P<name>[a-z0-9_]+)$"
 )
 NUMBER_SUFFIX_RE = re.compile(r"_\d{2,}$")
+GENERIC_LAYER_RE = re.compile(r"^(?:layer|layer_\d+|layer_\d+_\d+|layer_\d+_copy)$")
 
 
 @dataclass(frozen=True)
@@ -259,6 +260,40 @@ def normalize_opening_marker_label(label: str) -> tuple[str | None, str | None]:
         if normalized.startswith(prefix) and len(normalized) > len(prefix):
             return prefix[:-1], normalized[len(prefix) :]
     return None, None
+
+
+def _normalized_label(label: str) -> str:
+    """Return an asset-safe label without stripping structural room prefixes."""
+
+    return normalize_asset_name(label.strip())
+
+
+def _is_generic_layer_label(label: str) -> bool:
+    """Return whether a label looks like Illustrator's generic Layer N wrapper."""
+
+    return bool(GENERIC_LAYER_RE.match(_normalized_label(label)))
+
+
+def _is_boundary_container_label(label: str, current: "_RoomBucket") -> bool:
+    """Return whether a named child group should act as this room's boundary.
+
+    Illustrator often exports an artist room group such as ``phong_kho`` with a
+    child group named ``room_boundary``. That child is geometry for the parent
+    room, not a separate room bucket.
+    """
+
+    normalized = _normalized_label(label)
+    if normalized in {"room_boundary", "boundary"}:
+        return True
+    if normalized.startswith("boundary_") and len(normalized) > len("boundary_"):
+        return True
+    if normalized.startswith("room_") and len(normalized) > len("room_"):
+        if not current.group_path or _is_generic_layer_label(current.label):
+            return False
+        room_name = normalized[len("room_") :]
+        parent_name = normalize_room_name(current.label)
+        return parent_name == room_name or parent_name.endswith(f"_{room_name}")
+    return False
 
 
 def _element_label(element: object) -> str:
@@ -594,6 +629,11 @@ def _collect_shapes(
         if tag in CONTAINER_TAGS:
             label = _element_label(child)
             if label:
+                if _is_boundary_container_label(label, current):
+                    current.transform_warnings.extend(transform_warnings)
+                    _collect_shapes(child, child_matrix, css_rules, current, buckets, group_path)
+                    continue
+
                 surface_target, material_hint, color_hint = normalize_surface_material_label(label)
                 if surface_target:
                     if surface_target == "floor":

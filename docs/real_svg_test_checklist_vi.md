@@ -49,6 +49,24 @@ python scripts/python/build_maya_room.py --input drops/ten_file.svg --room ten_p
   tường, chưa boolean, và chưa tạo lỗ thật.
 - Sau khi build `.ma`, mở Maya và kiểm tra marker trong `openings` trước khi polish thủ công.
 
+## Group prop theo phòng trong Illustrator
+
+- Họa sĩ chỉ cần group các đồ vật lớn cần blockout, không cần đặt tên từng shape nhỏ bên trong.
+- Cấu trúc được hỗ trợ:
+
+```text
+phong_kho
+├── room_boundary
+├── prop_*
+├── door_*
+└── window_*
+```
+
+- Boundary có thể đặt tên `room_boundary`, `room_<ten_phong>`, hoặc `boundary_<ten_phong>`.
+- Các group `prop_*`, `item_*`, `object_*`, `door_*`, `window_*` cùng cấp với boundary sẽ được gắn vào phòng đó.
+- Khi export SVG từ Illustrator, chọn **Object IDs = Layer Names**, **Minify = OFF**, **Responsive = OFF**.
+- Maya output tạo placeholder blockout có thể chỉnh sửa để polish tiếp, không phải final art/model cuối cùng.
+
 ## Tag material và màu
 
 - Có thể thêm hậu tố `_mat_<tên>`, `_material_<tên>`, hoặc `_color_<tên>` vào tên group/layer.
