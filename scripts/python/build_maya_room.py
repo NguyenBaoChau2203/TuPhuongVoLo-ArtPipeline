@@ -312,7 +312,7 @@ def geometry_payload(
         marker_payload["center_maya"] = [maya_center[0], maya_center[1]]
         opening_markers.append(marker_payload)
 
-    return {
+    payload = {
         "room_name": room.room_name,
         "original_label": room.original_label,
         "source_bbox_svg": list(room.boundary.bbox),
@@ -334,6 +334,16 @@ def geometry_payload(
         "prop_markers": prop_markers,
         "opening_markers": opening_markers,
     }
+    for key in (
+        "floor_material_hint",
+        "floor_color_hint",
+        "wall_material_hint",
+        "wall_color_hint",
+    ):
+        value = getattr(room, key, None)
+        if value:
+            payload[key] = value
+    return payload
 
 
 def build_plan(args: argparse.Namespace) -> MayaBuildPlan:

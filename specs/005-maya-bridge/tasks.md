@@ -179,3 +179,12 @@ Verified manually on artist/DCC machine with Autodesk Maya 2024 mayapy.exe. .ma 
 - [X] T110 Add non-Maya tests for known dimensions, `prop_type`/`name` lookup, unknown fallback, existing fixtures, and deterministic Maya placeholder output
 - [X] T111 Update Vietnamese artist docs and quickstart with supported keywords, fallback behavior, and no-real-assets guidance
 - [X] T112 Confirm no AI API, web UI, Feature 006, new dependencies, generated output commits, textures, materials, real 3D assets, new marker types, or SVG parsing rule changes are added
+
+## Phase 20: Material/Color Tags MVP (005.3U)
+
+- [X] T113 Parse `_mat_<name>`, `_material_<name>`, and `_color_<name>` suffixes from supported SVG group/layer labels
+- [X] T114 Store optional material/color hints in prop marker and room-level Maya geometry JSON where available
+- [X] T115 Create deterministic Maya materials for supported hints using names such as `mat_tpv_wood` and `mat_tpv_red`
+- [X] T116 Keep unknown hints safe, untagged SVG behavior unchanged, and existing prop orientation plus door/window marker tests passing
+- [X] T117 Update Vietnamese artist docs and quickstart with supported tags, examples, fallback behavior, and no-texture guidance
+- [X] T118 Confirm no AI API, web UI, Feature 006, new dependencies, generated output commits, texture files, real asset materials, renderer changes, lighting/camera/render preview changes, or advanced CSS/style parsing are added

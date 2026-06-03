@@ -10,7 +10,9 @@ from detect_rooms_from_svg import (
     detect_rooms,
     normalize_opening_marker_label,
     normalize_prop_marker_label,
+    normalize_prop_marker_label_with_hints,
     normalize_prop_marker_type,
+    normalize_surface_material_label,
 )
 
 FIXTURE_DIR = Path(__file__).parent / "in"
@@ -90,6 +92,36 @@ def test_prop_marker_rotation_suffix_normalization(
 
 
 @pytest.mark.parametrize(
+    ("label", "expected_type", "expected_material", "expected_color"),
+    [
+        ("prop_wooden_crate_01_mat_wood", "wooden_crate", "wood", None),
+        ("prop_table_material_metal", "table", "metal", None),
+        ("prop_box_color_red", "box", None, "red"),
+        ("prop_chair_mat_mystery", "chair", "mystery", None),
+    ],
+)
+def test_prop_marker_material_color_suffix_normalization(
+    label: str,
+    expected_type: str,
+    expected_material: str | None,
+    expected_color: str | None,
+) -> None:
+    prop_type, rotation, material_hint, color_hint = normalize_prop_marker_label_with_hints(label)
+
+    assert prop_type == expected_type
+    assert rotation == 0
+    assert material_hint == expected_material
+    assert color_hint == expected_color
+
+
+def test_surface_material_color_suffix_normalization() -> None:
+    assert normalize_surface_material_label("wall_mat_stone") == ("wall", "stone", None)
+    assert normalize_surface_material_label("floor_material_wood") == ("floor", "wood", None)
+    assert normalize_surface_material_label("wall_color_gray") == ("wall", None, "gray")
+    assert normalize_surface_material_label("room_kho_mat_wood")[0] is None
+
+
+@pytest.mark.parametrize(
     ("label", "expected_type", "expected_rotation"),
     [
         ("prop_shelf_unit", "shelf_unit", 0),
@@ -118,6 +150,43 @@ def test_detected_prop_marker_rotation_metadata(
     assert len(kho.prop_markers) == 1
     assert kho.prop_markers[0].prop_type == expected_type
     assert kho.prop_markers[0].rotation_y_degrees == expected_rotation
+
+
+def test_detected_prop_marker_material_color_hints(tmp_path: Path) -> None:
+    svg = write_svg(
+        tmp_path / "material_tags.svg",
+        '<g id="room_kho">'
+        '<path d="M0 0 L100 0 L100 100 L0 100 Z"/>'
+        '<g id="prop_wooden_crate_01_mat_wood"><rect x="20" y="30" width="10" height="8"/></g>'
+        '<g id="prop_table_material_metal"><rect x="40" y="30" width="10" height="8"/></g>'
+        '<g id="prop_box_color_red"><rect x="60" y="30" width="10" height="8"/></g>'
+        '<g id="prop_chair_mat_mystery"><rect x="80" y="30" width="10" height="8"/></g>'
+        "</g>",
+    )
+
+    kho = _room(detect_rooms(svg), "kho")
+    markers = {marker.prop_type: marker for marker in kho.prop_markers}
+
+    assert markers["wooden_crate"].material_hint == "wood"
+    assert markers["table"].material_hint == "metal"
+    assert markers["box"].color_hint == "red"
+    assert markers["chair"].material_hint == "mystery"
+
+
+def test_detected_floor_and_wall_material_hints(tmp_path: Path) -> None:
+    svg = write_svg(
+        tmp_path / "surface_tags.svg",
+        '<g id="room_kho">'
+        '<g id="floor_material_wood"><path d="M0 0 L100 0 L100 100 L0 100 Z"/></g>'
+        '<g id="wall_color_gray"></g>'
+        "</g>",
+    )
+
+    kho = _room(detect_rooms(svg), "kho")
+
+    assert kho.has_usable_boundary
+    assert kho.floor_material_hint == "wood"
+    assert kho.wall_color_hint == "gray"
 
 
 def test_nested_groups_fixture_detects_both_rooms() -> None:
