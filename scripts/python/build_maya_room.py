@@ -492,7 +492,46 @@ def write_geometry_json(plan: MayaBuildPlan) -> None:
     )
 
 
-def print_plan(plan: MayaBuildPlan) -> None:
+def _compact_prop_type_counts(markers: list) -> str:
+    """Return a compact type=count summary for prop markers."""
+
+    counts: dict[str, int] = {}
+    for marker in markers:
+        counts[marker.prop_type] = counts.get(marker.prop_type, 0) + 1
+    return ", ".join(f"{prop_type}={count}" for prop_type, count in counts.items())
+
+
+def _grouped_fallback_warnings(markers: list) -> list[str]:
+    """Group curved-path fallback warnings by marker instead of per shape."""
+
+    FALLBACK_NEEDLE = "fallback approximate path bbox"
+    lines: list[str] = []
+    for marker in markers:
+        fallback_count = sum(
+            1 for w in marker.warnings if FALLBACK_NEEDLE in w
+        )
+        non_fallback = [w for w in marker.warnings if FALLBACK_NEEDLE not in w]
+        if fallback_count > 0:
+            lines.append(
+                f"  {marker.original_label}: dùng approximate path bbox "
+                f"cho {fallback_count} curved path shape(s)"
+            )
+        for w in non_fallback:
+            lines.append(f"  {marker.original_label}: {w}")
+    return lines
+
+
+def _verbose_marker_warnings(markers: list) -> list[str]:
+    """Return per-shape detail warnings (verbose mode only)."""
+
+    lines: list[str] = []
+    for marker in markers:
+        for w in marker.warnings:
+            lines.append(f"  [verbose] {marker.original_label}: {w}")
+    return lines
+
+
+def print_plan(plan: MayaBuildPlan, *, verbose: bool = False) -> None:
     """Print the resolved Maya build plan in Vietnamese."""
 
     print(f"Phòng đã chọn: {plan.room.room_name}")
@@ -504,12 +543,16 @@ def print_plan(plan: MayaBuildPlan) -> None:
             f"{kind}={count}" for kind, count in sorted(plan.room.shape_kinds.items())
         )
         print(f"Loại hình trong phòng: {kinds}")
+
+    # --- Compact marker summary ---
     if plan.room.prop_markers:
-        props = ", ".join(
+        type_summary = _compact_prop_type_counts(plan.room.prop_markers)
+        labels = ", ".join(
             f"{marker.original_label} ({marker.prop_type})"
             for marker in plan.room.prop_markers
         )
-        print(f"Prop marker SVG ({len(plan.room.prop_markers)}): {props}")
+        print(f"Prop marker SVG ({len(plan.room.prop_markers)}): {labels}")
+        print(f"  Loại prop: {type_summary}")
     elif plan.preflight_prop_marker_candidates:
         print(
             "Prop marker SVG (0): preflight thấy marker trong SVG, "
@@ -523,20 +566,42 @@ def print_plan(plan: MayaBuildPlan) -> None:
         print(f"Opening marker SVG ({len(plan.room.opening_markers)}): {openings}")
     elif plan.preflight_opening_marker_candidates == 0:
         print(
-            "Opening marker SVG (0): không tìm thấy door_/window_ marker trong SVG export. "
-            "Nếu file .ai có door_main/window_*, hãy kiểm tra bước export SVG."
+            "Opening marker SVG (0): Không tìm thấy door_/window_ marker trong SVG export. "
+            "Nếu .ai có door_main/window_*, hãy kiểm tra bước export SVG."
         )
     else:
         print(
             "Opening marker SVG (0): SVG có door_/window_ marker, "
             "nhưng phòng đã chọn không emit opening marker nào."
         )
-    for marker in plan.room.prop_markers:
-        for warning in marker.warnings:
-            print(f"Cảnh báo prop {marker.original_label}: {warning}")
+
+    # --- Grouped fallback warnings (concise default) ---
+    fallback_lines = _grouped_fallback_warnings(plan.room.prop_markers)
+    if fallback_lines:
+        print("Cảnh báo bbox xấp xỉ:")
+        for line in fallback_lines:
+            print(line)
+
+    # Opening marker warnings (always concise)
     for marker in plan.room.opening_markers:
-        for warning in marker.warnings:
-            print(f"Cảnh báo opening {marker.source_name}: {warning}")
+        non_fallback = [
+            w for w in marker.warnings
+            if "fallback approximate path bbox" not in w
+        ]
+        for w in non_fallback:
+            print(f"Cảnh báo opening {marker.source_name}: {w}")
+
+    # Verbose: per-shape detail warnings
+    if verbose:
+        verbose_prop = _verbose_marker_warnings(plan.room.prop_markers)
+        verbose_opening = _verbose_marker_warnings(plan.room.opening_markers)
+        if verbose_prop or verbose_opening:
+            print("Chi tiết cảnh báo (verbose):")
+            for line in verbose_prop:
+                print(line)
+            for line in verbose_opening:
+                print(line)
+
     print(
         "Transform: "
         + ("đã áp dụng vào tọa độ phòng." if plan.transform_applied else "không có/không cần.")
@@ -735,7 +800,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="In kế hoạch, không chạy Maya.",
     )
-    parser.add_argument("--verbose", action="store_true", help="In log Maya trực tiếp.")
+    parser.add_argument("--verbose", action="store_true", help="In log Maya và cảnh báo chi tiết.")
     return parser
 
 
@@ -757,7 +822,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     print("TuPhuongVoLo-ArtPipeline - Tạo phòng Maya")
-    print_plan(plan)
+    print_plan(plan, verbose=args.verbose)
     if args.dry_run:
         print(
             "Dry-run: chỉ kiểm tra kế hoạch, không chạy Maya và không ghi manifest. "
@@ -778,6 +843,7 @@ def main(argv: list[str] | None = None) -> int:
     except OSError as exc:
         print(f"ERR_RUNTIME: Không thể chạy Maya. Chi tiết: {exc}", file=sys.stderr)
         return 1
+
 
 
 if __name__ == "__main__":
