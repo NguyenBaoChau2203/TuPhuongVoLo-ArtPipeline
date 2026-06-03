@@ -47,6 +47,14 @@ ORIENTATION_MARKERS = (
 )
 DOOR_WINDOW_MARKERS = ("door_", "window_")
 MATERIAL_MARKERS = ("mat_", "material_", "color_")
+MARKER_ATTRIBUTE_PRIORITY = (
+    "label",
+    "data-name",
+    "aria-label",
+    "title",
+    "name",
+    "id",
+)
 
 
 @dataclass
@@ -133,28 +141,45 @@ def element_is_hidden(element: ET.Element) -> bool:
     return display == "none" or visibility == "hidden" or opacity in {"0", "0.0", "0.00"}
 
 
-def marker_text(element: ET.Element) -> str:
-    """Collect useful naming attributes into one searchable marker string."""
+def _append_marker_value(values: list[str], value: object | None) -> None:
+    if value is None:
+        return
+    text = str(value).strip()
+    if text and text not in values:
+        values.append(text)
+
+
+def marker_values(element: ET.Element) -> list[str]:
+    """Collect explicit exported naming values that can preserve marker labels."""
 
     values: list[str] = []
+    attrs_by_key = {local_name(raw_key): raw_value for raw_key, raw_value in element.attrib.items()}
+    for key in MARKER_ATTRIBUTE_PRIORITY:
+        _append_marker_value(values, attrs_by_key.get(key))
+
     for raw_key, raw_value in element.attrib.items():
         key = local_name(raw_key)
-        if key in {"id", "class", "label", "name"} or key.startswith("data-"):
-            values.append(str(raw_value))
-    return " ".join(values).strip()
+        if key.startswith("data-") and key != "data-name":
+            _append_marker_value(values, raw_value)
+
+    for child in list(element):
+        if local_name(child.tag) == "title":
+            title = "".join(child.itertext()).strip()
+            _append_marker_value(values, title)
+    return values
 
 
 def add_marker_hit(
     target: list[MarkerCandidate],
     element: ET.Element,
-    text: str,
+    value: str,
     markers: tuple[str, ...],
 ) -> None:
     """Append one marker hit if the element naming text contains a marker."""
 
-    normalized = text.lower()
+    normalized = value.lower()
     if any(marker in normalized for marker in markers):
-        target.append(MarkerCandidate(local_name(element.tag), text))
+        target.append(MarkerCandidate(local_name(element.tag), value))
 
 
 def walk_svg(
@@ -177,12 +202,11 @@ def walk_svg(
     if tag in VISIBLE_SHAPE_ELEMENTS and not is_hidden:
         report.counts["visible_shape_candidates"] = report.counts.get("visible_shape_candidates", 0) + 1
 
-    text = marker_text(element)
-    if text:
-        add_marker_hit(report.prop_marker_candidates, element, text, PROP_MARKERS)
-        add_marker_hit(report.orientation_marker_candidates, element, text, ORIENTATION_MARKERS)
-        add_marker_hit(report.door_window_marker_candidates, element, text, DOOR_WINDOW_MARKERS)
-        add_marker_hit(report.material_color_candidates, element, text, MATERIAL_MARKERS)
+    for value in marker_values(element):
+        add_marker_hit(report.prop_marker_candidates, element, value, PROP_MARKERS)
+        add_marker_hit(report.orientation_marker_candidates, element, value, ORIENTATION_MARKERS)
+        add_marker_hit(report.door_window_marker_candidates, element, value, DOOR_WINDOW_MARKERS)
+        add_marker_hit(report.material_color_candidates, element, value, MATERIAL_MARKERS)
 
     for child in list(element):
         walk_svg(child, report, inherited_hidden=is_hidden)

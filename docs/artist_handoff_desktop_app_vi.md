@@ -233,6 +233,7 @@ Các phần sau chưa thuộc MVP bàn giao này hoặc vẫn là giới hạn a
 
 ## 12. Tài liệu liên quan
 
+- `docs\artist_svg_export_checklist_vi.md` — quy tắc marker `door_`/`window_`: preflight là nguồn kiểm tra; nếu preflight báo 0 marker thì Maya không tự tạo cửa.
 - `docs\artist_workflow_cat_guide_vi.html` — sổ tay mèo con thân thiện cho họa sĩ (007H)
 - `docs\desktop_app_mvp_vi.md`
 - `docs\release_packaging_checklist_vi.md`

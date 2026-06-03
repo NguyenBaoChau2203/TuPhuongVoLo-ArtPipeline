@@ -91,3 +91,16 @@ Khi test SVG thật, hãy ghi lại:
 - Kết quả dry-run Maya và lỗi cụ thể nếu có.
 
 Luôn giữ file thật và output sinh ra ở ngoài commit cho đến khi developer tạo fixture tối giản, đã được làm sạch, phù hợp để đưa vào `tests/in/`.
+
+## Ghi chú 008E: preflight là nguồn kiểm tra marker cửa/cửa sổ
+
+- Marker cửa/cửa sổ chỉ hợp lệ khi SVG export còn giữ tên rõ ràng bắt đầu bằng
+  `door_` hoặc `window_`.
+- Tên marker có thể nằm trong `id`, `data-name`, `aria-label`, `title`,
+  `inkscape:label`, `label`, `name`, `data-*`, hoặc thẻ con `<title>`.
+- Nếu preflight liệt kê `Danh sách door/window marker: door_main`, dry-run Maya
+  sẽ có dữ liệu để emit `opening_markers`.
+- Nếu preflight báo `Door/window marker: 0`, Maya sẽ không tạo cửa/cửa sổ. Đây là
+  dấu hiệu cần kiểm tra lại bước export SVG, không phải lỗi Maya.
+- Pipeline không đoán cửa từ hình chữ nhật nhìn giống cửa nếu group không có nhãn
+  `door_` hoặc `window_`.

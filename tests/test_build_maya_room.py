@@ -1847,6 +1847,43 @@ def test_geometry_json_payload_contains_root_level_room_props(
     assert opening_markers[0]["marker_name"] == "main"
 
 
+def test_geometry_json_payload_contains_opening_from_data_name_marker(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg_path = tmp_path / "door_data_name.svg"
+    svg_path.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<svg xmlns="http://www.w3.org/2000/svg" id="phong_kho" width="120" height="80">\n'
+        '  <g id="room_phong_kho"><polygon points="0,0 120,0 120,80 0,80"/></g>\n'
+        '  <g id="some_exported_id" data-name="door_main"><rect x="8" y="72" width="16" height="4"/></g>\n'
+        "</svg>\n",
+        encoding="utf-8",
+    )
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(svg_path),
+            "--room",
+            "phong_kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+    plan = builder.build_plan(args)
+
+    builder.write_geometry_json(plan)
+    payload = json.loads(plan.geometry_json.read_text(encoding="utf-8"))
+
+    opening_markers = payload["opening_markers"]
+    assert len(opening_markers) == 1
+    assert opening_markers[0]["marker_type"] == "door"
+    assert opening_markers[0]["marker_name"] == "main"
+    assert opening_markers[0]["source_name"] == "door_main"
+
+
 # --- Feature 008D Phase 2: Maya scene layout polish ---
 
 

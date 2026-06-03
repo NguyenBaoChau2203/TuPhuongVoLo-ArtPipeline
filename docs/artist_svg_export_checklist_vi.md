@@ -155,3 +155,22 @@ phong_kho
 > Ghi chú kỹ thuật: Việc làm cho parser đọc tốt mọi kiểu SVG thật từ Illustrator là
 > phạm vi của **Phase 005.1** và sẽ được làm sau. Hiện tại checklist này chỉ giúp
 > bạn chuẩn bị file tốt hơn.
+
+## Ghi chú 008E: kiểm tra marker cửa/cửa sổ đã sống sót sau export
+
+- [ ] Group/layer cửa phải có tên rõ ràng bắt đầu bằng `door_`, ví dụ `door_main`.
+- [ ] Group/layer cửa sổ phải có tên rõ ràng bắt đầu bằng `window_`, ví dụ `window_back_01`.
+- [ ] Sau khi export SVG, marker phải còn xuất hiện trong một trường tên của SVG:
+      `id`, `data-name`, `aria-label`, `title`, `inkscape:label`, `label`, `name`,
+      `data-*`, hoặc thẻ con `<title>`.
+- [ ] Chạy preflight trước khi dry-run Maya:
+
+```powershell
+python scripts/python/svg_preflight_check.py --input drops/ten_file.svg
+```
+
+- [ ] Nếu preflight in `Door/window marker: 1` và danh sách có `door_main`/`window_*`,
+      Maya dry-run có thể tạo marker trong geometry JSON và scene `.ma`.
+- [ ] Nếu preflight in `Door/window marker: 0`, SVG export hiện tại không còn tên
+      `door_`/`window_`. Maya sẽ không tự đoán cửa từ hình chữ nhật và sẽ không tự tạo
+      `door_main`. Hãy quay lại Illustrator/export SVG và kiểm tra tùy chọn giữ tên layer/group.
