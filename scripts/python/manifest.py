@@ -14,7 +14,7 @@ import sys
 import tempfile
 import unicodedata
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -63,6 +63,7 @@ DEFAULT_REQUIRED_FIELDS = [
 FIELD_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 ASSET_RE = FIELD_RE
 VERSION_RE = re.compile(r"^\d{3}$")
+UTC = timezone.utc
 
 
 class ManifestError(RuntimeError):
