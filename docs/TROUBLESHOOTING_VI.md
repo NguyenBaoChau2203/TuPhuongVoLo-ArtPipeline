@@ -1,90 +1,113 @@
-# 🔧 Xử lý sự cố — TuPhuongVoLo-ArtPipeline
+# Xử lý sự cố
 
-## Lỗi thường gặp
+## App không mở
 
-### ❌ "Python chưa được cài đặt"
+Kiểm tra Python:
 
-**Nguyên nhân**: Python chưa cài hoặc chưa thêm vào PATH.
+```powershell
+python --version
+```
 
-**Cách sửa**:
-1. Tải Python từ [python.org](https://python.org)
-2. Khi cài, **tick ✅ "Add Python to PATH"**
-3. Khởi động lại máy tính
-4. Thử lại
+Nếu Python không có trong `PATH`, cài Python hoặc đặt biến:
 
----
+```powershell
+set TUPHUONGVOLO_PYTHON_EXE=C:\Path\To\python.exe
+```
 
-### ❌ "Blender không tìm thấy"
+## App không tìm thấy repo
 
-**Nguyên nhân**: Blender chưa cài hoặc chưa thêm vào PATH.
+Chạy app từ thư mục repo hoặc đặt:
 
-**Cách sửa**:
-1. Tải Blender từ [blender.org](https://blender.org)
-2. Cài đặt bình thường
-3. Hoặc: mở file `config/pipeline.yaml` và sửa dòng `blender:` thành đường dẫn đầy đủ, ví dụ:
-   ```
-   blender: "C:/Program Files/Blender Foundation/Blender 4.0/blender.exe"
-   ```
+```powershell
+set TUPHUONGVOLO_REPO_ROOT=D:\TuPhuongVoLo-ArtPipeline
+```
 
----
+## Preflight báo FATAL
 
-### ❌ "Không tìm thấy file SVG"
+Thường do:
 
-**Nguyên nhân**: Bạn chưa bỏ file SVG vào đúng thư mục.
+- file không tồn tại
+- file không phải `.svg`
+- XML lỗi
+- root không phải `<svg>`
 
-**Cách sửa**:
-1. Bỏ file SVG vào thư mục `drops/`
-2. Hoặc kiểm tra đường dẫn file trong thông báo lỗi
+Hãy export lại SVG từ Illustrator rồi chạy:
 
----
+```powershell
+python scripts\python\svg_preflight_check.py --input "drops\scene_export.svg"
+```
 
-### ❌ "SVG không hợp lệ"
+## Dry-run được nhưng chạy Maya thật lỗi
 
-**Nguyên nhân**: File SVG không đạt yêu cầu chất lượng.
+Dry-run không cần Maya. Chạy thật cần `mayapy.exe`.
 
-**Cách sửa**:
-1. Đảm bảo file SVG được xuất từ Illustrator (không phải screenshot)
-2. Đảm bảo các layer có tên (không phải "Layer 1", "Layer 2")
-3. Chạy `02_clean_svg.bat` trước khi dùng các script khác
+Kiểm tra:
 
----
+```powershell
+launchers\00_maya_env_check.bat
+```
 
-### ❌ Cửa sổ đóng quá nhanh
+Đường dẫn thường dùng:
 
-**Nguyên nhân**: Script chạy xong và đóng ngay.
+```text
+C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe
+```
 
-**Cách sửa**: Các launcher đã có `pause` ở cuối. Nếu vẫn đóng nhanh, mở Command Prompt và chạy file .bat bằng tay:
-1. Nhấn `Win + R`, gõ `cmd`, Enter
-2. Gõ: `cd D:\TuPhuongVoLo-ArtPipeline`
-3. Gõ: `launchers\02_clean_svg.bat`
+## Không có file .ma
 
----
+Kiểm tra log app hoặc CLI:
 
-### ❌ Render bị đen / trống
+- dry-run chỉ in kế hoạch, không tạo `.ma`
+- chạy thật phải có `--maya-path`
+- Maya trả lỗi thì đọc dòng `ERR_MAYA_FAILED`
 
-**Nguyên nhân**: Camera không nhìn thấy phòng, hoặc chưa có ánh sáng.
+Output mong đợi:
 
-**Cách sửa**:
-1. Mở file `.blend` trong Blender
-2. Kiểm tra camera có hướng về phòng không
-3. Kiểm tra có đèn trong scene không
-4. Thử render thủ công trong Blender
+```text
+outputs\maya\
+```
 
----
+## Không có PNG preview
 
-### ❌ Lỗi tên file tiếng Việt
+PNG chỉ tạo khi bật `Render PNG preview` hoặc dùng `--render-preview`.
 
-**Nguyên nhân**: Đường dẫn có ký tự đặc biệt tiếng Việt.
+Output:
 
-**Cách sửa**:
-1. Đặt tên file/thư mục bằng tiếng Anh không dấu
-2. Tránh khoảng trắng trong tên file
-3. Ví dụ tốt: `kho_storage.svg`, không phải `Kho (lưu trữ).svg`
+```text
+outputs\preview\
+```
 
----
+## Scene Maya nhìn đơn giản
 
-## Vẫn gặp vấn đề?
+Đây là blockout để kiểm tra layout, chưa phải final art.
 
-1. Đọc thông báo lỗi trên màn hình — nó thường gợi ý cách sửa
-2. Kiểm tra file log (nếu có) trong thư mục dự án
-3. Hỏi developer của dự án
+Làm tiếp:
+
+1. tạo Maya sandbox
+2. nhờ Codex tạo Maya Python polish script
+3. chạy script trong sandbox
+4. bật/tắt group `GRP_agent_*` để review
+
+Xem:
+
+```text
+docs\WORKFLOW_FOR_WIFE_VI.md
+docs\CODEX_PROMPTS_VI.md
+```
+
+## Lỡ chạy script xấu trong Maya
+
+Nếu script chỉ tạo group `GRP_agent_*`, có thể tắt/xóa group đó.
+
+Nếu đã tạo sandbox, rollback bằng:
+
+```text
+restore_agent_backup.ps1
+```
+
+## Không nên làm
+
+- Không chạy AI/Codex trên file `.ma` gốc trong `outputs\maya\`.
+- Không sửa file `.ai` gốc bằng AI.
+- Không commit file sinh ra trong `outputs\`.
+- Không dùng launcher đã archive trừ khi developer cần lại.

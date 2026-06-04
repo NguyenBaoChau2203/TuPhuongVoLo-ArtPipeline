@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import os
 import queue
+import re
 import shutil
 import subprocess
 import sys
@@ -18,8 +19,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-APP_VERSION = "0.7.10"
-APP_PHASE = "007L"
+APP_VERSION = "0.7.11"
+APP_PHASE = "016A"
 APP_TITLE_BASE = "TuPhuongVoLo - Maya Artist App"
 APP_TITLE = f"{APP_TITLE_BASE} v{APP_VERSION} ({APP_PHASE})"
 
@@ -62,11 +63,26 @@ STATUS_RUNNING = "Đang chạy..."
 RUN_FINISHED_PREFIX = "__RUN_FINISHED__:"
 AI_RUN_FINISHED_PREFIX = "__AI_RUN_FINISHED__:"
 PREFLIGHT_RUN_FINISHED_PREFIX = "__PREFLIGHT_RUN_FINISHED__:"
+VISUAL_RUN_FINISHED_PREFIX = "__VISUAL_RUN_FINISHED__:"
+SANDBOX_RUN_FINISHED_PREFIX = "__SANDBOX_RUN_FINISHED__:"
 SVG_EMPTY_ERROR = "Chưa chọn file SVG."
 SVG_NOT_FOUND_ERROR = "Không tìm thấy file SVG. Hãy kiểm tra lại đường dẫn."
 ROOM_EMPTY_ERROR = "Chưa nhập tên phòng/layer."
 OUTPUT_EMPTY_ERROR = "Chưa chọn thư mục output."
 BUILD_SCRIPT_MISSING_ERROR = "Không tìm thấy build_maya_room.py trong repo."
+MAYA_SCENE_EMPTY_ERROR = "Chưa chọn file Maya .ma."
+MAYA_SCENE_NOT_FOUND_ERROR = "Không tìm thấy file Maya .ma. Hãy kiểm tra lại đường dẫn."
+MAYA_SCENE_NOT_MA_ERROR = "Input Maya phải là file .ma."
+GEOMETRY_JSON_EMPTY_ERROR = "Chưa chọn geometry JSON."
+GEOMETRY_JSON_NOT_FOUND_ERROR = "Không tìm thấy geometry JSON. Hãy kiểm tra lại đường dẫn."
+GEOMETRY_JSON_NOT_JSON_ERROR = "Geometry handoff phải là file .json."
+VISUAL_OUTPUT_EMPTY_ERROR = "Chưa chọn file output Visual Fidelity .ma."
+VISUAL_OUTPUT_EXISTS_ERROR = "Output Visual Fidelity đã tồn tại. Hãy chọn tên version mới."
+VISUAL_OUTPUT_SAME_AS_INPUT_ERROR = "Output Visual Fidelity phải khác file Maya input."
+VISUAL_FIDELITY_SCRIPT_MISSING_ERROR = "Không tìm thấy maya_visual_fidelity_pass.py trong repo."
+MAYA_SANDBOX_SCRIPT_MISSING_ERROR = "Không tìm thấy maya_agent_sandbox.py trong repo."
+SANDBOX_BACKUP_EMPTY_ERROR = "Chưa chọn thư mục backup sandbox."
+SANDBOX_WORKING_SCENE_MISSING_ERROR = "Chưa tìm thấy sandbox working/scene_agent_work.ma."
 AI_INPUT_EMPTY_ERROR = "Chưa chọn file PNG preview cho AI."
 AI_INPUT_NOT_FOUND_ERROR = "Không tìm thấy file PNG preview. Hãy kiểm tra lại đường dẫn."
 AI_INPUT_NOT_PNG_ERROR = "Input AI phải là file .png preview."
@@ -88,6 +104,10 @@ OUTPUT_SUBDIRS = {
 BUILD_SCRIPT_RELATIVE_PATH = Path("scripts") / "python" / "build_maya_room.py"
 AI_SCRIPT_RELATIVE_PATH = Path("scripts") / "python" / "ai_polish_preview.py"
 PREFLIGHT_SCRIPT_RELATIVE_PATH = Path("scripts") / "python" / "svg_preflight_check.py"
+VISUAL_FIDELITY_SCRIPT_RELATIVE_PATH = (
+    Path("scripts") / "python" / "maya_visual_fidelity_pass.py"
+)
+MAYA_SANDBOX_SCRIPT_RELATIVE_PATH = Path("scripts") / "python" / "maya_agent_sandbox.py"
 ARTIST_GUIDE_RELATIVE_PATH = Path("docs") / "artist_workflow_cat_guide_vi.html"
 PROP_MARKER_TEMPLATE_RELATIVE_PATH = (
     Path("assets") / "2d" / "templates" / "illustrator_prop_marker_template.svg"
@@ -97,6 +117,8 @@ REPO_MARKER_RELATIVE_PATHS = (
     BUILD_SCRIPT_RELATIVE_PATH,
     AI_SCRIPT_RELATIVE_PATH,
     PREFLIGHT_SCRIPT_RELATIVE_PATH,
+    VISUAL_FIDELITY_SCRIPT_RELATIVE_PATH,
+    MAYA_SANDBOX_SCRIPT_RELATIVE_PATH,
 )
 REPO_ROOT_ENV_VAR = "TUPHUONGVOLO_REPO_ROOT"
 PIPELINE_PYTHON_ENV_VAR = "TUPHUONGVOLO_PYTHON_EXE"
@@ -154,6 +176,30 @@ class ArtistPreflightOptions:
 
     svg_path: Path
     json_output: Path | None = None
+
+
+@dataclass(frozen=True)
+class ArtistVisualFidelityOptions:
+    """User inputs needed to run the post-build Visual Fidelity CLI."""
+
+    input_scene: Path
+    geometry_json: Path
+    output_scene: Path
+    maya_path: Path | None = None
+    report_json: Path | None = None
+    preset: str = "warehouse_v0"
+    dry_run: bool = True
+
+
+@dataclass(frozen=True)
+class ArtistMayaSandboxOptions:
+    """User inputs needed to create a safe Maya agent sandbox."""
+
+    maya_scene: Path
+    room_name: str = DEFAULT_ROOM_NAME
+    backup_root: Path | None = None
+    geometry_json: Path | None = None
+    source_svg: Path | None = None
 
 
 def _candidate_with_parents(path: Path) -> list[Path]:
@@ -227,6 +273,18 @@ def preflight_script_path(root: Path | None = None) -> Path:
     """Return the SVG preflight CLI path."""
 
     return (root or repo_root()) / PREFLIGHT_SCRIPT_RELATIVE_PATH
+
+
+def visual_fidelity_script_path(root: Path | None = None) -> Path:
+    """Return the post-build Visual Fidelity CLI path."""
+
+    return (root or repo_root()) / VISUAL_FIDELITY_SCRIPT_RELATIVE_PATH
+
+
+def maya_sandbox_script_path(root: Path | None = None) -> Path:
+    """Return the Maya agent sandbox CLI path."""
+
+    return (root or repo_root()) / MAYA_SANDBOX_SCRIPT_RELATIVE_PATH
 
 
 def artist_guide_path(root: Path | None = None) -> Path:
@@ -623,6 +681,12 @@ def default_preflight_report_path(output_dir: Path) -> Path:
     return output_dir / OUTPUT_SUBDIRS["reports"] / "svg_preflight_report.json"
 
 
+def default_visual_fidelity_report_path(output_dir: Path) -> Path:
+    """Return the default JSON report path for guided Visual Fidelity."""
+
+    return output_dir / OUTPUT_SUBDIRS["reports"] / "visual_fidelity_report.json"
+
+
 def preflight_options_from_strings(
     *,
     svg_path: str,
@@ -634,6 +698,51 @@ def preflight_options_from_strings(
     return ArtistPreflightOptions(
         svg_path=Path(_clean_text(svg_path)),
         json_output=default_preflight_report_path(selected_output_dir),
+    )
+
+
+def visual_options_from_strings(
+    *,
+    input_scene: str,
+    geometry_json: str,
+    output_scene: str,
+    maya_path: str,
+    output_dir: str,
+    dry_run: bool,
+) -> ArtistVisualFidelityOptions:
+    """Create Visual Fidelity option values from UI strings."""
+
+    selected_output_dir = Path(_clean_text(output_dir) or DEFAULT_OUTPUT_DIR)
+    mayapy = _clean_text(maya_path)
+    return ArtistVisualFidelityOptions(
+        input_scene=Path(_clean_text(input_scene)),
+        geometry_json=Path(_clean_text(geometry_json)),
+        output_scene=Path(_clean_text(output_scene)),
+        maya_path=Path(mayapy) if mayapy else None,
+        report_json=default_visual_fidelity_report_path(selected_output_dir),
+        dry_run=dry_run,
+    )
+
+
+def sandbox_options_from_strings(
+    *,
+    maya_scene: str,
+    geometry_json: str,
+    source_svg: str,
+    room_name: str,
+    backup_root: str,
+) -> ArtistMayaSandboxOptions:
+    """Create Maya sandbox option values from UI strings."""
+
+    geometry_text = _clean_text(geometry_json)
+    source_svg_text = _clean_text(source_svg)
+    backup_text = _clean_text(backup_root)
+    return ArtistMayaSandboxOptions(
+        maya_scene=Path(_clean_text(maya_scene)),
+        room_name=_clean_text(room_name) or DEFAULT_ROOM_NAME,
+        backup_root=Path(backup_text) if backup_text else None,
+        geometry_json=Path(geometry_text) if geometry_text else None,
+        source_svg=Path(source_svg_text) if source_svg_text else None,
     )
 
 
@@ -742,6 +851,118 @@ def validate_preflight_paths(options: ArtistPreflightOptions, *, root: Path) -> 
     return errors
 
 
+def validate_visual_fidelity_options(options: ArtistVisualFidelityOptions) -> list[str]:
+    """Return Vietnamese validation errors for Visual Fidelity inputs."""
+
+    errors: list[str] = []
+    if _is_empty_path(options.input_scene):
+        errors.append(MAYA_SCENE_EMPTY_ERROR)
+    elif options.input_scene.suffix.lower() != ".ma":
+        errors.append(MAYA_SCENE_NOT_MA_ERROR)
+
+    if _is_empty_path(options.geometry_json):
+        errors.append(GEOMETRY_JSON_EMPTY_ERROR)
+    elif options.geometry_json.suffix.lower() != ".json":
+        errors.append(GEOMETRY_JSON_NOT_JSON_ERROR)
+
+    if _is_empty_path(options.output_scene):
+        errors.append(VISUAL_OUTPUT_EMPTY_ERROR)
+    elif options.output_scene.suffix.lower() != ".ma":
+        errors.append(MAYA_SCENE_NOT_MA_ERROR)
+
+    if (
+        not _is_empty_path(options.input_scene)
+        and not _is_empty_path(options.output_scene)
+        and options.input_scene == options.output_scene
+    ):
+        errors.append(VISUAL_OUTPUT_SAME_AS_INPUT_ERROR)
+
+    if not options.dry_run and options.maya_path is None:
+        errors.append(MAYAPY_REQUIRED_ERROR)
+
+    return errors
+
+
+def validate_visual_fidelity_paths(
+    options: ArtistVisualFidelityOptions,
+    *,
+    root: Path,
+) -> list[str]:
+    """Return Vietnamese validation errors for Visual Fidelity files."""
+
+    errors: list[str] = []
+    if not _is_empty_path(options.input_scene):
+        input_scene = resolve_repo_relative_path(options.input_scene, root)
+        if not input_scene.is_file():
+            errors.append(MAYA_SCENE_NOT_FOUND_ERROR)
+
+    if not _is_empty_path(options.geometry_json):
+        geometry_json = resolve_repo_relative_path(options.geometry_json, root)
+        if not geometry_json.is_file():
+            errors.append(GEOMETRY_JSON_NOT_FOUND_ERROR)
+
+    if not visual_fidelity_script_path(root).is_file():
+        errors.append(VISUAL_FIDELITY_SCRIPT_MISSING_ERROR)
+
+    if not options.dry_run:
+        output_scene = resolve_repo_relative_path(options.output_scene, root)
+        if output_scene.exists():
+            errors.append(VISUAL_OUTPUT_EXISTS_ERROR)
+        if options.maya_path is not None and not options.maya_path.is_file():
+            errors.append(MAYAPY_NOT_FOUND_ERROR)
+
+    return errors
+
+
+def validate_sandbox_options(options: ArtistMayaSandboxOptions) -> list[str]:
+    """Return Vietnamese validation errors for Maya sandbox inputs."""
+
+    errors: list[str] = []
+    if _is_empty_path(options.maya_scene):
+        errors.append(MAYA_SCENE_EMPTY_ERROR)
+    elif options.maya_scene.suffix.lower() != ".ma":
+        errors.append(MAYA_SCENE_NOT_MA_ERROR)
+
+    if not options.room_name.strip():
+        errors.append(ROOM_EMPTY_ERROR)
+
+    if options.geometry_json is not None and options.geometry_json.suffix.lower() != ".json":
+        errors.append(GEOMETRY_JSON_NOT_JSON_ERROR)
+
+    if options.source_svg is not None and options.source_svg.suffix.lower() != ".svg":
+        errors.append("Source SVG snapshot phải là file .svg.")
+
+    if options.backup_root is not None and _is_empty_path(options.backup_root):
+        errors.append(SANDBOX_BACKUP_EMPTY_ERROR)
+
+    return errors
+
+
+def validate_sandbox_paths(options: ArtistMayaSandboxOptions, *, root: Path) -> list[str]:
+    """Return Vietnamese validation errors for Maya sandbox files."""
+
+    errors: list[str] = []
+    if not _is_empty_path(options.maya_scene):
+        maya_scene = resolve_repo_relative_path(options.maya_scene, root)
+        if not maya_scene.is_file():
+            errors.append(MAYA_SCENE_NOT_FOUND_ERROR)
+
+    if options.geometry_json is not None:
+        geometry_json = resolve_repo_relative_path(options.geometry_json, root)
+        if not geometry_json.is_file():
+            errors.append(GEOMETRY_JSON_NOT_FOUND_ERROR)
+
+    if options.source_svg is not None:
+        source_svg = resolve_repo_relative_path(options.source_svg, root)
+        if not source_svg.is_file():
+            errors.append(SVG_NOT_FOUND_ERROR)
+
+    if not maya_sandbox_script_path(root).is_file():
+        errors.append(MAYA_SANDBOX_SCRIPT_MISSING_ERROR)
+
+    return errors
+
+
 def validate_runtime_environment(*, root: Path | None = None) -> list[str]:
     """Return Vietnamese validation errors for repo and Python runtime discovery."""
 
@@ -783,6 +1004,38 @@ def validate_preflight_runtime_environment(*, root: Path | None = None) -> list[
         errors.append(REPO_ROOT_ERROR)
     elif not preflight_script_path(detected_root).is_file():
         errors.append(PREFLIGHT_SCRIPT_MISSING_ERROR)
+
+    if getattr(sys, "frozen", False) and pipeline_python_command_prefix() is None:
+        errors.append(PIPELINE_PYTHON_ERROR)
+
+    return errors
+
+
+def validate_visual_fidelity_runtime_environment(*, root: Path | None = None) -> list[str]:
+    """Return Vietnamese validation errors for Visual Fidelity runtime discovery."""
+
+    errors: list[str] = []
+    detected_root = root or find_repo_root()
+    if detected_root is None:
+        errors.append(REPO_ROOT_ERROR)
+    elif not visual_fidelity_script_path(detected_root).is_file():
+        errors.append(VISUAL_FIDELITY_SCRIPT_MISSING_ERROR)
+
+    if getattr(sys, "frozen", False) and pipeline_python_command_prefix() is None:
+        errors.append(PIPELINE_PYTHON_ERROR)
+
+    return errors
+
+
+def validate_sandbox_runtime_environment(*, root: Path | None = None) -> list[str]:
+    """Return Vietnamese validation errors for Maya sandbox runtime discovery."""
+
+    errors: list[str] = []
+    detected_root = root or find_repo_root()
+    if detected_root is None:
+        errors.append(REPO_ROOT_ERROR)
+    elif not maya_sandbox_script_path(detected_root).is_file():
+        errors.append(MAYA_SANDBOX_SCRIPT_MISSING_ERROR)
 
     if getattr(sys, "frozen", False) and pipeline_python_command_prefix() is None:
         errors.append(PIPELINE_PYTHON_ERROR)
@@ -899,6 +1152,76 @@ def build_svg_preflight_command(
     return command
 
 
+def build_visual_fidelity_command(
+    options: ArtistVisualFidelityOptions,
+    *,
+    python_executable: str | None = None,
+    python_command_prefix: list[str] | None = None,
+    root: Path | None = None,
+) -> list[str]:
+    """Build the exact CLI command for the post-build Visual Fidelity pass."""
+
+    root = root or repo_root()
+    prefix = python_command_prefix or pipeline_python_command_prefix(
+        python_executable=python_executable
+    )
+    if prefix is None:
+        raise RuntimeError(PIPELINE_PYTHON_ERROR)
+
+    command = [
+        *prefix,
+        str(visual_fidelity_script_path(root)),
+        "--input-scene",
+        str(options.input_scene),
+        "--geometry-json",
+        str(options.geometry_json),
+        "--output-scene",
+        str(options.output_scene),
+        "--preset",
+        options.preset,
+    ]
+    if options.report_json is not None:
+        command.extend(["--report-json", str(options.report_json)])
+    if options.dry_run:
+        command.append("--dry-run")
+    elif options.maya_path is not None:
+        command.extend(["--maya-path", str(options.maya_path)])
+    return command
+
+
+def build_maya_sandbox_command(
+    options: ArtistMayaSandboxOptions,
+    *,
+    python_executable: str | None = None,
+    python_command_prefix: list[str] | None = None,
+    root: Path | None = None,
+) -> list[str]:
+    """Build the exact CLI command for Maya agent sandbox creation."""
+
+    root = root or repo_root()
+    prefix = python_command_prefix or pipeline_python_command_prefix(
+        python_executable=python_executable
+    )
+    if prefix is None:
+        raise RuntimeError(PIPELINE_PYTHON_ERROR)
+
+    command = [
+        *prefix,
+        str(maya_sandbox_script_path(root)),
+        "--maya-scene",
+        str(options.maya_scene),
+        "--room",
+        options.room_name,
+    ]
+    if options.geometry_json is not None:
+        command.extend(["--geometry-json", str(options.geometry_json)])
+    if options.source_svg is not None:
+        command.extend(["--source-svg", str(options.source_svg)])
+    if options.backup_root is not None:
+        command.extend(["--backup-root", str(options.backup_root)])
+    return command
+
+
 def dry_run_settings_key(options: ArtistAppOptions, *, root: Path) -> tuple[str, str, str, bool, int, int]:
     """Return the settings fingerprint that must match before actual Maya run."""
 
@@ -947,6 +1270,89 @@ def ai_output_dir_path(root: Path) -> Path:
     return root / DEFAULT_AI_OUTPUT_DIR
 
 
+def default_maya_sandbox_backup_root() -> Path:
+    """Return the same default backup root used by maya_agent_sandbox.py."""
+
+    windows_drive = Path("D:/")
+    if os.name == "nt" and windows_drive.exists():
+        return Path("D:/TuPhuongVoLo_AgentBackups")
+    return Path.home() / "TuPhuongVoLo_AgentBackups"
+
+
+def newest_file(folder: Path, pattern: str) -> Path | None:
+    """Return the newest matching file, or None when the folder is absent/empty."""
+
+    if not folder.exists():
+        return None
+    candidates = [path for path in folder.glob(pattern) if path.is_file()]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda path: (path.stat().st_mtime, path.name.lower()))
+
+
+def latest_maya_scene(output_dir: Path, *, root: Path) -> Path | None:
+    """Return the latest generated Maya scene under the selected output root."""
+
+    output_root = resolve_output_root(output_dir, root)
+    return newest_file(output_root / OUTPUT_SUBDIRS["maya"], "*.ma")
+
+
+def latest_geometry_json(output_dir: Path, *, root: Path) -> Path | None:
+    """Return the latest generated geometry handoff JSON under outputs/tmp."""
+
+    output_root = resolve_output_root(output_dir, root)
+    return newest_file(output_root / "tmp", "*.json")
+
+
+def _increment_versioned_path(path: Path) -> Path:
+    stem = path.stem
+    match = re.search(r"_v(\d{3})$", stem)
+    if not match:
+        candidate = path.with_name(f"{stem}_v002{path.suffix}")
+        return candidate
+    version = int(match.group(1)) + 1
+    prefix = stem[: match.start(1)]
+    return path.with_name(f"{prefix}{version:03d}{path.suffix}")
+
+
+def next_available_path(path: Path) -> Path:
+    """Return a versioned path that does not currently exist."""
+
+    candidate = path
+    while candidate.exists():
+        candidate = _increment_versioned_path(candidate)
+    return candidate
+
+
+def default_visual_output_scene(input_scene: Path) -> Path:
+    """Return a safe default Visual Fidelity output path for a Maya scene."""
+
+    if _is_empty_path(input_scene):
+        return Path("")
+    stem = input_scene.stem
+    if "_maya_v" in stem:
+        visual_stem = stem.replace("_maya_v", "_final_candidate_v")
+    else:
+        visual_stem = f"{stem}_final_candidate_v001"
+    return next_available_path(input_scene.with_name(f"{visual_stem}{input_scene.suffix}"))
+
+
+def latest_sandbox_working_scene(backup_root: Path | None = None) -> Path | None:
+    """Return the newest sandbox working scene from the backup root."""
+
+    root = backup_root or default_maya_sandbox_backup_root()
+    if not root.exists():
+        return None
+    candidates = [
+        path
+        for path in root.glob("*/working/scene_agent_work.ma")
+        if path.is_file()
+    ]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda path: (path.stat().st_mtime, str(path).lower()))
+
+
 class ArtistDesktopApp:
     """Tkinter UI for the local artist app."""
 
@@ -971,6 +1377,8 @@ class ArtistDesktopApp:
         self.worker: threading.Thread | None = None
         self.ai_worker: threading.Thread | None = None
         self.preflight_worker: threading.Thread | None = None
+        self.visual_worker: threading.Thread | None = None
+        self.sandbox_worker: threading.Thread | None = None
         self.active_maya_options: ArtistAppOptions | None = None
         self.active_maya_root: Path | None = None
         self.successful_dry_run_key: tuple[str, str, str, bool, int, int] | None = None
@@ -987,7 +1395,7 @@ class ArtistDesktopApp:
         self.svg_status_var = tk.StringVar(value="Chưa kiểm tra")
         self.status_var = tk.StringVar(value=STATUS_READY)
         self.workflow_status_var = tk.StringVar(
-            value="Luồng khuyến nghị: Chọn SVG (1) → Kiểm tra SVG (2) → Chạy thử an toàn (3) → Dựng Maya thật (4) → Mở kết quả (5)."
+            value="Luồng khuyến nghị: Chọn SVG (1) → Kiểm tra SVG (2) → Dry-run (3) → Dựng Maya (4) → Visual/Sandbox (5) → Mở kết quả (6)."
         )
         self.command_var = tk.StringVar(value="")
         self.ai_png_var = tk.StringVar()
@@ -999,6 +1407,12 @@ class ArtistDesktopApp:
         self.ai_dry_run_var = tk.BooleanVar(value=True)
         self.ai_status_var = tk.StringVar(value=STATUS_READY)
         self.ai_command_var = tk.StringVar(value="")
+        self.maya_scene_var = tk.StringVar()
+        self.geometry_json_var = tk.StringVar()
+        self.visual_output_var = tk.StringVar()
+        self.visual_dry_run_var = tk.BooleanVar(value=True)
+        self.sandbox_backup_root_var = tk.StringVar(value=str(default_maya_sandbox_backup_root()))
+        self.post_status_var = tk.StringVar(value="Chưa chạy bước sau Maya")
 
         self._build_ui(scrolledtext)
         self.root.after(100, self._drain_log_queue)
@@ -1052,13 +1466,13 @@ class ArtistDesktopApp:
         ).pack(anchor=tk.W)
         ttk.Label(
             header_frame,
-            text="Vẽ SVG trong Illustrator → kiểm tra dry-run → dựng blockout Maya",
+            text="Vẽ SVG trong Illustrator → dựng blockout Maya → Visual Fidelity / Sandbox",
             style="Subtitle.TLabel",
         ).pack(anchor=tk.W, pady=(1, 0))
         ttk.Label(
             header_frame,
             text=(
-                "🐾 Gợi ý: Chọn SVG → Dry-run → Chạy Maya → Mở .ma trong Maya"
+                "🐾 Gợi ý: Chọn SVG → Dry-run → Chạy Maya → Tạo sandbox"
                 "   |   Không sửa/xóa file gốc của artist."
             ),
             style="Tip.TLabel",
@@ -1247,24 +1661,110 @@ class ArtistDesktopApp:
             style="Hint.TLabel",
         ).pack(side=tk.LEFT, padx=(10, 0))
 
-        # ── Tính năng AI (AI preview) ───────────────────────────────────────
-        ai_section = ttk.LabelFrame(
-            scrollable_frame, text="✨ Tính năng AI (Xem trước)", padding=8
+        # ── Step 5: Visual Fidelity + Maya Sandbox ─────────────────────────
+        post_section = ttk.LabelFrame(
+            scrollable_frame,
+            text="🧰 Step 5: Visual Fidelity & Maya Sandbox",
+            padding=8,
         )
-        ai_section.grid(row=6, column=0, sticky=tk.EW, pady=(0, 6))
+        post_section.grid(row=6, column=0, sticky=tk.EW, pady=(0, 6))
+        post_section.columnconfigure(1, weight=1)
+
+        ttk.Label(post_section, text="Maya scene .ma").grid(row=0, column=0, sticky=tk.W, pady=3)
+        ttk.Entry(post_section, textvariable=self.maya_scene_var).grid(
+            row=0, column=1, sticky=tk.EW, pady=3
+        )
+        ttk.Button(
+            post_section,
+            text="Chọn .ma",
+            command=self._choose_maya_scene,
+            style=STYLE_UTILITY_BUTTON,
+        ).grid(row=0, column=2, padx=(8, 0), pady=3)
+
+        ttk.Label(post_section, text="Geometry JSON").grid(row=1, column=0, sticky=tk.W, pady=3)
+        ttk.Entry(post_section, textvariable=self.geometry_json_var).grid(
+            row=1, column=1, sticky=tk.EW, pady=3
+        )
+        ttk.Button(
+            post_section,
+            text="Chọn JSON",
+            command=self._choose_geometry_json,
+            style=STYLE_UTILITY_BUTTON,
+        ).grid(row=1, column=2, padx=(8, 0), pady=3)
+
+        ttk.Button(
+            post_section,
+            text="Tự tìm output mới nhất",
+            command=self._fill_latest_pipeline_outputs,
+            style=STYLE_GUIDE_BUTTON,
+        ).grid(row=2, column=0, sticky=tk.W, pady=(5, 3))
         ttk.Label(
-            ai_section,
-            text="AI preview: chưa bật trong workflow hiện tại. Tính năng này có thể được cập nhật sau.",
+            post_section,
+            text="💡 Điền nhanh file .ma mới nhất trong outputs/maya và JSON mới nhất trong outputs/tmp.",
             style="Hint.TLabel",
-        ).pack(anchor=tk.W)
+        ).grid(row=2, column=1, columnspan=2, sticky=tk.W, padx=(8, 0), pady=(5, 3))
+
+        ttk.Checkbutton(
+            post_section,
+            text="Visual Fidelity dry-run trước",
+            variable=self.visual_dry_run_var,
+        ).grid(row=3, column=0, sticky=tk.W, pady=3)
+        ttk.Label(post_section, text="Visual output .ma").grid(row=4, column=0, sticky=tk.W, pady=3)
+        ttk.Entry(post_section, textvariable=self.visual_output_var).grid(
+            row=4, column=1, sticky=tk.EW, pady=3
+        )
+        ttk.Button(
+            post_section,
+            text="Chọn output",
+            command=self._choose_visual_output_scene,
+            style=STYLE_UTILITY_BUTTON,
+        ).grid(row=4, column=2, padx=(8, 0), pady=3)
+
+        post_buttons = ttk.Frame(post_section)
+        post_buttons.grid(row=5, column=0, columnspan=3, sticky=tk.W, pady=(6, 4))
+        self.visual_button = ttk.Button(
+            post_buttons,
+            text="Tạo Visual Fidelity",
+            command=self._run_visual_fidelity_clicked,
+            style=STYLE_GUIDE_BUTTON,
+        )
+        self.visual_button.pack(side=tk.LEFT)
+        self.sandbox_button = ttk.Button(
+            post_buttons,
+            text="Tạo Maya Sandbox",
+            command=self._run_maya_sandbox_clicked,
+            style=STYLE_PRIMARY_BUTTON,
+        )
+        self.sandbox_button.pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Button(
+            post_buttons,
+            text="Mở working/scene_agent_work.ma",
+            command=self._open_latest_sandbox_working_scene,
+            style=STYLE_UTILITY_BUTTON,
+        ).pack(side=tk.LEFT, padx=(8, 0))
+
+        ttk.Label(post_section, text="Sandbox backup root").grid(row=6, column=0, sticky=tk.W, pady=3)
+        ttk.Entry(post_section, textvariable=self.sandbox_backup_root_var).grid(
+            row=6, column=1, sticky=tk.EW, pady=3
+        )
+        ttk.Button(
+            post_section,
+            text="Chọn backup",
+            command=self._choose_sandbox_backup_root,
+            style=STYLE_UTILITY_BUTTON,
+        ).grid(row=6, column=2, padx=(8, 0), pady=3)
+
+        ttk.Label(post_section, textvariable=self.post_status_var, style="Hint.TLabel").grid(
+            row=7, column=0, columnspan=3, sticky=tk.W, pady=(4, 0)
+        )
 
         # Hidden elements for backwards compatibility
         self.run_button = ttk.Button(step3_section)
-        self.ai_run_button = ttk.Button(ai_section)
+        self.ai_run_button = ttk.Button(post_section)
 
-        # ── Step 5: Mở output / xem log ──────────────────────────────────────
+        # ── Step 6: Mở output / xem log ──────────────────────────────────────
         step5_section = ttk.LabelFrame(
-            scrollable_frame, text="📋 Step 5: Mở thư mục kết quả & Xem log", padding=8
+            scrollable_frame, text="📋 Step 6: Mở thư mục kết quả & Xem log", padding=8
         )
         step5_section.grid(row=7, column=0, sticky=tk.NSEW)
         step5_section.columnconfigure(1, weight=1)
@@ -1369,6 +1869,39 @@ class ArtistDesktopApp:
         if path:
             self.mayapy_var.set(path)
 
+    def _choose_maya_scene(self) -> None:
+        path = self.filedialog.askopenfilename(
+            title="Chọn file Maya .ma",
+            filetypes=[("Maya ASCII", "*.ma"), ("All files", "*.*")],
+        )
+        if path:
+            self.maya_scene_var.set(path)
+            default_output = default_visual_output_scene(Path(path))
+            if not _is_empty_path(default_output):
+                self.visual_output_var.set(str(default_output))
+
+    def _choose_geometry_json(self) -> None:
+        path = self.filedialog.askopenfilename(
+            title="Chọn geometry JSON",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+        )
+        if path:
+            self.geometry_json_var.set(path)
+
+    def _choose_visual_output_scene(self) -> None:
+        path = self.filedialog.asksaveasfilename(
+            title="Chọn output Visual Fidelity .ma",
+            defaultextension=".ma",
+            filetypes=[("Maya ASCII", "*.ma"), ("All files", "*.*")],
+        )
+        if path:
+            self.visual_output_var.set(path)
+
+    def _choose_sandbox_backup_root(self) -> None:
+        path = self.filedialog.askdirectory(title="Chọn thư mục backup sandbox")
+        if path:
+            self.sandbox_backup_root_var.set(path)
+
     def _choose_ai_png(self) -> None:
         path = self.filedialog.askopenfilename(
             title="Chọn PNG preview cho AI",
@@ -1405,6 +1938,54 @@ class ArtistDesktopApp:
             svg_path=self.svg_var.get(),
             output_dir=self.output_var.get(),
         )
+
+    def _current_visual_options(self) -> ArtistVisualFidelityOptions:
+        return visual_options_from_strings(
+            input_scene=self.maya_scene_var.get(),
+            geometry_json=self.geometry_json_var.get(),
+            output_scene=self.visual_output_var.get(),
+            maya_path=self.mayapy_var.get(),
+            output_dir=self.output_var.get(),
+            dry_run=self.visual_dry_run_var.get(),
+        )
+
+    def _current_sandbox_options(self) -> ArtistMayaSandboxOptions:
+        return sandbox_options_from_strings(
+            maya_scene=self.maya_scene_var.get(),
+            geometry_json=self.geometry_json_var.get(),
+            source_svg=self.svg_var.get(),
+            room_name=self.room_var.get(),
+            backup_root=self.sandbox_backup_root_var.get(),
+        )
+
+    def _fill_latest_pipeline_outputs(self, show_message: bool = True) -> None:
+        try:
+            root = repo_root()
+        except RuntimeError as exc:
+            self.messagebox.showerror("Cần kiểm tra lại", str(exc))
+            return
+
+        output_dir = Path(self.output_var.get() or DEFAULT_OUTPUT_DIR)
+        maya_scene = latest_maya_scene(output_dir, root=root)
+        geometry_json = latest_geometry_json(output_dir, root=root)
+        found: list[str] = []
+        if maya_scene is not None:
+            self.maya_scene_var.set(str(maya_scene))
+            self.visual_output_var.set(str(default_visual_output_scene(maya_scene)))
+            found.append(f".ma: {maya_scene}")
+        if geometry_json is not None:
+            self.geometry_json_var.set(str(geometry_json))
+            found.append(f"JSON: {geometry_json}")
+
+        if found:
+            self.post_status_var.set("Đã tự điền output mới nhất.")
+            self._append_log("\nĐã tự tìm output mới nhất:\n" + "\n".join(found) + "\n")
+        elif show_message:
+            self.post_status_var.set("Chưa tìm thấy output .ma/JSON.")
+            self.messagebox.showwarning(
+                "Chưa có output",
+                "Chưa tìm thấy file .ma trong outputs/maya hoặc JSON trong outputs/tmp.",
+            )
 
     def _run_preflight_clicked(self) -> None:
         if self.preflight_worker and self.preflight_worker.is_alive():
@@ -1582,6 +2163,104 @@ class ArtistDesktopApp:
         )
         self.ai_worker.start()
 
+    def _run_visual_fidelity_clicked(self) -> None:
+        if self.visual_worker and self.visual_worker.is_alive():
+            self.messagebox.showinfo(
+                "Visual Fidelity đang chạy",
+                "Visual Fidelity đang chạy, hãy đợi log kết thúc.",
+            )
+            return
+
+        options = self._current_visual_options()
+        root = find_repo_root()
+        self.repo_root_var.set(repo_root_display_value(root))
+        errors = validate_visual_fidelity_options(
+            options
+        ) + validate_visual_fidelity_runtime_environment(root=root)
+        if root is not None:
+            errors.extend(validate_visual_fidelity_paths(options, root=root))
+        if errors:
+            self.messagebox.showerror("Cần kiểm tra lại", "\n".join(errors))
+            return
+
+        try:
+            if root is None:
+                raise RuntimeError(REPO_ROOT_ERROR)
+            command = build_visual_fidelity_command(options, root=root)
+        except RuntimeError as exc:
+            self.messagebox.showerror("Cần kiểm tra lại", str(exc))
+            return
+
+        display_command = command_to_display(command)
+        self.command_var.set(display_command)
+        self._append_log("\n=== Visual Fidelity ===\n")
+        self._append_log(f"Repo root: {root}\n")
+        self._append_log(display_command + "\n\n")
+        self.post_status_var.set(
+            "Đang lập kế hoạch Visual Fidelity..."
+            if options.dry_run
+            else "Đang tạo Visual Fidelity .ma..."
+        )
+        self.visual_button.configure(state=self.tk.DISABLED)
+        self.visual_worker = threading.Thread(
+            target=self._run_subprocess,
+            args=(
+                command,
+                root,
+                VISUAL_RUN_FINISHED_PREFIX,
+                "Lỗi khi chạy Visual Fidelity",
+            ),
+            daemon=True,
+        )
+        self.visual_worker.start()
+
+    def _run_maya_sandbox_clicked(self) -> None:
+        if self.sandbox_worker and self.sandbox_worker.is_alive():
+            self.messagebox.showinfo(
+                "Sandbox đang chạy",
+                "Maya sandbox đang được tạo, hãy đợi log kết thúc.",
+            )
+            return
+
+        options = self._current_sandbox_options()
+        root = find_repo_root()
+        self.repo_root_var.set(repo_root_display_value(root))
+        errors = validate_sandbox_options(options) + validate_sandbox_runtime_environment(
+            root=root
+        )
+        if root is not None:
+            errors.extend(validate_sandbox_paths(options, root=root))
+        if errors:
+            self.messagebox.showerror("Cần kiểm tra lại", "\n".join(errors))
+            return
+
+        try:
+            if root is None:
+                raise RuntimeError(REPO_ROOT_ERROR)
+            command = build_maya_sandbox_command(options, root=root)
+        except RuntimeError as exc:
+            self.messagebox.showerror("Cần kiểm tra lại", str(exc))
+            return
+
+        display_command = command_to_display(command)
+        self.command_var.set(display_command)
+        self._append_log("\n=== Tạo Maya Sandbox ===\n")
+        self._append_log(f"Repo root: {root}\n")
+        self._append_log(display_command + "\n\n")
+        self.post_status_var.set("Đang tạo Maya sandbox...")
+        self.sandbox_button.configure(state=self.tk.DISABLED)
+        self.sandbox_worker = threading.Thread(
+            target=self._run_subprocess,
+            args=(
+                command,
+                root,
+                SANDBOX_RUN_FINISHED_PREFIX,
+                "Lỗi khi tạo Maya sandbox",
+            ),
+            daemon=True,
+        )
+        self.sandbox_worker.start()
+
     def _run_subprocess(
         self,
         command: list[str],
@@ -1641,8 +2320,9 @@ class ArtistDesktopApp:
                     ):
                         self.status_var.set("Dựng thật xong: mã 0")
                         self.workflow_status_var.set(
-                            "Bước 4/5 hoàn tất: Dựng Maya thành công! Hãy mở thư mục kết quả (Bước 5)."
+                            "Bước 4/6 hoàn tất: Dựng Maya thành công! Có thể tạo Visual Fidelity hoặc Maya sandbox (Bước 5)."
                         )
+                        self._fill_latest_pipeline_outputs(show_message=False)
                 else:
                     if self.active_maya_options is not None and self.active_maya_options.dry_run:
                         self.status_var.set(f"Chạy thử lỗi: mã {return_code}")
@@ -1672,6 +2352,32 @@ class ArtistDesktopApp:
                     self.ai_status_var.set("Hoàn tất: mã 0")
                 else:
                     self.ai_status_var.set(f"Lỗi: mã {return_code}")
+            elif message.startswith(VISUAL_RUN_FINISHED_PREFIX):
+                return_code = int(message.removeprefix(VISUAL_RUN_FINISHED_PREFIX))
+                self.visual_button.configure(state=self.tk.NORMAL)
+                if return_code == 0:
+                    self.post_status_var.set("Visual Fidelity hoàn tất: mã 0")
+                    self.workflow_status_var.set(
+                        "Bước 5/6: Visual Fidelity OK. Có thể tạo sandbox để Codex polish tiếp."
+                    )
+                else:
+                    self.post_status_var.set(f"Visual Fidelity lỗi: mã {return_code}")
+                    self.workflow_status_var.set(
+                        "Visual Fidelity thất bại. Hãy xem log trước khi tạo sandbox."
+                    )
+            elif message.startswith(SANDBOX_RUN_FINISHED_PREFIX):
+                return_code = int(message.removeprefix(SANDBOX_RUN_FINISHED_PREFIX))
+                self.sandbox_button.configure(state=self.tk.NORMAL)
+                if return_code == 0:
+                    self.post_status_var.set("Tạo Maya sandbox xong: mã 0")
+                    self.workflow_status_var.set(
+                        "Bước 5/6: Sandbox OK. Mở working/scene_agent_work.ma để chạy script Codex."
+                    )
+                else:
+                    self.post_status_var.set(f"Tạo Maya sandbox lỗi: mã {return_code}")
+                    self.workflow_status_var.set(
+                        "Tạo Maya sandbox thất bại. Hãy xem log để kiểm tra đường dẫn .ma/JSON."
+                    )
             else:
                 self._append_log(message)
         self.root.after(100, self._drain_log_queue)
@@ -1720,6 +2426,23 @@ class ArtistDesktopApp:
             self.messagebox.showerror("Không mở được thư mục", str(exc))
             return
         self._open_folder(path)
+
+    def _open_latest_sandbox_working_scene(self) -> None:
+        backup_root_text = self.sandbox_backup_root_var.get().strip()
+        backup_root = Path(backup_root_text) if backup_root_text else None
+        scene = latest_sandbox_working_scene(backup_root)
+        if scene is None:
+            self.messagebox.showwarning(
+                "Chưa có sandbox",
+                SANDBOX_WORKING_SCENE_MISSING_ERROR,
+            )
+            return
+        try:
+            os.startfile(str(scene.resolve()))  # type: ignore[attr-defined]
+        except OSError as exc:
+            self._show_open_problem("Không mở được working scene", exc)
+            return
+        self._append_log(f"\nĐã mở sandbox working scene: {scene}\n")
 
     def _open_repo(self) -> None:
         try:

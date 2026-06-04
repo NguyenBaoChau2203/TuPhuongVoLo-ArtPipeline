@@ -137,11 +137,11 @@ phong_kho
       chưa boolean, và chưa tạo lỗ cửa/cửa sổ thật.
 - [ ] Sau khi build `.ma`, mở scene trong Maya và kiểm tra group `openings` để xem marker có đúng vị trí không.
 
-> Checkpoint kỹ thuật: procedural prop blockout đã được kiểm chứng trong Maya ở `docs/verification/005_3P_procedural_prop_blockout_verified.md`. File test chỉ kiểm tra đúng kỹ thuật; preview có thể còn đơn giản và sẽ cần một phase polish visual riêng.
+> Checkpoint kỹ thuật: procedural prop blockout đã được kiểm chứng trong Maya ở `archive/verification/005_3P_procedural_prop_blockout_verified.md`. File test chỉ kiểm tra đúng kỹ thuật; preview có thể còn đơn giản và sẽ cần một phase polish visual riêng.
 
 > Ghi chú visual sanity 005.3P-V1: `tests/in/illustrator_prop_markers.svg` là fixture kỹ thuật nhỏ nên ảnh preview có thể nhìn thưa hoặc chỉ nổi bật một vài prop cao. Khi muốn kiểm tra nhiều loại prop blockout rõ hơn, dùng `tests/in/illustrator_prop_showcase.svg` với phòng `phong_showcase`. Prop procedural vẫn là blockout để kiểm tra bố cục, không phải model cuối cùng.
 
-> Checkpoint 005.3P-V1-R: `docs/verification/005_3P_V1_procedural_prop_preview_verified.md` ghi checklist Maya/DCC thật cho showcase fixture. Hiện checkpoint này vẫn pending cho đến khi operator chạy trên máy có `mayapy.exe`.
+> Checkpoint 005.3P-V1-R: `archive/verification/005_3P_V1_procedural_prop_preview_verified.md` ghi checklist Maya/DCC thật cho showcase fixture. Hiện checkpoint này vẫn pending cho đến khi operator chạy trên máy có `mayapy.exe`.
 
 ---
 

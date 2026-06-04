@@ -145,9 +145,9 @@ Trong chế độ `--dry-run`:
 - Không gọi AI ngoài, không FLUX/fal.ai.
 - Camera dùng camera iso do scene builder tạo (`cam_<phòng>_iso`).
 
-## Gợi ý dùng launcher ở Phase 005.4
+## Gợi ý dùng launcher ở workflow hiện tại
 
 - Chạy `launchers/00_maya_env_check.bat` nếu không chắc Python, PyYAML hoặc `mayapy.exe` đã sẵn sàng.
 - Chạy `launchers/07_build_maya_room.bat` cho một SVG/một phòng và bật dry-run trước.
-- Chạy `launchers/08_batch_maya_room.bat` cho nhiều SVG hoặc nhiều phòng; report JSON nằm mặc định ở `outputs/reports/batch_maya_report.json`.
+- Batch nhiều SVG/phòng đã được đưa ra khỏi luồng hằng ngày; nếu cần lại, xem `archive/launchers/08_batch_maya_room.bat`.
 - Khi dry-run đã đúng, chạy actual run và bật PNG preview nếu muốn kiểm tra nhanh hình isometric.

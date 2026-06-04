@@ -1,12 +1,13 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+shell commands, and other important information, read the current plan:
+`specs/016-artist-focused-repo-cleanup/plan.md`
 <!-- SPECKIT END -->
 
 # TuPhuongVoLo-ArtPipeline — AI Agent Instructions
 
 > **Project**: Art pipeline automation for the indie game "Tứ Phương Vô Lộ"
-> **Phase**: Maya-first production workflow verified through 007J-F1
+> **Phase**: Artist-focused cleanup toward reference-image -> JSX -> Maya sandbox workflow
 > **Owner**: Artist-developer hybrid workflow
 
 ---
@@ -148,7 +149,7 @@ python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --r
 | `outputs/` | All generated outputs go here |
 | `tests/` | Test files and fixtures |
 | `docs/` | Documentation (Vietnamese artist docs + English dev docs) |
-| `docs/research/` | Research source documents (English + Vietnamese) |
+| `archive/research/` | Archived research source documents (English + Vietnamese) |
 | `skills/` | Reusable AI agent skill definitions |
 | `.cursor/rules/` | Cursor IDE rule files |
 
@@ -178,8 +179,8 @@ The following research documents inform this project's architecture and tooling 
 
 | Document | Language | Key Contributions |
 |----------|----------|--------------------|
-| `docs/research/Indie Game Art Workflow Automation Research.md` | English | Tool comparison tables (AI vectorizers, 2D map generators, 2D-to-3D pipelines), GitHub repo registry (Illustrator_MCP, illustrator-scripts, FloorplanToBlender3d, IsometricTransform.jsx), three-tier workflow (Beginner / Semi-Automated / Advanced Agentic), 7-day and 30-day setup plans, contextual prompt engineering suite |
-| `docs/research/Kế hoạch bán tự động hóa pipeline art cho Tứ Phương Vô Lộ.md` | Vietnamese | Version-locked toolchain recommendations, three-layer architecture (2D authoring / cleanup-vector-processing / 3D-isometric), SVG quality-gate criteria, concrete code samples for Potrace+vpype+svgpathtools pipeline, Maya SVG import limitation analysis, naming agent CLI design, test case design (motel room + island map) |
+| `archive/research/Indie Game Art Workflow Automation Research.md` | English | Tool comparison tables (AI vectorizers, 2D map generators, 2D-to-3D pipelines), GitHub repo registry (Illustrator_MCP, illustrator-scripts, FloorplanToBlender3d, IsometricTransform.jsx), three-tier workflow (Beginner / Semi-Automated / Advanced Agentic), 7-day and 30-day setup plans, contextual prompt engineering suite |
+| `archive/research/Kế hoạch bán tự động hóa pipeline art cho Tứ Phương Vô Lộ.md` | Vietnamese | Version-locked toolchain recommendations, three-layer architecture (2D authoring / cleanup-vector-processing / 3D-isometric), SVG quality-gate criteria, concrete code samples for Potrace+vpype+svgpathtools pipeline, Maya SVG import limitation analysis, naming agent CLI design, test case design (motel room + island map) |
 
 Research-confirmed decisions:
 - **Tier B (Semi-Automated)** is the recommended production baseline

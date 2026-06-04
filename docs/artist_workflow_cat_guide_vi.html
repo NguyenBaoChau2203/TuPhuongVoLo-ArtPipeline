@@ -53,6 +53,19 @@
       border-radius: 5px;
       font-size: 0.88em;
     }
+    .prompt-box {
+      display: block;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      background: #2f241c;
+      color: #fff7ed;
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+      font-family: "Cascadia Code", "Consolas", "Menlo", monospace;
+      font-size: 0.84rem;
+      line-height: 1.55;
+      margin: 0.7rem 0 1rem;
+    }
     strong { color: var(--warm-brown); }
 
     /* === Layout === */
@@ -522,12 +535,13 @@
 <nav class="nav-bar" role="navigation" aria-label="Mục lục">
   <span class="nav-logo">🐱</span>
   <a href="#workflow">Quy trình</a>
+  <a href="#reference-jsx">Ảnh → JSX</a>
   <a href="#illustrator">Illustrator</a>
   <a href="#naming">Đặt tên</a>
   <a href="#what-tool-knows">Khả năng</a>
   <a href="#desktop-app">Desktop App</a>
+  <a href="#maya-sandbox">Maya Sandbox</a>
   <a href="#app-steps">Giải thích App</a>
-  <a href="#ai-preview">AI Preview</a>
   <a href="#safety">An toàn</a>
   <a href="#glossary">Từ điển</a>
   <a href="#checklist">Checklist</a>
@@ -549,7 +563,7 @@
       Sổ tay mèo con<br>cho pipeline Tứ Phương Vô Lộ
     </h1>
     <p class="hero-subtitle">
-      Illustrator → Desktop App → Maya → AI Preview <em style="opacity:0.85">(tùy chọn)</em>
+      Ảnh mẫu → JSX Draft → SVG → Desktop App → Maya Sandbox → Review / Rollback
     </p>
 
     <div class="paw-trail" aria-hidden="true">
@@ -573,57 +587,57 @@
 
         <div class="step-card">
           <span class="step-num">1</span>
-          <span class="step-icon">🎨</span>
-          <div class="step-label">Vẽ trong<br>Illustrator</div>
-          <div class="step-sub">Group rõ từng phòng</div>
+          <span class="step-icon">🖼️</span>
+          <div class="step-label">Gửi ảnh mẫu<br>và mô tả</div>
+          <div class="step-sub">Nêu phòng, cửa, đồ lớn,<br>flow đi lại</div>
         </div>
         <span class="step-arrow">➜</span>
 
         <div class="step-card">
           <span class="step-num">2</span>
-          <span class="step-icon">📄</span>
-          <div class="step-label">Xuất SVG sạch</div>
-          <div class="step-sub">Dùng script JSX hoặc<br>File → Save As → SVG</div>
+          <span class="step-icon">🤖</span>
+          <div class="step-label">Codex tạo<br>JSX Draft</div>
+          <div class="step-sub"><code>reference_to_layout_draft.jsx</code><br>là khuôn để chỉnh theo ảnh</div>
         </div>
         <span class="step-arrow">➜</span>
 
         <div class="step-card">
           <span class="step-num">3</span>
-          <span class="step-icon">🖥️</span>
-          <div class="step-label">Mở Desktop App</div>
-          <div class="step-sub"><code>09_artist_desktop_app.bat</code></div>
+          <span class="step-icon">🎨</span>
+          <div class="step-label">Mở JSX trong<br>Illustrator</div>
+          <div class="step-sub">Vợ chỉnh mắt nhìn,<br>rồi export SVG thủ công</div>
         </div>
         <span class="step-arrow">➜</span>
 
         <div class="step-card">
           <span class="step-num">4</span>
-          <span class="step-icon">🧪</span>
-          <div class="step-label">Dry-run trước</div>
-          <div class="step-sub">Kiểm tra lệnh — không tạo file thật</div>
+          <span class="step-icon">🖥️</span>
+          <div class="step-label">Desktop App<br>kiểm SVG</div>
+          <div class="step-sub">Dry-run trước,<br>sau đó tạo Maya <code>.ma</code></div>
         </div>
         <span class="step-arrow">➜</span>
 
         <div class="step-card">
           <span class="step-num">5</span>
-          <span class="step-icon">⚙️</span>
-          <div class="step-label">Chạy Maya thật</div>
-          <div class="step-sub">Cần đường dẫn <code>mayapy.exe</code></div>
+          <span class="step-icon">🏛️</span>
+          <div class="step-label">Visual Fidelity<br>pass</div>
+          <div class="step-sub">Xem bố cục, scale,<br>đúng ý trước khi polish</div>
         </div>
         <span class="step-arrow">➜</span>
 
         <div class="step-card">
           <span class="step-num">6</span>
-          <span class="step-icon">🏛️</span>
-          <div class="step-label">Mở .ma trong Maya</div>
-          <div class="step-sub">Polish thủ công theo ý thích</div>
+          <span class="step-icon">🛡️</span>
+          <div class="step-label">Tạo Maya<br>Sandbox</div>
+          <div class="step-sub">Làm trên bản copy,<br>không đụng output gốc</div>
         </div>
         <span class="step-arrow">➜</span>
 
         <div class="step-card" style="border-color:#d0eaff; background:#f5fbff;">
           <span class="step-num" style="background: linear-gradient(135deg,#6db3f2,#4a90d9);">7</span>
-          <span class="step-icon">🤖</span>
-          <div class="step-label">AI Preview<br><span class="tag optional">tùy chọn</span></div>
-          <div class="step-sub">Từ PNG → tham khảo mood</div>
+          <span class="step-icon">🧰</span>
+          <div class="step-label">Codex polish<br>bằng Maya Python</div>
+          <div class="step-sub">Thêm group riêng,<br>bật/tắt hoặc rollback được</div>
         </div>
 
       </div>
@@ -631,7 +645,61 @@
 
     <div class="banner info">
       <span class="banner-icon">🐾</span>
-      <span><strong>Ghi nhớ:</strong> File <code>.ma</code> trong <code>outputs/maya/</code> là nguồn sự thật duy nhất để polish cuối. AI preview chỉ là ảnh tham khảo, không thay thế việc chỉnh tay trong Maya.</span>
+      <span><strong>Ghi nhớ:</strong> JSX và Maya Python chỉ là trợ lý tạo bản nháp / thêm chi tiết. Vợ vẫn là người quyết định cuối: chỉnh trong Illustrator, export SVG, review trong Maya, bật/tắt group polish hoặc rollback khi cần.</span>
+    </div>
+  </section>
+
+  <!-- ─── 2. Ảnh mẫu -> JSX Draft ─────────────────────────────── -->
+  <section class="section" id="reference-jsx" aria-labelledby="h-reference-jsx">
+    <div class="section-header">
+      <span class="section-icon">🖼️</span>
+      <h2 id="h-reference-jsx">Từ ảnh mẫu sang JSX Draft</h2>
+    </div>
+
+    <div class="card">
+      <h3><code>reference_to_layout_draft.jsx</code> là gì?</h3>
+      <p>Đây là <strong>khuôn JSX cho Illustrator</strong>. Codex không bắt vợ vẽ từ trang trắng; Codex sẽ nhìn ảnh mẫu và mô tả, rồi tạo một file JSX riêng dựa trên khuôn này.</p>
+      <p>Khi chạy JSX trong Illustrator, nó tạo sẵn các layer/group có tên đúng pipeline: <code>room_</code>, <code>door_</code>, <code>window_</code>, <code>prop_</code>, <code>flow_</code>. Vợ chỉ cần sửa dáng, kéo vị trí, thêm/bớt chi tiết theo mắt nhìn rồi xuất SVG thủ công.</p>
+
+      <div class="banner good">
+        <span class="banner-icon">✅</span>
+        <span><strong>JSX có thể làm sẵn:</strong> ranh phòng/map, cửa/cửa sổ, vị trí đồ lớn, flow di chuyển, vài shape chính, tên layer/group theo pipeline.</span>
+      </div>
+
+      <div class="banner warn">
+        <span class="banner-icon">⚠️</span>
+        <span><strong>JSX không nên xuất SVG tự động.</strong> Bước export vẫn để vợ làm sau khi review trong Illustrator, vì mắt họa sĩ quyết định bố cục cuối tốt hơn automation.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Cách gửi ảnh cho Codex</h3>
+      <ol class="step-list">
+        <li>Gửi ảnh mẫu hoặc ảnh chụp màn hình bố cục.</li>
+        <li>Gửi mô tả ngắn bằng tiếng Việt: phòng gì, mood gì, đồ lớn nào cần có.</li>
+        <li>Nói rõ tên asset và tên room/layer muốn dùng, ví dụ <code>phong_kho</code>.</li>
+        <li>Yêu cầu Codex tạo file JSX dựa trên template <code>scripts/illustrator/templates/reference_to_layout_draft.jsx</code>.</li>
+        <li>Mở Illustrator → <strong>File → Scripts → Other Script...</strong> → chọn file JSX Codex tạo.</li>
+        <li>Vợ chỉnh lại layout trong Illustrator rồi export SVG sạch vào <code>drops/</code>.</li>
+      </ol>
+
+      <code class="prompt-box">Hãy nhìn ảnh mẫu này và tạo Illustrator JSX draft cho pipeline Tứ Phương Vô Lộ.
+
+Asset: tu_phuong_vo_lo_phong_kho
+Room/layer chính: phong_kho
+Mục tiêu: tạo layout gần đúng để vợ tôi mở trong Illustrator chỉnh tiếp.
+
+Cần có:
+- room boundary khép kín
+- cửa chính và cửa sổ nếu thấy trong ảnh
+- prop lớn: kệ, bàn, thùng, giường hoặc đồ lớn tương ứng ảnh
+- flow di chuyển chính
+- layer/group đặt tên đúng pipeline: room_, door_, window_, prop_, flow_
+
+Dùng template:
+scripts/illustrator/templates/reference_to_layout_draft.jsx
+
+Không export SVG tự động. Chỉ tạo JSX an toàn, editable, để vợ tôi review rồi export SVG thủ công.</code>
     </div>
   </section>
 
@@ -773,9 +841,10 @@
           <li>Tên phòng từ group/layer</li>
           <li>Các shape SVG cơ bản được hỗ trợ</li>
           <li>Prop marker theo tên group/layer</li>
+          <li>JSX draft từ ảnh mẫu + mô tả để mở trong Illustrator</li>
           <li>Tạo file <code>.ma</code> blockout trong Maya</li>
+          <li>Maya sandbox và group polish thêm vào riêng</li>
           <li>Tạo ảnh PNG preview</li>
-          <li>AI preview từ PNG (tùy chọn, tham khảo)</li>
         </ul>
       </div>
 
@@ -785,7 +854,7 @@
           <li>Toàn bộ nét vẽ freehand của đồ vật</li>
           <li>Line art chi tiết của nội thất</li>
           <li>Tự tạo cảnh isometric final đã polish</li>
-          <li>Điều khiển bằng lệnh tự nhiên (Feature 006 — chưa làm)</li>
+          <li>Tự quyết định gu thẩm mỹ cuối cùng thay họa sĩ</li>
         </ul>
       </div>
     </div>
@@ -811,66 +880,82 @@
     <div class="card" style="margin-top:0.9rem;">
       <ol class="step-list">
         <li>Mở <code>launchers/09_artist_desktop_app.bat</code> (double-click).</li>
-        <li>Bấm <strong>Browse</strong> để chọn file SVG sạch đã xuất từ Illustrator.</li>
+        <li>Bấm <strong>Chọn SVG</strong> để chọn file SVG sạch đã xuất từ Illustrator.</li>
         <li>Nhập <strong>Tên phòng</strong>, ví dụ: <code>phong_kho</code>.</li>
-        <li>Giữ <strong>Dry-run</strong> ở trạng thái bật cho lần chạy đầu tiên.</li>
+        <li>Bấm <strong>Kiểm tra SVG</strong>, rồi bấm <strong>Chạy thử an toàn</strong> cho lần chạy đầu tiên.</li>
         <li>Bật <strong>Render PNG preview</strong> nếu muốn xem ảnh kiểm tra nhanh.</li>
         <li>Kiểm tra <em>Repo root</em> và <em>Command preview</em> hiển thị đúng trong app.</li>
-        <li>Bấm <strong>Chạy pipeline</strong> và đọc log bên dưới — dry-run không tạo file thật.</li>
-        <li>Nếu log dry-run trả <strong>exit code 0</strong> và lệnh trông đúng → bỏ chọn Dry-run.</li>
+        <li>Đọc log bên dưới — dry-run không tạo file thật.</li>
+        <li>Nếu log dry-run trả <strong>exit code 0</strong> và lệnh trông đúng → chuyển sang bước dựng thật.</li>
         <li>Kiểm tra đường dẫn <code>mayapy.exe</code> (ví dụ: <code>C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe</code>).</li>
-        <li>Bấm <strong>Chạy pipeline</strong> lần nữa để tạo file <code>.ma</code> thật.</li>
-        <li>Mở thư mục <code>outputs/maya/</code> để lấy file <code>.ma</code> và mở trong Maya để polish.</li>
+        <li>Bấm <strong>Dựng Maya thật</strong> để tạo file <code>.ma</code>.</li>
+        <li>Bấm <strong>Tự tìm output mới nhất</strong> để app điền file <code>.ma</code> và geometry JSON vừa sinh ra.</li>
+        <li>Bấm <strong>Tạo Visual Fidelity</strong> nếu muốn thêm lớp dễ đọc trước khi polish.</li>
+        <li>Bấm <strong>Tạo Maya Sandbox</strong>, rồi bấm <strong>Mở working/scene_agent_work.ma</strong> để mở bản sandbox trong Maya.</li>
       </ol>
     </div>
 
     <div class="banner info">
       <span class="banner-icon">📂</span>
-      <span>App có nút tắt để mở nhanh: <code>outputs/maya/</code>, <code>outputs/preview/</code>, và thư mục repo. Dùng nút này để tìm file output mà không cần tìm thủ công.</span>
+      <span>App có nút tắt để mở nhanh: <code>outputs/maya/</code>, <code>outputs/preview/</code>, <code>outputs/reports/</code>, repo, và sandbox working scene mới nhất. Dùng các nút này để không phải tìm file thủ công.</span>
     </div>
   </section>
 
-  <!-- ─── 6. AI Preview ───────────────────────────────────────── -->
-  <section class="section" id="ai-preview" aria-labelledby="h-ai">
+  <!-- ─── 6. Maya Sandbox + Agent Polish ──────────────────────── -->
+  <section class="section" id="maya-sandbox" aria-labelledby="h-maya-sandbox">
     <div class="section-header">
-      <span class="section-icon">🤖</span>
-      <h2 id="h-ai">AI Preview — tùy chọn, tham khảo thôi <span class="tag optional">không bắt buộc</span></h2>
+      <span class="section-icon">🛡️</span>
+      <h2 id="h-maya-sandbox">Maya Sandbox + script polish</h2>
     </div>
 
-    <div class="banner warn">
-      <span class="banner-icon">⚠️</span>
-      <span><strong>Không cần dùng bước này để dựng phòng.</strong> Tính năng này hiện tại được tạm hoãn vì API tạo ảnh có thể tốn chi phí. Nếu chưa có chỉ đạo riêng, hãy tập trung vào các bước chính: Illustrator SVG -> dry-run -> dựng Maya .ma -> polish thủ công trong Maya. AI preview chỉ là ảnh tham khảo, không thay thế file Maya .ma.</span>
+    <div class="banner good">
+      <span class="banner-icon">✅</span>
+      <span><strong>Đây là bước hỗ trợ phần Maya sau khi đã có SVG và file <code>.ma</code>.</strong> Codex có thể viết script Maya Python để thêm chi tiết, ánh sáng, camera, prop phụ, vật liệu nháp vào một group riêng để vợ review.</span>
     </div>
 
     <div class="card" style="margin-top:0.9rem;">
-      <h3>Dùng AI Preview với mock (không cần API key)</h3>
+      <h3><code>agent_polish_additive_template.py</code> là gì?</h3>
+      <p>Đây là <strong>khuôn script Maya Python an toàn</strong>. Codex sẽ copy khuôn này và chỉnh thành script riêng cho từng cảnh, ví dụ: thêm kệ, thùng, đèn ấm, camera review, hoặc vài chi tiết giúp blockout dễ đọc hơn.</p>
+      <p>Script này chỉ được chạy trong sandbox <code>working/scene_agent_work.ma</code>. Nó tạo mọi thứ mới dưới một group riêng như <code>GRP_agent_polish_v001</code>, nên vợ có thể hide group, delete group, hoặc rollback sandbox nếu không thích.</p>
+
+      <div class="banner warn">
+        <span class="banner-icon">⚠️</span>
+        <span><strong>Không chạy script polish trực tiếp trên file gốc trong <code>outputs/maya/</code>.</strong> Luôn tạo sandbox trước, mở file <code>working/scene_agent_work.ma</code>, rồi mới chạy script Codex gửi.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Cách dùng hằng ngày sau khi có file <code>.ma</code></h3>
       <ol class="step-list">
-        <li>Sau khi Maya tạo xong ảnh preview, chuyển sang khu vực <strong>AI polish preview</strong> trong app.</li>
-        <li>Chọn file PNG preview đã tạo (thường trong <code>outputs/preview/</code>).</li>
-        <li>Chọn <strong>Provider: mock</strong> — không cần API key, không cần internet.</li>
-        <li>Giữ <strong>AI dry-run</strong> bật cho lần đầu để chỉ xem kế hoạch.</li>
-        <li>Bấm <strong>Tạo AI polish preview</strong> và đọc log.</li>
-        <li>Nếu muốn xem ảnh mock thật, tắt AI dry-run rồi bấm lại.</li>
-        <li>Ảnh output nằm trong <code>outputs/ai_preview/</code>.</li>
+        <li>Desktop App tạo xong file <code>.ma</code> trong <code>outputs/maya/</code>.</li>
+        <li>Bấm <strong>Tự tìm output mới nhất</strong> để app điền scene và geometry JSON.</li>
+        <li>Bấm <strong>Tạo Maya Sandbox</strong> để có bản làm việc <code>working/scene_agent_work.ma</code> và backup.</li>
+        <li>Bấm <strong>Mở working/scene_agent_work.ma</strong> để mở sandbox trong Maya.</li>
+        <li>Gửi ảnh preview hoặc mô tả cho Codex: muốn thêm gì, bỏ gì, mood ánh sáng ra sao.</li>
+        <li>Codex tạo script dựa trên <code>scripts/maya/agent_polish_templates/agent_polish_additive_template.py</code>.</li>
+        <li>Trong Maya: mở Script Editor, dán script Python, chạy.</li>
+        <li>Vợ review group <code>GRP_agent_polish_v001</code>: bật/tắt, sửa tay, xóa group, hoặc rollback sandbox nếu không thích.</li>
       </ol>
     </div>
 
     <div class="card" style="border-color:#d0eaff; background:#f5fbff;">
-      <h3>Về provider <code>fal</code> <span class="tag optional">tùy chọn nâng cao</span></h3>
-      <ul class="rule-list">
-        <li>
-          <span class="rule-icon">🔑</span>
-          <span>Provider <code>fal</code> chỉ hoạt động khi máy đã cài <code>fal-client</code> và đặt biến môi trường <code>FAL_KEY</code>. Không cần làm bước này cho workflow bình thường.</span>
-        </li>
-        <li>
-          <span class="rule-icon">🛡️</span>
-          <span>Nếu thiếu <code>FAL_KEY</code> và bật <strong>Bỏ qua nếu thiếu cấu hình AI</strong>, pipeline Maya vẫn chạy bình thường — AI chỉ skip an toàn.</span>
-        </li>
-        <li>
-          <span class="rule-icon">📌</span>
-          <span>Ảnh AI chỉ là <strong>tham khảo mood, ánh sáng, vật liệu</strong>. File <code>.ma</code> vẫn là nguồn để polish cuối trong Maya.</span>
-        </li>
-      </ul>
+      <h3>Prompt mẫu gửi Codex cho Maya polish</h3>
+      <code class="prompt-box">Hãy tạo Maya Python polish script cho sandbox hiện tại.
+
+Scene đang mở phải là:
+working/scene_agent_work.ma
+
+Dùng template:
+scripts/maya/agent_polish_templates/agent_polish_additive_template.py
+
+Yêu cầu:
+- không sửa/xóa tường, cửa, layout gốc
+- tạo mọi object mới dưới group GRP_agent_polish_v001
+- thêm các chi tiết sau: [mô tả đồ vật / ánh sáng / camera / mood]
+- đặt tên object rõ ràng bằng ASCII
+- nếu không thích, vợ tôi có thể hide/delete group hoặc rollback sandbox
+
+Hãy trả về script Python để dán vào Maya Script Editor.</code>
     </div>
   </section>
 
@@ -950,8 +1035,13 @@
       </div>
 
       <div class="gloss-card">
-        <div class="gloss-term">AI preview</div>
-        <p class="gloss-def">Ảnh tham khảo được tạo bởi AI từ PNG preview. Chỉ dùng để xem mood / cảm hứng — không thay thế file <code>.ma</code> để polish.</p>
+        <div class="gloss-term">JSX Draft</div>
+        <p class="gloss-def">Script Illustrator do Codex tạo từ ảnh mẫu và mô tả. Khi chạy, nó dựng sẵn layout vector editable để họa sĩ chỉnh tiếp rồi export SVG thủ công.</p>
+      </div>
+
+      <div class="gloss-card">
+        <div class="gloss-term">Maya sandbox</div>
+        <p class="gloss-def">Bản copy an toàn của cảnh Maya dùng để thử script polish. Nếu không thích kết quả, có thể hide/delete group agent hoặc rollback sandbox.</p>
       </div>
     </div>
   </section>
@@ -990,7 +1080,7 @@
       </div>
       <div class="check-item">
         <span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span>
-        <span>AI preview là <strong>tùy chọn</strong> — không ảnh hưởng đến pipeline Maya dù có hay không.</span>
+        <span>Nếu chạy script polish của Codex, đã mở đúng sandbox <code>working/scene_agent_work.ma</code> và script tạo group riêng để rollback được.</span>
       </div>
 
       <div class="banner good" style="margin-top:1rem;">
@@ -1157,56 +1247,40 @@
 
     <!-- Step 4 -->
     <div class="card" style="border-color:#d0eaff; background:#f5fbff;">
-      <h3>✨ Step 4: AI polish preview <span class="tag optional">tùy chọn</span></h3>
+      <h3>🛡️ Step 4: Sau khi có <code>.ma</code> — làm trên Maya sandbox</h3>
       <div class="banner warn" style="margin-bottom:1rem;">
         <span class="banner-icon">⚠️</span>
-        <span><strong>AI preview là tham khảo / cảm hứng — không bắt buộc và không thay thế Maya.</strong>
-        File <code>.ma</code> trong <code>outputs/maya/</code> mới là nguồn sự thật để polish cuối cùng.
-        AI preview chỉ tạo ảnh PNG tham khảo mood, ánh sáng, vật liệu.</span>
+        <span><strong>Không polish bằng script trên file output gốc.</strong>
+        File <code>.ma</code> trong <code>outputs/maya/</code> là bản sinh ra từ pipeline; hãy tạo sandbox rồi làm trên <code>working/scene_agent_work.ma</code>.</span>
       </div>
+
       <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
         <thead>
           <tr style="background:#e8f3fd;">
-            <th style="text-align:left;padding:0.4rem 0.6rem;border-bottom:1.5px solid #a8d0f0;">Trường / nút</th>
+            <th style="text-align:left;padding:0.4rem 0.6rem;border-bottom:1.5px solid #a8d0f0;">Việc cần làm</th>
             <th style="text-align:left;padding:0.4rem 0.6rem;border-bottom:1.5px solid #a8d0f0;">Ý nghĩa</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">PNG preview</td>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Chọn một file PNG đã có trong <code>outputs/preview/</code> — ảnh PNG do Maya tạo ra sau khi chạy pipeline. <strong>Không phải ảnh AI.</strong></td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">Tạo sandbox</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Tạo bản copy để thử polish. Nếu hỏng hoặc không thích, rollback sandbox thay vì sửa file gốc.</td>
           </tr>
           <tr>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">Provider</td>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;"><code>mock</code> là an toàn nhất — không cần internet, không cần API key, tạo ảnh placeholder để test.<br><code>fal</code> là provider thật — cần cài <code>fal-client</code> và biến môi trường <code>FAL_KEY</code>. Không cần dùng ngay.</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">Mở <code>working/scene_agent_work.ma</code></td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Đây là file duy nhất Codex script được phép chạm vào trong bước polish tự động.</td>
           </tr>
           <tr>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">Model</td>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Để mặc định trừ khi được hướng dẫn cụ thể. Chỉ dùng với provider <code>fal</code>.</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">Gửi yêu cầu polish cho Codex</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Ví dụ: thêm vài thùng gỗ ở giữa, ánh sáng vàng từ cửa, camera review 3/4, làm kệ bên phải cao hơn.</td>
           </tr>
           <tr>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">Prompt preset</td>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Chọn style tham khảo cho AI. Để mặc định cho đến khi được hướng dẫn.</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">Chạy Maya Python</td>
+            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Dán script Codex gửi vào Maya Script Editor ở chế độ Python rồi chạy.</td>
           </tr>
           <tr>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">Prompt thêm</td>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Tùy chọn — thêm mô tả ngắn bằng tiếng Anh để AI hiểu mood bạn muốn. Ví dụ: <code>cozy tropical lighting</code>. Có thể để trống.</td>
-          </tr>
-          <tr>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">☑ Bỏ qua nếu thiếu cấu hình AI</td>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Giữ BẬT nếu dùng provider <code>fal</code> mà chưa cài đầy đủ. Pipeline Maya vẫn chạy bình thường; AI chỉ bị skip an toàn.</td>
-          </tr>
-          <tr>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">☑ AI dry-run</td>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Giống dry-run của Maya nhưng cho AI — in lệnh và kiểm tra, không tạo ảnh thật. Bật lúc đầu để kiểm tra cấu hình.</td>
-          </tr>
-          <tr>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;font-weight:700;">🟠 Tạo AI polish preview</td>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #c0d8f0;">Chạy bước AI preview. Kết quả (nếu không dry-run) lưu vào <code>outputs/ai_preview/</code>.</td>
-          </tr>
-          <tr>
-            <td style="padding:0.45rem 0.6rem;font-weight:700;">Mở outputs/ai_preview</td>
-            <td style="padding:0.45rem 0.6rem;">Mở thư mục chứa ảnh AI preview trong File Explorer.</td>
+            <td style="padding:0.45rem 0.6rem;font-weight:700;">Review group <code>GRP_agent_polish_v001</code></td>
+            <td style="padding:0.45rem 0.6rem;">Nếu thích thì giữ và chỉnh tay tiếp. Nếu không thích thì hide/delete group hoặc rollback sandbox.</td>
           </tr>
         </tbody>
       </table>
@@ -1233,14 +1307,6 @@
             <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Lệnh chính xác app sẽ chạy. Dùng nút <em>Copy lệnh</em> để copy nếu cần debug.</td>
           </tr>
           <tr>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">Trạng thái AI</td>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Tương tự Trạng thái Maya nhưng cho bước AI preview (tùy chọn).</td>
-          </tr>
-          <tr>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;font-weight:700;">Lệnh AI</td>
-            <td style="padding:0.45rem 0.6rem;border-bottom:1px dashed #e0c8b0;">Lệnh AI preview chính xác (chỉ xuất hiện khi bạn bấm Tạo AI polish preview).</td>
-          </tr>
-          <tr>
             <td style="padding:0.45rem 0.6rem;font-weight:700;">Log (vùng cuộn)</td>
             <td style="padding:0.45rem 0.6rem;">Toàn bộ output của quá trình chạy — bao gồm danh sách prop marker, thông báo lỗi (tiếng Việt), và exit code cuối cùng. <strong>Đọc kỹ log sau mỗi lần bấm Chạy pipeline.</strong></td>
           </tr>
@@ -1253,7 +1319,8 @@
       <div class="checklist-title"><span>🐾</span> Quy trình khuyên dùng (từng bước)</div>
 
       <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Mở hướng dẫn (nút <strong>Mở hướng dẫn</strong>) để tham khảo khi cần.</span></div>
-      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Chuẩn bị SVG trong Illustrator: group phòng rõ ràng, thêm prop marker nếu cần.</span></div>
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Gửi ảnh mẫu + mô tả cho Codex để tạo JSX draft khi muốn bắt đầu nhanh hơn.</span></div>
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Mở JSX trong Illustrator, chỉnh lại bằng mắt họa sĩ: group phòng rõ ràng, thêm prop marker nếu cần.</span></div>
       <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Xuất SVG sạch sang thư mục ngoài <code>assets/</code> (ví dụ: <code>drops/</code>).</span></div>
       <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Bấm <strong>Chọn SVG</strong> → chọn file SVG vừa xuất.</span></div>
       <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Nhập <strong>Tên phòng/layer</strong> đúng với tên group trong SVG.</span></div>
@@ -1262,13 +1329,14 @@
       <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Khi dry-run OK → tắt <strong>Dry-run</strong>. Điền <strong>mayapy.exe</strong> nếu chưa có.</span></div>
       <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Bật <strong>Render PNG preview</strong> nếu muốn xem ảnh preview ngay sau khi chạy.</span></div>
       <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Bấm <strong>Chạy pipeline</strong> lần nữa để tạo file <code>.ma</code> thật.</span></div>
-      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Bấm <strong>Mở outputs/maya</strong> → mở file <code>.ma</code> trong Maya để polish.</span></div>
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Bấm <strong>Mở outputs/maya</strong> → kiểm tra file <code>.ma</code> đã sinh ra.</span></div>
       <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Bấm <strong>Mở outputs/preview</strong> để xem ảnh PNG preview blockout.</span></div>
-      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Polish thủ công trong Maya. <em>(Tùy chọn)</em> Chạy AI preview để lấy cảm hứng.</span></div>
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Tạo Maya sandbox, mở <code>working/scene_agent_work.ma</code>, rồi mới chạy script polish Codex gửi nếu cần.</span></div>
+      <div class="check-item"><span class="check-box" role="checkbox" aria-checked="false" tabindex="0" title="Đánh dấu">☐</span><span>Review group <code>GRP_agent_polish_v001</code>: giữ, chỉnh tay, hide/delete group, hoặc rollback sandbox.</span></div>
 
       <div class="banner good" style="margin-top:1rem;">
         <span class="banner-icon">🐾</span>
-        <span>Dry-run → đọc log → chạy thật → mở <code>.ma</code> trong Maya. Đây là quy trình vàng! 🎉</span>
+        <span>Ảnh mẫu → JSX draft → SVG sạch → dry-run → chạy thật → Maya sandbox → review group polish. Đây là quy trình vàng! 🎉</span>
       </div>
     </div>
 
@@ -1280,7 +1348,7 @@
         <li><span class="icon">🚫</span> <span><strong>Tên phòng/layer sai.</strong> → Phải trùng chính xác với tên group/layer trong Illustrator SVG — không dấu, không khoảng trắng.</span></li>
         <li><span class="icon">🚫</span> <span><strong>SVG marker prop không nằm trong group phòng.</strong> → Prop marker phải được paste/đặt bên trong group phòng thật trong Illustrator, không phải để ngoài.</span></li>
         <li><span class="icon">🚫</span> <span><strong>Thiếu đường dẫn mayapy khi chạy thật.</strong> → Tắt Dry-run nhưng chưa điền mayapy.exe sẽ báo lỗi. Điền đúng đường dẫn hoặc dùng nút Chọn mayapy.</span></li>
-        <li><span class="icon">🚫</span> <span><strong>Nhầm AI preview là ảnh final.</strong> → AI preview chỉ là ảnh tham khảo. File <code>.ma</code> mới là nguồn để polish.</span></li>
+        <li><span class="icon">🚫</span> <span><strong>Chạy script polish trên file <code>.ma</code> gốc.</strong> → Luôn mở sandbox <code>working/scene_agent_work.ma</code>; script agent chỉ được thêm group riêng để rollback được.</span></li>
         <li><span class="icon">🚫</span> <span><strong>Nhầm SVG mẫu marker với bản vẽ thật.</strong> → SVG mẫu chỉ dùng để copy/paste marker. Không nạp thẳng SVG mẫu vào pipeline — phải là SVG phòng thật của bạn.</span></li>
         <li><span class="icon">🚫</span> <span><strong>Chọn file <code>.ai</code> thay vì file <code>.svg</code>.</strong> → App chỉ nhận file <code>.svg</code> đã xuất riêng từ Illustrator.</span></li>
       </ul>
@@ -1293,10 +1361,10 @@
 <footer class="footer">
   <span class="footer-cats" aria-hidden="true">🐾 🐱 🐾</span>
   <p>Sổ tay này dành cho họa sĩ của dự án <strong>Tứ Phương Vô Lộ</strong>.</p>
-  <p>Pipeline phiên bản <strong>v0.7.9 (007J-F1)</strong> · Branch <code>workflow/maya-first-artist-pipeline</code></p>
-  <p style="margin-top:0.5rem;">📄 Tài liệu chi tiết: <code>docs/desktop_app_mvp_vi.md</code> · <code>docs/artist_handoff_desktop_app_vi.md</code></p>
-  <p>🛡️ File <code>.ma</code> là nguồn editable cuối cùng. AI chỉ tham khảo. Dry-run trước, chạy thật sau.</p>
-  <p style="margin-top:0.8rem; opacity:0.6; font-size:0.75rem;">Phase 007I · Tài liệu tĩnh, chỉ đọc trong trình duyệt. Không phụ thuộc CDN hay mạng.</p>
+  <p>Pipeline artist-focused cleanup <strong>016</strong> · Branch chính <code>master</code></p>
+  <p style="margin-top:0.5rem;">📄 Hướng dẫn phụ: <code>docs/artist_handoff_desktop_app_vi.md</code> · <code>docs/WORKFLOW_FOR_WIFE_VI.md</code></p>
+  <p>🛡️ File <code>.ma</code> là nguồn editable cuối cùng. Script agent chỉ chạy trong sandbox. Dry-run trước, chạy thật sau.</p>
+  <p style="margin-top:0.8rem; opacity:0.6; font-size:0.75rem;">Feature 016 · Tài liệu tĩnh, chỉ đọc trong trình duyệt. Không phụ thuộc CDN hay mạng.</p>
 </footer>
 
 <!-- Back to top -->
