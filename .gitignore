@@ -30,6 +30,7 @@ Desktop.ini
 
 # === Project Outputs (generated, not source) ===
 outputs/svg/*.svg
+outputs/illustrator_jsx/
 outputs/png/*.png
 outputs/preview/*
 outputs/ai_preview/

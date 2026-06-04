@@ -20,6 +20,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from clean_svg_paths import configure_stdio
+
 
 DEFAULT_SESSION_LABEL = "maya_agent_session"
 TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
@@ -398,6 +400,7 @@ def run(args: argparse.Namespace) -> SandboxPlan:
 def main(argv: list[str] | None = None) -> int:
     """CLI entrypoint."""
 
+    configure_stdio()
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
