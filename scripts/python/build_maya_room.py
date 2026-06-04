@@ -692,7 +692,11 @@ def append_render_manifest_entry(plan: MayaBuildPlan) -> None:
     )
 
 
-def run_render(plan: MayaBuildPlan, verbose: bool = False) -> int:
+def run_render(
+    plan: MayaBuildPlan,
+    verbose: bool = False,
+    skip_manifest_update: bool = False,
+) -> int:
     """Render the isometric PNG preview from the saved .ma scene.
 
     Requires the .ma scene to already exist. The render command opens the scene
@@ -734,12 +738,22 @@ def run_render(plan: MayaBuildPlan, verbose: bool = False) -> int:
             file=sys.stderr,
         )
         return 1
-    append_render_manifest_entry(plan)
-    print(f"Hoàn tất render preview. Đã tạo PNG và cập nhật manifest: {plan.render_output}")
+    if skip_manifest_update:
+        print(
+            "Hoàn tất render preview. Đã bỏ qua cập nhật manifest theo yêu cầu: "
+            f"{plan.render_output}"
+        )
+    else:
+        append_render_manifest_entry(plan)
+        print(f"Hoàn tất render preview. Đã tạo PNG và cập nhật manifest: {plan.render_output}")
     return 0
 
 
-def run_maya(plan: MayaBuildPlan, verbose: bool = False) -> int:
+def run_maya(
+    plan: MayaBuildPlan,
+    verbose: bool = False,
+    skip_manifest_update: bool = False,
+) -> int:
     """Run Maya and update manifest after verified .ma output exists."""
 
     plan.maya_output.parent.mkdir(parents=True, exist_ok=True)
@@ -765,10 +779,17 @@ def run_maya(plan: MayaBuildPlan, verbose: bool = False) -> int:
             file=sys.stderr,
         )
         return 1
-    append_output_manifest_entries(plan)
-    print("Hoàn tất. Đã tạo .ma và cập nhật manifest.")
+    if skip_manifest_update:
+        print("Hoàn tất. Đã tạo .ma và bỏ qua cập nhật manifest theo yêu cầu.")
+    else:
+        append_output_manifest_entries(plan)
+        print("Hoàn tất. Đã tạo .ma và cập nhật manifest.")
     if plan.render_preview:
-        return run_render(plan, verbose=verbose)
+        return run_render(
+            plan,
+            verbose=verbose,
+            skip_manifest_update=skip_manifest_update,
+        )
     return 0
 
 
@@ -818,6 +839,14 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="In kế hoạch, không chạy Maya.",
     )
+    parser.add_argument(
+        "--skip-manifest-update",
+        action="store_true",
+        help=(
+            "Chạy thật nhưng không cập nhật repo manifest; "
+            "dùng cho smoke test output ngoài repo."
+        ),
+    )
     parser.add_argument("--verbose", action="store_true", help="In log Maya và cảnh báo chi tiết.")
     return parser
 
@@ -854,7 +883,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     try:
-        return run_maya(plan, verbose=args.verbose)
+        return run_maya(
+            plan,
+            verbose=args.verbose,
+            skip_manifest_update=args.skip_manifest_update,
+        )
     except FileNotFoundError as exc:
         print(f"ERR_MAYA_NOT_FOUND: {exc}", file=sys.stderr)
         return 1

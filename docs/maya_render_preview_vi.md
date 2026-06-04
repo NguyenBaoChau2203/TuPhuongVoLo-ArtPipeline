@@ -54,6 +54,17 @@ python scripts/python/build_maya_room.py `
   --maya-path "C:/Program Files/Autodesk/Maya2025/bin/mayapy.exe"
 ```
 
+Smoke test actual run vào thư mục ngoài repo, không cập nhật repo manifest:
+
+```powershell
+python scripts/python/build_maya_room.py `
+  --input "D:/duong_dan_sandbox/working/scene_agent_work_export.svg" `
+  --room phong_kho `
+  --output-dir "D:/duong_dan_sandbox/outputs/actual_maya_generation" `
+  --maya-path "C:/Program Files/Autodesk/Maya2024/bin/mayapy.exe" `
+  --skip-manifest-update
+```
+
 Batch có render preview:
 
 ```powershell
@@ -72,6 +83,7 @@ python scripts/python/batch_maya_room.py `
 | `--render-output` | (theo quy ước) | Đường dẫn PNG tùy chọn; nếu bỏ trống dùng tên chuẩn. |
 | `--render-width` | `1280` | Chiều rộng ảnh render. |
 | `--render-height` | `720` | Chiều cao ảnh render. |
+| `--skip-manifest-update` | tắt | Chạy actual Maya nhưng bỏ qua cập nhật repo manifest; chỉ dùng cho smoke test output ngoài repo. |
 
 Batch hỗ trợ `--render-preview`, `--render-width`, `--render-height`.
 
@@ -103,6 +115,7 @@ Trong chế độ `--dry-run`:
 - Tạo `.ma` trước, xác minh `.ma` tồn tại → ghi manifest entry stage `maya`.
 - Nếu bật `--render-preview`: render PNG, xác minh PNG tồn tại → ghi manifest
   entry stage `preview`.
+- Nếu thêm `--skip-manifest-update`: vẫn tạo `.ma`, geometry JSON và PNG preview nếu bật, nhưng bỏ qua entry manifest cho các artifact đó.
 - Nếu yêu cầu render nhưng PNG không xuất hiện → báo lỗi `ERR_RENDER_MISSING`
   và **không** ghi manifest cho PNG.
 - Nếu Maya render trả mã lỗi → báo `ERR_RENDER_FAILED`.
@@ -120,6 +133,8 @@ Trong chế độ `--dry-run`:
 - Dry-run không bao giờ động vào manifest.
 - Manifest chỉ được cập nhật **sau khi** file thật (`.ma`, sau đó `.png`) đã tồn
   tại và được xác minh.
+- Production actual run mặc định vẫn cập nhật `outputs/manifest/asset_manifest.json`; đây là hành vi chủ ý để theo dõi output thật.
+- Smoke test ngoài repo nên dùng `--output-dir` ngoài repo kèm `--skip-manifest-update` để repo luôn clean.
 
 ## Giới hạn hiện tại
 

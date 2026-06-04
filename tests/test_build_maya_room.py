@@ -1605,6 +1605,92 @@ def fake_mayapy(tmp_path: Path) -> Path:
     return path
 
 
+def test_cli_help_includes_skip_manifest_update() -> None:
+    help_text = builder.build_parser().format_help()
+
+    assert "--skip-manifest-update" in help_text
+
+
+def test_actual_run_updates_manifest_by_default(tmp_path: Path, monkeypatch) -> None:
+    manifest_path = isolated_manifest(monkeypatch, tmp_path)
+    svg = write_svg(tmp_path / "floorplan.svg")
+    mayapy = fake_mayapy(tmp_path)
+
+    def fake_run(command, **kwargs):
+        output = Path(command[command.index("--maya-output") + 1])
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text("//Maya ASCII", encoding="utf-8")
+        return _FakeProcess(0)
+
+    monkeypatch.setattr(builder.subprocess, "run", fake_run)
+
+    exit_code = builder.main(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--maya-path",
+            str(mayapy),
+        ]
+    )
+
+    assert exit_code == 0
+    entries = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert len(entries) == 1
+    assert entries[0]["stage"] == "maya"
+
+
+def test_actual_run_skip_manifest_update_writes_external_outputs_without_manifest(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    manifest_path = isolated_manifest(monkeypatch, tmp_path)
+    svg = write_svg(tmp_path / "floorplan.svg")
+    mayapy = fake_mayapy(tmp_path)
+    external_output_dir = tmp_path / "external_outputs"
+
+    def fail_manifest_update(*args, **kwargs):
+        raise AssertionError("manifest update must not be called")
+
+    def fake_run(command, **kwargs):
+        output = Path(command[command.index("--maya-output") + 1])
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text("//Maya ASCII", encoding="utf-8")
+        return _FakeProcess(0)
+
+    monkeypatch.setattr(builder.asset_manifest, "add_manifest_entry", fail_manifest_update)
+    monkeypatch.setattr(builder.subprocess, "run", fake_run)
+
+    exit_code = builder.main(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "kho",
+            "--output-dir",
+            str(external_output_dir),
+            "--maya-path",
+            str(mayapy),
+            "--skip-manifest-update",
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert not manifest_path.exists()
+    assert "bỏ qua cập nhật manifest" in captured.out
+    assert (
+        external_output_dir / "maya" / "tu_phuong_vo_lo_kho_main_maya_v001.ma"
+    ).exists()
+    assert (
+        external_output_dir / "tmp" / "tu_phuong_vo_lo_kho_main_blockout_v001.json"
+    ).exists()
+
+
 def test_build_plan_includes_render_settings_when_enabled(
     tmp_path: Path, monkeypatch
 ) -> None:
