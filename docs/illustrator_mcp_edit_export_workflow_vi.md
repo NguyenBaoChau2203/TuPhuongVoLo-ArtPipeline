@@ -14,6 +14,29 @@ Smoke test Illustrator MCP đã PASS trên bản sao sandbox:
 
 `ERR_MAYA_NOT_FOUND` nghĩa là máy đang thiếu Maya hoặc `mayapy.exe`, không tự động nghĩa là SVG sai. Dry-run vẫn là bước kiểm tra hợp lệ vì dry-run không cần Maya và không ghi manifest.
 
+## Ghi chú 011B-F / 011B-G: actual Maya sandbox an toàn
+
+Ở 011B-F, máy DCC đã xác nhận có Maya 2024:
+
+- `C:\Program Files\Autodesk\Maya2024\bin\maya.exe`
+- `C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe`
+
+Dry-run với SVG export từ Illustrator và room thân thiện `phong_kho` đã PASS, nhưng actual run bị dừng trước khi chạy vì CLI mặc định sẽ cập nhật repo manifest tại `outputs/manifest/asset_manifest.json`. Với smoke test output nằm ngoài repo, side-effect này làm repo bị dirty nên không phù hợp cho sandbox verification.
+
+Từ 011B-G, smoke test actual Maya ngoài repo dùng thêm:
+
+```powershell
+python scripts/python/build_maya_room.py `
+  --input "D:\TuPhuongVoLo_IllustratorAgentBackups\20260604_134449_phong_kho\working\scene_agent_work_011B_D_export.svg" `
+  --room phong_kho `
+  --output-dir "D:\TuPhuongVoLo_IllustratorAgentBackups\20260604_134449_phong_kho\outputs\011B_F_actual_maya_generation" `
+  --maya-path "C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe" `
+  --skip-manifest-update `
+  --verbose
+```
+
+Chế độ này vẫn tạo `.ma` và geometry JSON ở output folder ngoài repo, nhưng bỏ qua cập nhật repo manifest theo yêu cầu. File `.ma`/`.json` sinh ra là artifact kiểm chứng bên ngoài, không commit vào repo.
+
 ## Quy tắc sandbox
 
 - Không mở/chỉnh sửa file `.ai` gốc của họa sĩ.
@@ -69,6 +92,7 @@ Quy tắc này giúp tránh trường hợp agent vô tình sửa hoặc save nh
 
 - `--dry-run`: đọc SVG, phát hiện phòng/prop/door/window, lập kế hoạch output; không cần Maya, không tạo `.ma`, không ghi manifest.
 - Actual run: cần Autodesk Maya và `mayapy.exe`; sau khi Maya tạo `.ma` thành công mới cập nhật manifest.
+- Actual run sandbox ngoài repo: thêm `--skip-manifest-update` và `--output-dir` ngoài repo để tạo artifact kiểm chứng mà không làm repo dirty.
 - `ERR_MAYA_NOT_FOUND`: cần kiểm tra cài đặt Maya, `tool_paths.mayapy` trong `config/pipeline.yaml`, hoặc tham số `--maya-path`.
 
 Luôn chạy dry-run trước actual run, đặc biệt sau export từ Illustrator MCP.
