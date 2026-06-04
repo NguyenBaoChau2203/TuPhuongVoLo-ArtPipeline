@@ -111,6 +111,8 @@ phong_kho
       Hãy chạy dry-run trước để kiểm tra tên prop và kế hoạch dựng Maya trước khi chạy thật.
 - [ ] Đây chỉ là blockout để kiểm tra bố cục, **không phải model 3D cuối cùng**. Họa sĩ vẫn polish và thay asset thật trong Maya sau.
 - [ ] Khi export SVG từ Illustrator, chọn **Object IDs = Layer Names**, **Minify = OFF**, **Responsive = OFF** để pipeline giữ được tên group/layer.
+- [ ] Nếu Illustrator export tên có dấu `_` thành `x5F`/`x5f` trong SVG ID, cứ tiếp tục nhập tên phòng thân thiện như `phong_kho` trong app/CLI. Từ 011B-E, pipeline tự giải mã các ID kiểu `room_x5F_phong_x5F_kho`.
+- [ ] Khi dùng Illustrator MCP/agent, chỉ edit/export trong sandbox. Sau `doc.exportFile()`, script phải kích hoạt lại file `.ai` sandbox trước khi làm bước tiếp theo, vì Illustrator có thể chuyển active document sang SVG vừa export. Xem thêm `docs/illustrator_mcp_edit_export_workflow_vi.md`.
 
 ## Gợi ý material và màu trong tên group/layer
 
