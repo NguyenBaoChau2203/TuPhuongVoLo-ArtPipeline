@@ -24,6 +24,11 @@ Optional/fallback path:
 clean SVG -> Blender MVP isometric draft / batch dry-run
 ```
 
+Feature 015A resets the product direction around an artist prompt-control loop:
+the artist gives Vietnamese art direction, AI agents operate only inside
+Illustrator/Maya sandboxes, the existing SVG -> Maya pipeline remains the
+handoff spine, and artist review/rollback is mandatory.
+
 ## Feature Status
 
 | Order | Feature | Spec | Status |
@@ -48,6 +53,7 @@ clean SVG -> Blender MVP isometric draft / batch dry-run
 | 7.14 | Guided Artist Workflow (007L) | `scripts/python/artist_desktop_app.py` | Desktop app guides Preflight -> Dry-run -> Actual Maya run |
 | 12E | Maya MCP Sandbox Workflow Closeout | `docs/maya_mcp_sandbox_workflow_closeout_vi.md` | Verified Illustrator sandbox -> Maya MCP sandbox safety closeout |
 | 014A | Maya Visual Fidelity MVP | `specs/014a-visual-fidelity-mvp/` | Optional post-build warehouse visual fidelity pass for Maya blockouts |
+| 015A | Artist Prompt Control Loop MVP | `specs/015-artist-prompt-control-loop/` | Docs/templates for prompt-driven Illustrator + Maya sandbox operator workflow |
 
 ## Developer Quickstart
 
@@ -190,6 +196,8 @@ Vietnamese guides:
 - [Bàn giao desktop app Maya](docs/artist_handoff_desktop_app_vi.md)
 - [Closeout Illustrator-to-Maya MCP sandbox 012E](docs/maya_mcp_sandbox_workflow_closeout_vi.md)
 - [Visual Fidelity MVP 014A cho Maya](docs/visual_fidelity_mvp_vi.md)
+- [Daily workflow 015A cho artist/operator](docs/artist_daily_workflow_vi.md)
+- [Artist Prompt Control Loop 015A](docs/artist_prompt_control_loop_vi.md)
 - [Checklist release/packaging desktop app](docs/release_packaging_checklist_vi.md)
 - [Hướng dẫn cài đặt](docs/INSTALL_VI.md)
 - [Hướng dẫn sử dụng](docs/HOW_TO_USE_FOR_ARTIST_VI.md)
@@ -206,7 +214,8 @@ Core artist flow:
 6. Alternative CLI launcher: run `launchers/07_build_maya_room.bat` for one room dry-run before creating `.ma`.
 7. Run `launchers/08_batch_maya_room.bat` for multi-SVG or multi-room dry-run/report.
 8. After dry-run looks correct, run actual Maya execution and open generated `.ma` scenes from `outputs/maya/` in Maya.
-9. Optional: choose a generated PNG preview in the desktop app AI section and run a reference-only AI polish preview into `outputs/ai_preview/`.
+9. Optional: run the Feature 014A Visual Fidelity pass, then create/open a Maya sandbox for prompt polish review.
+10. Optional: choose a generated PNG preview in the desktop app AI section and run a reference-only AI polish preview into `outputs/ai_preview/`.
 
 Generated `.ma`, `.png`, `outputs/tmp/`, and normal batch reports are local outputs and should not be committed unless intentionally added as test fixtures.
 
@@ -245,7 +254,9 @@ TuPhuongVoLo-ArtPipeline/
 
 ## Not Implemented
 
-Feature 006 natural-language control/MCP is not implemented. AI polish preview
+Feature 006 natural-language control/MCP is not implemented. Feature 015A now
+documents the prompt-control product direction, but it does not implement a new
+prompt orchestration app or make agent edits automatic. AI polish preview
 has a local mock provider, an optional fal.ai provider, and desktop app controls,
 but it is still only a reference-image workflow and does not drive pipeline
 automation. Actual Maya scene generation requires local Autodesk Maya with

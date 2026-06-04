@@ -27,6 +27,15 @@ Closeout 012E đã ghi lại workflow agent/MCP sandbox sau 012D tại
 `docs\maya_mcp_sandbox_workflow_closeout_vi.md`. Workflow này là quy trình dev/operator
 có kiểm soát, không thay thế bước artist review trong Maya.
 
+Phase 015A bổ sung hướng đi sản phẩm mới: artist prompt -> agent sandbox operator ->
+Maya review/rollback. Với daily workflow hiện tại, vẫn export SVG thủ công nếu
+Illustrator MCP chưa khỏe, sau đó chạy app/CLI, Visual Fidelity, Maya sandbox, và
+dùng prompt template cho Codex polish có guard. Xem:
+
+- `docs\artist_daily_workflow_vi.md`
+- `docs\artist_prompt_control_loop_vi.md`
+- `docs\visual_fidelity_mvp_vi.md`
+
 ## 2. Yêu cầu máy chạy
 
 - Windows 10/11.
@@ -241,6 +250,9 @@ Các phần sau chưa thuộc MVP bàn giao này hoặc vẫn là giới hạn a
 - `docs\artist_svg_export_checklist_vi.md` — quy tắc marker `door_`/`window_`: preflight là nguồn kiểm tra; nếu preflight báo 0 marker thì Maya không tự tạo cửa.
 - `docs\artist_workflow_cat_guide_vi.html` — sổ tay mèo con thân thiện cho họa sĩ (007H)
 - `docs\desktop_app_mvp_vi.md`
+- `docs\artist_daily_workflow_vi.md`
+- `docs\artist_prompt_control_loop_vi.md`
+- `docs\visual_fidelity_mvp_vi.md`
 - `docs\maya_mcp_sandbox_workflow_closeout_vi.md`
 - `docs\illustrator_mcp_edit_export_workflow_vi.md`
 - `docs\antigravity_maya_mcp_sandbox_vi.md`
