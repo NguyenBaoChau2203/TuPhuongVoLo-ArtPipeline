@@ -21,12 +21,16 @@ def _fake_repo(root: Path) -> Path:
     ai_script_path.write_text("print('fake ai preview')\n", encoding="utf-8")
     preflight_script_path = root / "scripts" / "python" / "svg_preflight_check.py"
     preflight_script_path.write_text("print('fake svg preflight')\n", encoding="utf-8")
+    visual_script_path = root / "scripts" / "python" / "maya_visual_fidelity_pass.py"
+    visual_script_path.write_text("print('fake visual fidelity')\n", encoding="utf-8")
+    sandbox_script_path = root / "scripts" / "python" / "maya_agent_sandbox.py"
+    sandbox_script_path.write_text("print('fake maya sandbox')\n", encoding="utf-8")
     return root
 
 
 def test_app_version_metadata_is_display_ready() -> None:
-    assert app.APP_VERSION == "0.7.10"
-    assert app.APP_PHASE == "007L"
+    assert app.APP_VERSION == "0.7.11"
+    assert app.APP_PHASE == "016A"
     assert f"v{app.APP_VERSION}" in app.APP_TITLE
     assert app.APP_PHASE in app.APP_TITLE
     assert app.APP_VERSION in app.app_version_display()
@@ -549,6 +553,159 @@ def test_artist_guide_and_template_paths_use_repo_root(tmp_path: Path) -> None:
         / "illustrator_prop_marker_template.svg"
     )
     assert app.prop_marker_template_dir(fake_root) == fake_root / "assets" / "2d" / "templates"
+    assert app.visual_fidelity_script_path(fake_root) == (
+        fake_root / "scripts" / "python" / "maya_visual_fidelity_pass.py"
+    )
+    assert app.maya_sandbox_script_path(fake_root) == (
+        fake_root / "scripts" / "python" / "maya_agent_sandbox.py"
+    )
+
+
+def test_visual_fidelity_command_wraps_existing_cli(tmp_path: Path) -> None:
+    fake_root = _fake_repo(tmp_path / "repo")
+    options = app.ArtistVisualFidelityOptions(
+        input_scene=Path("outputs/maya/room_maya_v001.ma"),
+        geometry_json=Path("outputs/tmp/room_blockout_v001.json"),
+        output_scene=Path("outputs/maya/room_final_candidate_v001.ma"),
+        report_json=Path("outputs/reports/visual_fidelity_report.json"),
+        dry_run=True,
+    )
+
+    command = app.build_visual_fidelity_command(
+        options,
+        python_executable="python",
+        root=fake_root,
+    )
+
+    assert command[0] == "python"
+    assert any("maya_visual_fidelity_pass.py" in part for part in command)
+    assert command[command.index("--input-scene") + 1] == str(options.input_scene)
+    assert command[command.index("--geometry-json") + 1] == str(options.geometry_json)
+    assert command[command.index("--output-scene") + 1] == str(options.output_scene)
+    assert command[command.index("--report-json") + 1] == str(options.report_json)
+    assert "--dry-run" in command
+    assert "--maya-path" not in command
+
+
+def test_visual_fidelity_actual_command_includes_mayapy(tmp_path: Path) -> None:
+    fake_root = _fake_repo(tmp_path / "repo")
+    mayapy = Path(r"C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe")
+    options = app.ArtistVisualFidelityOptions(
+        input_scene=Path("outputs/maya/room_maya_v001.ma"),
+        geometry_json=Path("outputs/tmp/room_blockout_v001.json"),
+        output_scene=Path("outputs/maya/room_final_candidate_v001.ma"),
+        maya_path=mayapy,
+        dry_run=False,
+    )
+
+    command = app.build_visual_fidelity_command(
+        options,
+        python_executable="python",
+        root=fake_root,
+    )
+
+    assert "--dry-run" not in command
+    assert command[command.index("--maya-path") + 1] == str(mayapy)
+
+
+def test_maya_sandbox_command_wraps_existing_cli(tmp_path: Path) -> None:
+    fake_root = _fake_repo(tmp_path / "repo")
+    options = app.ArtistMayaSandboxOptions(
+        maya_scene=Path("outputs/maya/room_maya_v001.ma"),
+        geometry_json=Path("outputs/tmp/room_blockout_v001.json"),
+        source_svg=Path("drops/room.svg"),
+        room_name="phong_kho",
+        backup_root=Path("D:/TuPhuongVoLo_AgentBackups"),
+    )
+
+    command = app.build_maya_sandbox_command(
+        options,
+        python_executable="python",
+        root=fake_root,
+    )
+
+    assert command[0] == "python"
+    assert any("maya_agent_sandbox.py" in part for part in command)
+    assert command[command.index("--maya-scene") + 1] == str(options.maya_scene)
+    assert command[command.index("--geometry-json") + 1] == str(options.geometry_json)
+    assert command[command.index("--source-svg") + 1] == str(options.source_svg)
+    assert command[command.index("--room") + 1] == "phong_kho"
+    assert command[command.index("--backup-root") + 1] == str(options.backup_root)
+
+
+def test_visual_and_sandbox_validation_errors_are_vietnamese(tmp_path: Path) -> None:
+    visual_errors = app.validate_visual_fidelity_options(
+        app.ArtistVisualFidelityOptions(
+            input_scene=Path(""),
+            geometry_json=Path(""),
+            output_scene=Path(""),
+            dry_run=False,
+        )
+    )
+    sandbox_errors = app.validate_sandbox_options(
+        app.ArtistMayaSandboxOptions(maya_scene=Path(""), room_name="")
+    )
+
+    assert app.MAYA_SCENE_EMPTY_ERROR in visual_errors
+    assert app.GEOMETRY_JSON_EMPTY_ERROR in visual_errors
+    assert app.VISUAL_OUTPUT_EMPTY_ERROR in visual_errors
+    assert app.MAYAPY_REQUIRED_ERROR in visual_errors
+    assert app.MAYA_SCENE_EMPTY_ERROR in sandbox_errors
+    assert app.ROOM_EMPTY_ERROR in sandbox_errors
+
+
+def test_visual_fidelity_path_validation_checks_existing_inputs(tmp_path: Path) -> None:
+    fake_root = _fake_repo(tmp_path / "repo")
+    scene = fake_root / "outputs" / "maya" / "room_maya_v001.ma"
+    geometry = fake_root / "outputs" / "tmp" / "room_blockout_v001.json"
+    scene.parent.mkdir(parents=True)
+    geometry.parent.mkdir(parents=True)
+    scene.write_text("// maya ascii\n", encoding="utf-8")
+    geometry.write_text("{}\n", encoding="utf-8")
+
+    errors = app.validate_visual_fidelity_paths(
+        app.ArtistVisualFidelityOptions(
+            input_scene=Path("outputs/maya/room_maya_v001.ma"),
+            geometry_json=Path("outputs/tmp/room_blockout_v001.json"),
+            output_scene=Path("outputs/maya/room_final_candidate_v001.ma"),
+            dry_run=True,
+        ),
+        root=fake_root,
+    )
+
+    assert errors == []
+
+
+def test_latest_output_helpers_and_default_visual_scene(tmp_path: Path) -> None:
+    fake_root = tmp_path / "repo"
+    maya_dir = fake_root / "outputs" / "maya"
+    tmp_dir = fake_root / "outputs" / "tmp"
+    maya_dir.mkdir(parents=True)
+    tmp_dir.mkdir(parents=True)
+    old_scene = maya_dir / "tu_phuong_vo_lo_phong_kho_main_maya_v001.ma"
+    new_scene = maya_dir / "tu_phuong_vo_lo_phong_kho_main_maya_v002.ma"
+    geometry = tmp_dir / "tu_phuong_vo_lo_phong_kho_main_blockout_v002.json"
+    old_scene.write_text("// old\n", encoding="utf-8")
+    new_scene.write_text("// new\n", encoding="utf-8")
+    geometry.write_text("{}\n", encoding="utf-8")
+
+    assert app.latest_maya_scene(Path("outputs"), root=fake_root) == new_scene
+    assert app.latest_geometry_json(Path("outputs"), root=fake_root) == geometry
+    assert app.default_visual_output_scene(new_scene) == (
+        maya_dir / "tu_phuong_vo_lo_phong_kho_main_final_candidate_v002.ma"
+    )
+
+
+def test_latest_sandbox_working_scene_uses_newest_file(tmp_path: Path) -> None:
+    backup_root = tmp_path / "backups"
+    old_scene = backup_root / "20260601_old" / "working" / "scene_agent_work.ma"
+    new_scene = backup_root / "20260602_new" / "working" / "scene_agent_work.ma"
+    old_scene.parent.mkdir(parents=True)
+    new_scene.parent.mkdir(parents=True)
+    old_scene.write_text("// old\n", encoding="utf-8")
+    new_scene.write_text("// new\n", encoding="utf-8")
+
+    assert app.latest_sandbox_working_scene(backup_root) == new_scene
 
 
 def test_open_artist_guide_uses_mocked_browser_opener(tmp_path: Path) -> None:
