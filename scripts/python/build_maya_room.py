@@ -19,7 +19,12 @@ from typing import Any
 import manifest as asset_manifest
 import yaml
 from clean_svg_paths import configure_stdio
-from detect_rooms_from_svg import RoomReport, detect_rooms, normalize_room_name
+from detect_rooms_from_svg import (
+    RoomReport,
+    decode_illustrator_underscore_escapes,
+    detect_rooms,
+    normalize_room_name,
+)
 from room_geometry import create_wall_segments, normalize_points_to_origin, scale_points_to_blender
 
 PIPELINE_STEP = "feature_005_maya_bridge"
@@ -135,14 +140,27 @@ def select_room(
         for report in usable:
             if report.room_name == normalized:
                 return report, warnings
-        available = ", ".join(report.room_name for report in usable)
-        raise ValueError(f"Không tìm thấy phòng '{normalized}'. Phòng có sẵn: {available}")
+        available = "; ".join(_format_available_room(report) for report in usable)
+        raise ValueError(
+            f"Không tìm thấy phòng '{normalized}'. "
+            "Phòng có sẵn (raw SVG -> nhãn họa sĩ -> tên nội bộ): "
+            f"{available}"
+        )
 
     selected = usable[0]
     warnings.append(
         f"Bạn chưa chọn --room; pipeline sẽ dùng phòng đầu tiên: {selected.room_name}."
     )
     return selected, warnings
+
+
+def _format_available_room(report: RoomReport) -> str:
+    """Return one room option with raw, decoded, and normalized names."""
+
+    artist_label = report.artist_label or decode_illustrator_underscore_escapes(
+        report.original_label
+    )
+    return f"{report.original_label} -> {artist_label} -> {report.room_name}"
 
 
 def resolve_output_dirs(output_dir: Path, pipeline_config: dict[str, Any]) -> tuple[Path, Path]:

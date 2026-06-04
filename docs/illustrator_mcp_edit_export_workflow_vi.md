@@ -1,0 +1,74 @@
+# Quy trình Illustrator MCP edit/export có kiểm soát
+
+> **Giai đoạn**: 011B-D kết quả thật + 011B-E hardening  
+> **Mục tiêu**: Cho phép agent chỉnh sửa/export SVG trong sandbox Illustrator mà không làm hỏng file gốc, đồng thời giữ UX phòng `phong_kho` cho pipeline Python/Maya.
+
+## Tóm tắt 011B-D
+
+Smoke test Illustrator MCP đã PASS trên bản sao sandbox:
+
+- Agent chỉ chỉnh sửa file `working/scene_agent_work.ai`.
+- Export SVG mới nằm trong sandbox `working/`.
+- Maya dry-run PASS khi trỏ vào SVG export mới.
+- Actual Maya generation trên máy hiện tại bị chặn bởi `ERR_MAYA_NOT_FOUND`.
+
+`ERR_MAYA_NOT_FOUND` nghĩa là máy đang thiếu Maya hoặc `mayapy.exe`, không tự động nghĩa là SVG sai. Dry-run vẫn là bước kiểm tra hợp lệ vì dry-run không cần Maya và không ghi manifest.
+
+## Quy tắc sandbox
+
+- Không mở/chỉnh sửa file `.ai` gốc của họa sĩ.
+- Không sửa SVG gốc hoặc file trong `D:\TuPhuongVoLo_ArtistTests`.
+- MCP/agent chỉ làm việc trong `D:\TuPhuongVoLo_IllustratorAgentBackups\<session>\working`.
+- SVG export từ agent cũng chỉ ghi vào thư mục `working/` của sandbox.
+- Sau khi export, họa sĩ hoặc operator review file sandbox trước khi đưa vào production.
+
+## Illustrator mã hóa dấu gạch dưới
+
+Illustrator 2020 có thể export dấu `_` trong XML ID thành token `x5F` hoặc `x5f`.
+
+Ví dụ:
+
+```text
+phong_kho -> phong_x5F_kho
+room_phong_kho -> room_x5F_phong_x5F_kho
+prop_wooden_crate_01 -> prop_x5F_wooden_x5F_crate_x5F_01
+```
+
+Từ 011B-E, pipeline Python giải mã token này cho tên phòng/marker. Họa sĩ và app vẫn nên dùng tên thân thiện:
+
+```powershell
+python scripts/python/build_maya_room.py --input path\to\scene_agent_work_export.svg --room phong_kho --dry-run
+```
+
+Pipeline vẫn có thể hiểu dạng cũ đã lộ ra trước đó như `x5f_phong_x5f_kho`, nhưng UX ưu tiên là `phong_kho`.
+
+## Marker smoke/test của agent
+
+Các group/layer dùng để smoke test agent không phải phòng production. Pipeline 011B-E bỏ qua các tên hẹp sau khi phát hiện room candidate:
+
+- `agent_test_*`
+- `agent_smoke_marker_*`
+- `*_smoke_marker_*`
+
+Không dùng các mẫu tên này cho phòng thật. Nếu cần ghi chú test trong Illustrator, để trong sandbox và xóa trước khi production.
+
+## Cảnh báo active document sau export
+
+`doc.exportFile()` trong Illustrator có thể làm active document chuyển sang SVG vừa export. Script MCP không được giả định `activeDocument` vẫn là file `.ai`.
+
+Sau mỗi bước export, script phải:
+
+1. Lưu lại reference tới document `.ai` trước khi export.
+2. Export SVG vào sandbox `working/`.
+3. Re-activate document `.ai` trước mọi thao tác edit/save tiếp theo.
+4. Kiểm tra tên/đường dẫn active document trước khi ghi tiếp.
+
+Quy tắc này giúp tránh trường hợp agent vô tình sửa hoặc save nhầm SVG export thay vì file AI sandbox.
+
+## Dry-run và actual Maya
+
+- `--dry-run`: đọc SVG, phát hiện phòng/prop/door/window, lập kế hoạch output; không cần Maya, không tạo `.ma`, không ghi manifest.
+- Actual run: cần Autodesk Maya và `mayapy.exe`; sau khi Maya tạo `.ma` thành công mới cập nhật manifest.
+- `ERR_MAYA_NOT_FOUND`: cần kiểm tra cài đặt Maya, `tool_paths.mayapy` trong `config/pipeline.yaml`, hoặc tham số `--maya-path`.
+
+Luôn chạy dry-run trước actual run, đặc biệt sau export từ Illustrator MCP.

@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from detect_rooms_from_svg import (
+    decode_illustrator_underscore_escapes,
     detect_rooms,
     normalize_opening_marker_label,
     normalize_prop_marker_label,
@@ -54,6 +55,25 @@ def _opening(report, marker_type, marker_name):
             return marker
     found = [(m.marker_type, m.marker_name) for m in report.opening_markers]
     raise AssertionError(f"Opening {marker_type}:{marker_name} not found in {found}")
+
+
+@pytest.mark.parametrize(
+    ("label", "expected"),
+    [
+        ("phong_x5F_kho", "phong_kho"),
+        ("phong_x5f_kho", "phong_kho"),
+        ("room_x5F_phong_x5F_kho", "room_phong_kho"),
+        ("prop_x5F_wooden_x5F_crate_x5F_01", "prop_wooden_crate_01"),
+        ("x5f_phong_x5f_kho", "phong_kho"),
+        ("box5fish", "box5fish"),
+        ("texture_x5fish_note", "texture_x5fish_note"),
+    ],
+)
+def test_illustrator_x5f_underscore_escape_decode_helper(
+    label: str,
+    expected: str,
+) -> None:
+    assert decode_illustrator_underscore_escapes(label) == expected
 
 
 def test_prop_marker_name_normalization() -> None:
@@ -710,3 +730,65 @@ def test_existing_nested_group_room_detection_unaffected_by_root_fix() -> None:
     assert kho.original_label == "phong_kho"
     assert len(kho.prop_markers) == 5
     assert len(kho.opening_markers) == 1
+
+
+# --- Phase 011B-E: Illustrator 2020 x5F ID compatibility ---
+
+
+def test_illustrator_x5f_room_id_detects_artist_friendly_room_name(
+    tmp_path: Path,
+) -> None:
+    svg = write_svg(
+        tmp_path / "x5f_room.svg",
+        '<g id="room_x5F_phong_x5F_kho">'
+        '<path d="M0 0 L120 0 L120 80 L0 80 Z"/>'
+        "</g>",
+    )
+
+    kho = _room(detect_rooms(svg), "phong_kho")
+
+    assert kho.original_label == "room_x5F_phong_x5F_kho"
+    assert kho.artist_label == "room_phong_kho"
+    assert kho.has_usable_boundary
+
+
+def test_illustrator_x5f_prop_id_normalizes_to_artist_prop_type(
+    tmp_path: Path,
+) -> None:
+    svg = write_svg(
+        tmp_path / "x5f_prop.svg",
+        '<g id="room_x5F_phong_x5F_kho">'
+        '<path d="M0 0 L120 0 L120 80 L0 80 Z"/>'
+        '<g id="prop_x5F_wooden_x5F_crate_x5F_01">'
+        '<rect x="20" y="20" width="16" height="12"/>'
+        "</g>"
+        "</g>",
+    )
+
+    kho = _room(detect_rooms(svg), "phong_kho")
+
+    assert [marker.prop_type for marker in kho.prop_markers] == ["wooden_crate"]
+    assert kho.prop_markers[0].original_label == "prop_x5F_wooden_x5F_crate_x5F_01"
+
+
+@pytest.mark.parametrize(
+    "marker_id",
+    [
+        "agent_test_011B_E",
+        "agent_smoke_marker_011B_D",
+        "room_smoke_marker_011B_D",
+    ],
+)
+def test_agent_smoke_marker_groups_are_not_room_candidates(
+    tmp_path: Path,
+    marker_id: str,
+) -> None:
+    svg = write_svg(
+        tmp_path / "smoke_marker.svg",
+        '<g id="room_kho"><path d="M0 0 L100 0 L100 80 L0 80 Z"/></g>'
+        f'<g id="{marker_id}"><rect x="10" y="10" width="5" height="5"/></g>',
+    )
+
+    reports = detect_rooms(svg)
+
+    assert {report.room_name for report in reports} == {"kho"}

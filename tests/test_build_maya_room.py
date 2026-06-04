@@ -172,6 +172,25 @@ def write_prop_rotation_svg(path: Path) -> Path:
     return path
 
 
+def write_illustrator_x5f_svg(path: Path) -> Path:
+    """Write an Illustrator-style SVG whose IDs encode underscores as x5F."""
+
+    path.write_text(
+        """<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80">
+  <g id="room_x5F_phong_x5F_kho">
+    <path d="M0 0 L120 0 L120 80 L0 80 Z"/>
+    <g id="prop_x5F_wooden_x5F_crate_x5F_01">
+      <rect x="20" y="20" width="16" height="12"/>
+    </g>
+  </g>
+</svg>
+""",
+        encoding="utf-8",
+    )
+    return path
+
+
 def isolated_manifest(monkeypatch, tmp_path: Path) -> Path:
     """Redirect manifest lookups to a temp file."""
 
@@ -377,6 +396,77 @@ def test_room_selection_by_normalized_vietnamese_name(tmp_path: Path, monkeypatc
     plan = builder.build_plan(args)
 
     assert plan.room.room_name == "sanh_chinh"
+
+
+def test_room_selection_accepts_artist_name_for_illustrator_x5f_ids(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg = write_illustrator_x5f_svg(tmp_path / "x5f_floorplan.svg")
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "phong_kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+
+    plan = builder.build_plan(args)
+
+    assert plan.room.room_name == "phong_kho"
+    assert plan.room.original_label == "room_x5F_phong_x5F_kho"
+    assert plan.maya_output.name == "tu_phuong_vo_lo_phong_kho_main_maya_v001.ma"
+
+
+def test_room_selection_still_accepts_legacy_encoded_x5f_room_name(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    isolated_manifest(monkeypatch, tmp_path)
+    svg = write_illustrator_x5f_svg(tmp_path / "x5f_floorplan.svg")
+    args = builder.build_parser().parse_args(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "x5f_phong_x5f_kho",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+
+    plan = builder.build_plan(args)
+
+    assert plan.room.room_name == "phong_kho"
+
+
+def test_missing_room_error_lists_raw_decoded_and_internal_room_names(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    svg = write_illustrator_x5f_svg(tmp_path / "x5f_floorplan.svg")
+
+    exit_code = builder.main(
+        [
+            "--input",
+            str(svg),
+            "--room",
+            "sanh_chinh",
+            "--output-dir",
+            str(tmp_path / "outputs"),
+            "--dry-run",
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert "room_x5F_phong_x5F_kho -> room_phong_kho -> phong_kho" in captured.err
 
 
 def test_missing_style_returns_clear_error(tmp_path: Path, capsys) -> None:

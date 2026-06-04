@@ -71,6 +71,10 @@ GENERIC_LAYER_RE = re.compile(r"^(?:layer|layer_\d+|layer_\d+_\d+|layer_\d+_copy
 GENERIC_ROOT_SVG_RE = re.compile(
     r"^(?:svg|layer|layer_\d+|layer_\d+_\d+|layer_\d+_copy|artboard|artboard_\d+|untitled)$"
 )
+ILLUSTRATOR_UNDERSCORE_ESCAPE_TOKEN = "x5f"
+AGENT_TEST_ROOM_RE = re.compile(
+    r"^(?:agent_test(?:_|$)|agent_smoke_marker(?:_|$)|smoke_marker(?:_|$)|.*_smoke_marker(?:_|$))"
+)
 PATH_FALLBACK_TOKEN_RE = re.compile(
     r"[MmLlHhVvZzCcSsQqTtAa]|[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?",
 )
@@ -159,6 +163,7 @@ class RoomReport:
     floor_color_hint: str | None = None
     wall_material_hint: str | None = None
     wall_color_hint: str | None = None
+    artist_label: str | None = None
 
     @property
     def has_usable_boundary(self) -> bool:
@@ -171,6 +176,8 @@ class RoomReport:
 
         data = asdict(self)
         data["bbox"] = list(self.bbox) if self.bbox else None
+        if not data.get("artist_label"):
+            data.pop("artist_label", None)
         data["prop_markers"] = [marker.to_dict() for marker in self.prop_markers]
         data["opening_markers"] = [marker.to_dict() for marker in self.opening_markers]
         for key in (
@@ -188,6 +195,26 @@ class RoomReport:
         return data
 
 
+def decode_illustrator_underscore_escapes(label: str) -> str:
+    """Decode Illustrator SVG ID underscore escape tokens.
+
+    Illustrator 2020 can export an underscore from a layer/group name as a
+    standalone ``x5F``/``x5f`` token inside the SVG ID.  This intentionally
+    decodes only underscore-delimited tokens, not arbitrary hex escapes or text
+    such as ``box5fish``.
+    """
+
+    if not label:
+        return label
+    parts = label.split("_")
+    if not any(part.lower() == ILLUSTRATOR_UNDERSCORE_ESCAPE_TOKEN for part in parts):
+        return label
+    decoded_parts = [
+        part for part in parts if part.lower() != ILLUSTRATOR_UNDERSCORE_ESCAPE_TOKEN
+    ]
+    return "_".join(decoded_parts)
+
+
 def normalize_room_name(label: str) -> str:
     """Normalize a group/layer label into the shared asset-name convention.
 
@@ -199,7 +226,7 @@ def normalize_room_name(label: str) -> str:
     round-trip between detection output and ``--room`` selection.
     """
 
-    clean = label.strip()
+    clean = decode_illustrator_underscore_escapes(label.strip())
     lowered = clean.lower()
     for prefix in ("room_", "room-", "room ", "layer_"):
         if lowered.startswith(prefix):
@@ -246,7 +273,7 @@ def normalize_prop_marker_label_with_hints(
 ) -> tuple[str | None, int, str | None, str | None]:
     """Return prop type, rotation, and optional material/color hints."""
 
-    normalized = normalize_asset_name(label.strip())
+    normalized = normalize_asset_name(decode_illustrator_underscore_escapes(label.strip()))
     normalized, rotation = _strip_rotation_suffix(normalized)
     normalized, material_hint, color_hint = _strip_material_color_suffix(normalized)
     normalized, later_rotation = _strip_rotation_suffix(normalized)
@@ -265,7 +292,7 @@ def normalize_surface_material_label(
     """Return floor/wall target plus optional material/color hint."""
 
     base, material_hint, color_hint = _strip_material_color_suffix(
-        normalize_asset_name(label.strip())
+        normalize_asset_name(decode_illustrator_underscore_escapes(label.strip()))
     )
     if base in {"floor", "wall"} and (material_hint or color_hint):
         return base, material_hint, color_hint
@@ -275,7 +302,7 @@ def normalize_surface_material_label(
 def normalize_opening_marker_label(label: str) -> tuple[str | None, str | None]:
     """Return marker type/name for door/window marker labels."""
 
-    normalized = normalize_asset_name(label.strip())
+    normalized = normalize_asset_name(decode_illustrator_underscore_escapes(label.strip()))
     for prefix in OPENING_MARKER_PREFIXES:
         if normalized.startswith(prefix) and len(normalized) > len(prefix):
             return prefix[:-1], normalized[len(prefix) :]
@@ -285,7 +312,20 @@ def normalize_opening_marker_label(label: str) -> tuple[str | None, str | None]:
 def _normalized_label(label: str) -> str:
     """Return an asset-safe label without stripping structural room prefixes."""
 
-    return normalize_asset_name(label.strip())
+    return normalize_asset_name(decode_illustrator_underscore_escapes(label.strip()))
+
+
+def _artist_label(label: str) -> str:
+    """Return the decoded artist-facing label for an SVG label."""
+
+    return decode_illustrator_underscore_escapes(label.strip())
+
+
+def _is_agent_test_room_label(label: str) -> bool:
+    """Return whether a label is an agent/test marker, not a production room."""
+
+    normalized = normalize_room_name(label)
+    return bool(AGENT_TEST_ROOM_RE.match(normalized))
 
 
 def _is_generic_layer_label(label: str) -> bool:
@@ -969,6 +1009,10 @@ def _collect_shapes(
                         current.transform_applied = True
                     continue
 
+                if _is_agent_test_room_label(label):
+                    current.transform_warnings.extend(transform_warnings)
+                    continue
+
                 current.transform_warnings.extend(transform_warnings)
                 bucket = _RoomBucket(label=label, group_path=[*group_path, label])
                 buckets.append(bucket)
@@ -1008,6 +1052,7 @@ def _collect_shapes(
 
 def _make_room_report_from_bucket(label: str, bucket: _RoomBucket) -> RoomReport:
     room_name = normalize_room_name(label)
+    artist_label = _artist_label(label)
     warnings: list[str] = [
         *bucket.transform_warnings,
         *bucket.prop_warnings,
@@ -1062,6 +1107,7 @@ def _make_room_report_from_bucket(label: str, bucket: _RoomBucket) -> RoomReport
         floor_color_hint=bucket.floor_color_hint,
         wall_material_hint=bucket.wall_material_hint,
         wall_color_hint=bucket.wall_color_hint,
+        artist_label=artist_label if artist_label != label else None,
     )
 
 
@@ -1108,7 +1154,7 @@ def detect_rooms(svg_path: Path) -> list[RoomReport]:
     # SVG carries a meaningful label, initialize the top-level bucket with
     # that label so the existing boundary/prop/opening machinery works.
     root_label = _element_label(root)
-    if _is_meaningful_root_svg_label(root_label):
+    if _is_meaningful_root_svg_label(root_label) and not _is_agent_test_room_label(root_label):
         top_level = _RoomBucket(label=root_label, group_path=[root_label])
         group_path: list[str] = [root_label]
     else:
@@ -1151,6 +1197,8 @@ def print_room_report(report: RoomReport) -> None:
     status = "OK" if report.has_usable_boundary else "CHƯA DÙNG ĐƯỢC"
     print(f"- {report.room_name} ({status})")
     print(f"  Nhãn gốc: {report.original_label}")
+    if report.artist_label:
+        print(f"  Nhãn sau khi giải mã Illustrator: {report.artist_label}")
     if report.group_path:
         print(f"  Đường dẫn group: {' > '.join(report.group_path)}")
     print(f"  Số hình: {report.path_count}; đường bao đóng kín: {report.closed_path_count}")
