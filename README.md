@@ -47,6 +47,7 @@ clean SVG -> Blender MVP isometric draft / batch dry-run
 | 7.13 | SVG Preflight Checker (007M) | `scripts/python/svg_preflight_check.py` | Read-only Illustrator SVG safety check before Maya dry-run |
 | 7.14 | Guided Artist Workflow (007L) | `scripts/python/artist_desktop_app.py` | Desktop app guides Preflight -> Dry-run -> Actual Maya run |
 | 12E | Maya MCP Sandbox Workflow Closeout | `docs/maya_mcp_sandbox_workflow_closeout_vi.md` | Verified Illustrator sandbox -> Maya MCP sandbox safety closeout |
+| 014A | Maya Visual Fidelity MVP | `specs/014a-visual-fidelity-mvp/` | Optional post-build warehouse visual fidelity pass for Maya blockouts |
 
 ## Developer Quickstart
 
@@ -74,6 +75,12 @@ python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --r
 python scripts/python/build_maya_room.py --input tests/in/illustrator_prop_markers.svg --room phong_kho --dry-run
 python scripts/python/build_maya_room.py --input tests/in/illustrator_prop_showcase.svg --room phong_showcase --render-preview --dry-run
 python scripts/python/batch_maya_room.py --input-dir tests/in --dry-run --json-report outputs/reports/batch_maya_report.json
+```
+
+Feature 014A visual fidelity dry-run without Maya:
+
+```powershell
+python scripts/python/maya_visual_fidelity_pass.py --geometry-json outputs/tmp/tu_phuong_vo_lo_phong_kho_main_blockout_v017.json --preset warehouse_v0 --dry-run --report-json outputs/reports/visual_fidelity_report_014A.json
 ```
 
 Artist desktop app MVP:
@@ -165,6 +172,12 @@ Actual Maya run, when `mayapy.exe` is available:
 python scripts/python/build_maya_room.py --input tests/in/feature001_kho.svg --room kho --maya-path "C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe"
 ```
 
+Optional Feature 014A visual fidelity pass after Maya build:
+
+```powershell
+python scripts/python/maya_visual_fidelity_pass.py --input-scene "D:\path\to\source_scene.ma" --geometry-json "D:\path\to\blockout.json" --output-scene "D:\path\to\tu_phuong_vo_lo_phong_kho_main_maya_visual_fidelity_v018.ma" --preset warehouse_v0 --maya-path "C:\Program Files\Autodesk\Maya2024\bin\mayapy.exe"
+```
+
 Feature 005 MVP actual execution supports `mayapy.exe` only. `maya.exe` and
 `mayabatch.exe` support is future work.
 
@@ -176,6 +189,7 @@ Vietnamese guides:
 - [Checklist kiểm tra SVG thật trước khi dựng Maya](docs/real_svg_test_checklist_vi.md)
 - [Bàn giao desktop app Maya](docs/artist_handoff_desktop_app_vi.md)
 - [Closeout Illustrator-to-Maya MCP sandbox 012E](docs/maya_mcp_sandbox_workflow_closeout_vi.md)
+- [Visual Fidelity MVP 014A cho Maya](docs/visual_fidelity_mvp_vi.md)
 - [Checklist release/packaging desktop app](docs/release_packaging_checklist_vi.md)
 - [Hướng dẫn cài đặt](docs/INSTALL_VI.md)
 - [Hướng dẫn sử dụng](docs/HOW_TO_USE_FOR_ARTIST_VI.md)
