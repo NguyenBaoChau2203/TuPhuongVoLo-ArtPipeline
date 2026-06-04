@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Any
 
 import manifest as asset_manifest
-import yaml
 from clean_svg_paths import configure_stdio
 from detect_rooms_from_svg import (
     RoomReport,
@@ -26,6 +25,11 @@ from detect_rooms_from_svg import (
     normalize_room_name,
 )
 from room_geometry import create_wall_segments, normalize_points_to_origin, scale_points_to_blender
+
+try:
+    import yaml
+except ModuleNotFoundError:  # pragma: no cover - exercised in Maya Python smoke runs
+    yaml = None
 
 PIPELINE_STEP = "feature_005_maya_bridge"
 DEFAULT_STYLE = "line_art_green_floor"
@@ -37,6 +41,143 @@ MAYA_STAGE = "maya"
 RENDER_STAGE = "preview"
 DEFAULT_RENDER_WIDTH = 1280
 DEFAULT_RENDER_HEIGHT = 720
+
+
+def strip_yaml_comment(line: str) -> str:
+    """Strip YAML comments while preserving quoted color values such as "#4A7C59"."""
+
+    quote: str | None = None
+    escaped = False
+    for index, char in enumerate(line):
+        if escaped:
+            escaped = False
+            continue
+        if char == "\\" and quote:
+            escaped = True
+            continue
+        if char in {'"', "'"}:
+            if quote == char:
+                quote = None
+            elif quote is None:
+                quote = char
+            continue
+        if char == "#" and quote is None:
+            return line[:index]
+    return line
+
+
+def parse_simple_yaml_scalar(value: str) -> Any:
+    """Parse the scalar forms used by the repository config YAML files."""
+
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+        return value[1:-1]
+    lowered = value.lower()
+    if lowered == "true":
+        return True
+    if lowered == "false":
+        return False
+    if lowered in {"null", "none", "~"}:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        pass
+    try:
+        return float(value)
+    except ValueError:
+        return value
+
+
+def simple_yaml_load(text: str) -> dict[str, Any]:
+    """Load the small dict/list YAML subset used by config/*.yaml.
+
+    Maya's bundled Python may not have PyYAML installed. The pipeline config
+    files only use nested mappings, lists of mappings, and scalar values, so a
+    tiny fallback keeps emergency Maya builds working without adding packages.
+    """
+
+    lines: list[tuple[int, str]] = []
+    for raw_line in text.splitlines():
+        line = strip_yaml_comment(raw_line).rstrip()
+        if not line.strip():
+            continue
+        lines.append((len(line) - len(line.lstrip(" ")), line.strip()))
+
+    def parse_block(index: int, indent: int) -> tuple[Any, int]:
+        if index >= len(lines):
+            return {}, index
+        if lines[index][0] < indent:
+            return {}, index
+        if lines[index][1].startswith("- "):
+            return parse_list(index, lines[index][0])
+        return parse_mapping(index, lines[index][0])
+
+    def parse_mapping(index: int, indent: int) -> tuple[dict[str, Any], int]:
+        result: dict[str, Any] = {}
+        while index < len(lines):
+            current_indent, content = lines[index]
+            if current_indent < indent:
+                break
+            if current_indent > indent:
+                break
+            if content.startswith("- "):
+                break
+            if ":" not in content:
+                raise ValueError(f"Config YAML fallback không đọc được dòng: {content}")
+            key, raw_value = content.split(":", 1)
+            key = key.strip()
+            raw_value = raw_value.strip()
+            if raw_value:
+                result[key] = parse_simple_yaml_scalar(raw_value)
+                index += 1
+                continue
+            index += 1
+            if index >= len(lines) or lines[index][0] <= current_indent:
+                result[key] = {}
+                continue
+            child, index = parse_block(index, lines[index][0])
+            result[key] = child
+        return result, index
+
+    def parse_list(index: int, indent: int) -> tuple[list[Any], int]:
+        result: list[Any] = []
+        while index < len(lines):
+            current_indent, content = lines[index]
+            if current_indent < indent:
+                break
+            if current_indent != indent or not content.startswith("- "):
+                break
+            item_text = content[2:].strip()
+            index += 1
+            if not item_text:
+                child, index = parse_block(index, lines[index][0]) if index < len(lines) else ({}, index)
+                result.append(child)
+                continue
+            if ":" in item_text:
+                key, raw_value = item_text.split(":", 1)
+                item: dict[str, Any] = {}
+                if raw_value.strip():
+                    item[key.strip()] = parse_simple_yaml_scalar(raw_value.strip())
+                elif index < len(lines) and lines[index][0] > current_indent:
+                    child, index = parse_block(index, lines[index][0])
+                    item[key.strip()] = child
+                else:
+                    item[key.strip()] = {}
+                if index < len(lines) and lines[index][0] > current_indent:
+                    extra, index = parse_mapping(index, lines[index][0])
+                    item.update(extra)
+                result.append(item)
+                continue
+            result.append(parse_simple_yaml_scalar(item_text))
+        return result, index
+
+    parsed, final_index = parse_block(0, lines[0][0]) if lines else ({}, 0)
+    if final_index != len(lines):
+        raise ValueError("Config YAML fallback không đọc được toàn bộ file.")
+    if not isinstance(parsed, dict):
+        raise ValueError("Config YAML fallback cần root object/dict.")
+    return parsed
 
 
 @dataclass(frozen=True)
@@ -77,10 +218,12 @@ def load_yaml_file(path: Path) -> dict[str, Any]:
     """Load a YAML file as a dictionary."""
 
     try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        text = path.read_text(encoding="utf-8")
+        data = yaml.safe_load(text) if yaml is not None else simple_yaml_load(text)
+        data = data or {}
     except FileNotFoundError as exc:
         raise ValueError(f"Không tìm thấy file config: {path}") from exc
-    except yaml.YAMLError as exc:
+    except Exception as exc:
         raise ValueError(f"Config YAML không hợp lệ: {path} ({exc})") from exc
     if not isinstance(data, dict):
         raise ValueError(f"Config YAML phải là object/dict: {path}")
