@@ -3,6 +3,8 @@
 > **Giai đoạn**: 011B-D kết quả thật + 011B-E hardening  
 > **Mục tiêu**: Cho phép agent chỉnh sửa/export SVG trong sandbox Illustrator mà không làm hỏng file gốc, đồng thời giữ UX phòng `phong_kho` cho pipeline Python/Maya.
 
+> **Closeout 012E**: Luồng Illustrator sandbox -> Maya MCP sandbox đã được ghi lại tại `docs/maya_mcp_sandbox_workflow_closeout_vi.md`.
+
 ## Tóm tắt 011B-D
 
 Smoke test Illustrator MCP đã PASS trên bản sao sandbox:
@@ -43,6 +45,7 @@ Chế độ này vẫn tạo `.ma` và geometry JSON ở output folder ngoài re
 - Không sửa SVG gốc hoặc file trong `D:\TuPhuongVoLo_ArtistTests`.
 - MCP/agent chỉ làm việc trong `D:\TuPhuongVoLo_IllustratorAgentBackups\<session>\working`.
 - SVG export từ agent cũng chỉ ghi vào thư mục `working/` của sandbox.
+- Không commit `.ai`, `.svg`, `.ma`, `.json`, `.png`, `.zip`, report, hoặc backup sinh ra từ sandbox.
 - Sau khi export, họa sĩ hoặc operator review file sandbox trước khi đưa vào production.
 
 ## Illustrator mã hóa dấu gạch dưới
@@ -96,3 +99,7 @@ Quy tắc này giúp tránh trường hợp agent vô tình sửa hoặc save nh
 - `ERR_MAYA_NOT_FOUND`: cần kiểm tra cài đặt Maya, `tool_paths.mayapy` trong `config/pipeline.yaml`, hoặc tham số `--maya-path`.
 
 Luôn chạy dry-run trước actual run, đặc biệt sau export từ Illustrator MCP.
+
+## Liên kết closeout 012E
+
+Tài liệu `docs/maya_mcp_sandbox_workflow_closeout_vi.md` ghi lại chuỗi đã PASS sau 012D, gồm x5F SVG parsing, `--skip-manifest-update`, Maya sandbox, commandPort `127.0.0.1:50007`, restore bằng `restore_agent_backup.ps1`, và checklist không commit artifact sinh ra.

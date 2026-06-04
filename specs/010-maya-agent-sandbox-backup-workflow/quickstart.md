@@ -27,3 +27,16 @@ python scripts/python/maya_agent_sandbox.py --help
 pytest tests/test_maya_agent_sandbox.py -v
 pytest tests/ -v --ignore=tests/tmp
 ```
+
+## Phase 012E Closeout
+
+The completed Illustrator-to-Maya MCP sandbox workflow is documented in:
+
+```text
+docs/maya_mcp_sandbox_workflow_closeout_vi.md
+```
+
+Key safety reminders: open only `working/scene_agent_work.ma`, verify the current
+Maya scene path before any MCP edit/save, use `restore_agent_backup.ps1` for
+rollback, and do not commit generated `.ai`, `.svg`, `.ma`, `.json`, `.png`,
+`.zip`, output, report, or external sandbox files.

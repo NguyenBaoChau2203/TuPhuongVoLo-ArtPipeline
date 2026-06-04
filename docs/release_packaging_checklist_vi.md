@@ -29,7 +29,9 @@ docs/verification/007E_packaging_metadata_verified.md
 
 - [ ] Đang ở branch `workflow/maya-first-artist-pipeline`.
 - [ ] Worktree chỉ có thay đổi source/docs/tests dự kiến.
+- [ ] Nếu branch đang ahead of origin, chỉ push sau khi user/operator đồng ý rõ ràng.
 - [ ] Không có file sinh ra trong `build/`, `dist/`, hoặc `outputs/` được stage.
+- [ ] Không có sandbox artifact từ `D:\TuPhuongVoLo_AgentBackups`, `D:\TuPhuongVoLo_IllustratorAgentBackups`, hoặc `D:\TuPhuongVoLo_ArtistTests` được stage.
 - [ ] `python scripts/python/artist_desktop_app.py --help` chạy được.
 - [ ] `python scripts/python/artist_desktop_app.py --version` in đúng phiên bản.
 - [ ] `python scripts/python/package_artist_app.py --dry-run` in phiên bản app và lệnh PyInstaller dự kiến.
@@ -67,7 +69,12 @@ Không commit các artifact local sau:
 - `outputs/reports/`
 - `outputs/ai_preview/`
 - file `.ma` sinh ra
+- file `.ai`/`.svg` sandbox
+- geometry JSON `.json` sinh ra
 - file `.png` sinh ra
+- sandbox backup/report/zip sinh ra
+
+Nếu cần đóng phase agent/MCP sandbox, xem checklist 012E tại `docs/maya_mcp_sandbox_workflow_closeout_vi.md` trước khi stage hoặc commit.
 
 ## Cảnh báo phạm vi
 
