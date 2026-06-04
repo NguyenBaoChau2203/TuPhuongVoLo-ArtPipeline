@@ -51,6 +51,10 @@ outputs/reports/*
 *.ma~
 *.mb~
 
+# === Artist source artwork ===
+*.ai
+*.ait
+
 # === Logs ===
 *.log
 
