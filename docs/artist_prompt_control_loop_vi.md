@@ -60,6 +60,12 @@ Template prompt:
 docs/templates/illustrator_artist_prompt_template_vi.md
 ```
 
+Hướng dẫn khắc phục riêng cho lỗi MCP EOF:
+
+```text
+docs/illustrator_mcp_eof_troubleshooting_vi.md
+```
+
 ## Vòng lặp Maya Prompt Loop
 
 Luồng gần ổn định hơn:
