@@ -11,6 +11,7 @@ from pathlib import Path
 # Paths relative to repository root
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DOC_PATH = REPO_ROOT / "docs" / "antigravity_maya_mcp_sandbox_vi.md"
+CLOSEOUT_DOC_PATH = REPO_ROOT / "docs" / "maya_mcp_sandbox_workflow_closeout_vi.md"
 CONFIG_EXAMPLE_PATH = REPO_ROOT / "docs" / "templates" / "antigravity_maya_mcp_config.example.json"
 PROMPT_TEMPLATE_PATH = REPO_ROOT / "docs" / "templates" / "antigravity_maya_agent_prompt_vi.md"
 HELPER_SCRIPT_PATH = REPO_ROOT / "scripts" / "maya" / "enable_maya_mcp_command_port.py"
@@ -19,6 +20,7 @@ HELPER_SCRIPT_PATH = REPO_ROOT / "scripts" / "maya" / "enable_maya_mcp_command_p
 def test_files_exist():
     """Verify that all phase deliverables exist in their designated locations."""
     assert DOC_PATH.is_file(), f"Missing doc: {DOC_PATH}"
+    assert CLOSEOUT_DOC_PATH.is_file(), f"Missing closeout doc: {CLOSEOUT_DOC_PATH}"
     assert CONFIG_EXAMPLE_PATH.is_file(), f"Missing config: {CONFIG_EXAMPLE_PATH}"
     assert PROMPT_TEMPLATE_PATH.is_file(), f"Missing prompt: {PROMPT_TEMPLATE_PATH}"
     assert HELPER_SCRIPT_PATH.is_file(), f"Missing helper script: {HELPER_SCRIPT_PATH}"
@@ -77,6 +79,27 @@ def test_agent_prompt_mentions_work_scene():
     """Verify that the agent prompt explicitly directs the agent to working/scene_agent_work.ma."""
     content = PROMPT_TEMPLATE_PATH.read_text(encoding="utf-8")
     assert "working/scene_agent_work.ma" in content
+
+
+def test_closeout_doc_records_012e_workflow_and_known_findings():
+    """Verify 012E closeout doc preserves the verified MCP sandbox safety facts."""
+    content = CLOSEOUT_DOC_PATH.read_text(encoding="utf-8")
+
+    required_tokens = [
+        "Illustrator sandbox",
+        "x5F",
+        "--skip-manifest-update",
+        "C:\\Program Files\\Autodesk\\Maya2024\\bin\\mayapy.exe",
+        "127.0.0.1:50007",
+        "python(\"...\")",
+        "working\\scene_agent_work.ma",
+        "restore_agent_backup.ps1",
+        "-ExecutionPolicy Bypass",
+        "Không commit",
+    ]
+
+    for token in required_tokens:
+        assert token in content
 
 
 def test_docs_contain_safety_rules_and_forbidden_actions():

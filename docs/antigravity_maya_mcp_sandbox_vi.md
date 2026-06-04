@@ -2,6 +2,8 @@
 
 Tài liệu này hướng dẫn chi tiết cách thiết lập, cấu hình và quy trình vận hành an toàn khi kết nối AI Agent (Antigravity) với Autodesk Maya qua Model Context Protocol (MCP) trong dự án game **Tứ Phương Vô Lộ**.
 
+> **Closeout 012E**: Quy trình Illustrator sandbox -> Maya MCP sandbox đã PASS sau 012D và được tóm tắt tại `docs/maya_mcp_sandbox_workflow_closeout_vi.md`.
+
 > [!WARNING]
 > Việc cho phép AI Agent điều khiển trực tiếp Maya đi kèm rủi ro hư hại dữ liệu thiết kế, thay đổi cấu trúc scene ngoài ý muốn. Quy trình dưới đây bắt buộc phải được tuân thủ nghiêm ngặt.
 
@@ -56,9 +58,10 @@ Vì AI Agent có khả năng thực thi các tác vụ sửa đổi sâu như t�
 - ❌ **Không** mở hoặc sửa đổi trực tiếp các file thiết kế gốc `.ai` của Adobe Illustrator.
 - ❌ **Không** sửa đổi các file .svg thô hoặc .svg đã làm sạch trong `drops/`, `assets/`, hay các thư mục test.
 - ❌ **Không** ghi đè trực tiếp lên các file Maya `.ma` gốc trong thư mục `outputs/maya/`.
+- ❌ **Không** mở, chỉnh, hoặc save generated source `.ma`/geometry JSON dùng làm input sandbox; agent chỉ được làm việc trên `working/scene_agent_work.ma`.
 - ❌ **Không** cấp quyền đọc/ghi hệ thống file (filesystem MCP tool) mở rộng cho ổ đĩa hệ thống `C:\Users` hay `D:\` (chỉ giới hạn tối đa trong thư mục `working/` của sandbox).
 - ❌ **Không** đưa secrets, API keys, file cấu hình `.env` vào không gian làm việc hoặc đẩy lên hệ thống kiểm soát phiên bản (git).
-- ❌ **Không** commit các file `.ma`, `.png`, `.zip`, hay thư mục log/backup sinh ra từ sandbox vào git.
+- ❌ **Không** commit các file `.ai`, `.svg`, `.ma`, `.json`, `.png`, `.zip`, report, output, hay thư mục log/backup sinh ra từ sandbox vào git.
 
 ---
 
@@ -68,14 +71,18 @@ Vì AI Agent có khả năng thực thi các tác vụ sửa đổi sâu như t�
 - [ ] `git status` ở trạng thái hoàn toàn sạch sẽ (clean), không chứa thay đổi chưa commit.
 - [ ] Đã tạo phiên sandbox cách ly thành công (Phase 010A).
 - [ ] Maya chỉ đang mở tệp `working/scene_agent_work.ma`.
+- [ ] Đã xác minh current scene path trong Maya trùng đúng sandbox working file trước khi inspect/edit.
+- [ ] Đã ghi lại hash/source path nếu cần đối chiếu rollback.
 - [ ] Không gian làm việc của Antigravity giới hạn ở thư mục dự án hoặc thư mục sandbox cụ thể.
 - [ ] Quyền truy cập tệp tin (filesystem) của MCP (nếu có) được giới hạn trong thư mục `working/` của sandbox.
 - [ ] Cổng kết nối `commandPort` của Maya chỉ mở trên địa chỉ nội bộ `127.0.0.1:50007`. Bắt buộc không được cấu hình mở cổng này cho toàn mạng (wildcard IP `0.0.0.0`), để tránh nguy cơ máy bị hacker bên ngoài dò quét cổng và chạy mã độc từ xa.
+- [ ] Nếu MCP/commandPort diễn giải lệnh như MEL, dùng wrapper `python("...")` cho probe Python an toàn.
 - [ ] Không lưu trữ secrets hoặc cấu hình chứa đường dẫn thực tế trong repo.
 
 ### Sau khi Agent kết thúc:
 - [ ] Đã lưu scene đã chỉnh sửa thành một tệp tin mới (ví dụ: `scene_agent_result_v001.ma`).
 - [ ] Đã thực hiện kiểm tra thủ công trực tiếp trong giao diện Maya.
 - [ ] Đảm bảo dữ liệu snapshot gốc trong `original/` vẫn an toàn và không bị thay đổi.
-- [ ] Tuyệt đối không commit tệp scene đã tạo ra (`.ma`), các tệp kết quả render (`.png`), hoặc file nén (`.zip`) vào repo.
+- [ ] Nếu cần rollback, dùng `restore_agent_backup.ps1`; trên Windows có thể dùng process-scoped `-ExecutionPolicy Bypass` sau khi đã inspect script.
+- [ ] Tuyệt đối không commit tệp scene đã tạo ra (`.ma`), geometry JSON (`.json`), SVG/AI sandbox (`.svg`/`.ai`), các tệp kết quả render (`.png`), hoặc file nén (`.zip`) vào repo.
 - [ ] Tài liệu hóa/Báo cáo rõ ràng các thay đổi đã được họa sĩ phê duyệt thủ công.

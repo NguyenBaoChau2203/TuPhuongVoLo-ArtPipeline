@@ -28,3 +28,9 @@
 - [X] T010 Run requested CLI help and pytest validation.
 - [X] T011 Inspect git status and diff stat.
 - [X] T012 Commit with message `chore: add Maya agent sandbox backup workflow`.
+
+## Phase 012E: Maya MCP Sandbox Workflow Closeout
+
+- [X] T013 Document completed Illustrator sandbox -> Maya MCP sandbox workflow.
+- [X] T014 Document x5F SVG compatibility, manifest-safe actual Maya generation, commandPort guarded inspect/edit/save, restore, and polish findings.
+- [X] T015 Update safety checklist references for sandbox-only edits, scene-path verification, restore script usage, and generated artifact commit exclusions.

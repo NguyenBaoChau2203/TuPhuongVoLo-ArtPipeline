@@ -46,6 +46,7 @@ clean SVG -> Blender MVP isometric draft / batch dry-run
 | 7.12 | De-emphasize Paid AI Preview in Docs (007J-F2) | `specs/007-artist-desktop-app-mvp/` | Docs aligned to v0.7.9 (007J-F1), AI optionality/deferred cost clarified |
 | 7.13 | SVG Preflight Checker (007M) | `scripts/python/svg_preflight_check.py` | Read-only Illustrator SVG safety check before Maya dry-run |
 | 7.14 | Guided Artist Workflow (007L) | `scripts/python/artist_desktop_app.py` | Desktop app guides Preflight -> Dry-run -> Actual Maya run |
+| 12E | Maya MCP Sandbox Workflow Closeout | `docs/maya_mcp_sandbox_workflow_closeout_vi.md` | Verified Illustrator sandbox -> Maya MCP sandbox safety closeout |
 
 ## Developer Quickstart
 
@@ -174,6 +175,7 @@ Vietnamese guides:
 - [Sổ tay mèo con — hướng dẫn thân thiện cho họa sĩ (007H)](docs/artist_workflow_cat_guide_vi.html)
 - [Checklist kiểm tra SVG thật trước khi dựng Maya](docs/real_svg_test_checklist_vi.md)
 - [Bàn giao desktop app Maya](docs/artist_handoff_desktop_app_vi.md)
+- [Closeout Illustrator-to-Maya MCP sandbox 012E](docs/maya_mcp_sandbox_workflow_closeout_vi.md)
 - [Checklist release/packaging desktop app](docs/release_packaging_checklist_vi.md)
 - [Hướng dẫn cài đặt](docs/INSTALL_VI.md)
 - [Hướng dẫn sử dụng](docs/HOW_TO_USE_FOR_ARTIST_VI.md)
@@ -235,6 +237,11 @@ but it is still only a reference-image workflow and does not drive pipeline
 automation. Actual Maya scene generation requires local Autodesk Maya with
 `mayapy.exe`; the 005.4 launcher workflow has been verified on the artist/DCC
 machine with Maya 2024.
+
+The controlled 011B/012 Illustrator-to-Maya MCP sandbox workflow is documented
+as a safety closeout in `docs/maya_mcp_sandbox_workflow_closeout_vi.md`. It does
+not make Feature 006 a production natural-language control feature; agent work
+remains sandbox-only and requires artist review.
 
 ## License
 
